@@ -29,6 +29,7 @@ add_library(
         SHARED
 
         ${ANDROID-CPP}/AndroidMelonEventMessenger.cpp
+        ${ANDROID-CPP}/AudioOutputPolicy.cpp
         ${ANDROID-CPP}/CartLoader.cpp
         ${ANDROID-CPP}/DSiSupport.cpp
         ${ANDROID-CPP}/EmulatorArgsBuilder.cpp

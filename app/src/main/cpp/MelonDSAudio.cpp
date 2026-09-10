@@ -1,4 +1,5 @@
 #include "MelonDSAudio.h"
+#include "AudioOutputPolicy.h"
 #include "MicInputOboeCallback.h"
 #include "mic_blow.h"
 #include "OboeCallback.h"
@@ -257,7 +258,7 @@ namespace MelonDSAndroid
 
     void updateAudioSettings(AudioSettings audioSettings)
     {
-        if (audioSettings.soundEnabled && currentAudioSettings.volume > 0) {
+        if (shouldAudioOutputStreamBeActive(audioSettings.soundEnabled, audioSettings.volume)) {
             if (!audioStream) {
                 setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
             } else if (currentAudioSettings.audioLatency != audioSettings.audioLatency || currentAudioSettings.volume != audioSettings.volume) {
