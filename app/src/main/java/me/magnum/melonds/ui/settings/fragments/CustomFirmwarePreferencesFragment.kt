@@ -48,8 +48,9 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
             val consoleTypePreferenceValue = newValue as String
             val newConsoleType = enumValueOfIgnoreCase<ConsoleType>(consoleTypePreferenceValue)
 
-            if (viewModel.getConsoleConfigurationDirectoryStatus(newConsoleType).status != ConfigurationDirResult.Status.VALID) {
-                val textRes = when (newConsoleType) {
+            val validationResult = viewModel.getConsoleConfigurationDirectoryStatus(newConsoleType)
+            if (validationResult.status != ConfigurationDirResult.Status.VALID) {
+                val textRes = when (validationResult.consoleType) {
                     ConsoleType.DS -> R.string.ds_incorrect_bios_dir_info
                     ConsoleType.DSi -> R.string.dsi_incorrect_bios_dir_info
                 }
