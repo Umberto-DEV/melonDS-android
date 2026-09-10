@@ -15,6 +15,7 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                v.requestUnbufferedDispatch(event.source) // avoid per-frame batching of ACTION_MOVE while dragging
                 inputListener.onKeyPress(Input.TOUCHSCREEN)
                 inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height))
             }
