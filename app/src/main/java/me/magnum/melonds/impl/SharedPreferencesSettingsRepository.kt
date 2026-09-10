@@ -162,6 +162,7 @@ class SharedPreferencesSettingsRepository(
             rewindWindowSeconds = getRewindWindow(),
             useJit = isJitEnabled(),
             consoleType = consoleType,
+            rtcSyncToHost = isRtcSyncToHostEnabled(),
             soundEnabled = isSoundEnabled(),
             audioInterpolation = getAudioInterpolation(),
             audioBitrate = getAudioBitrate(),
@@ -284,6 +285,13 @@ class SharedPreferencesSettingsRepository(
     override fun isJitEnabled(): Boolean {
         val defaultJitEnabled = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
         return preferences.getBoolean("enable_jit", defaultJitEnabled)
+    }
+
+    override fun isRtcSyncToHostEnabled(): Boolean {
+        // Off by default: enabling this changes the game clock's behavior (it starts
+        // catching up to the device's clock instead of only running while the game plays),
+        // and existing users updating the app should not have that sprung on them.
+        return preferences.getBoolean("rtc_sync_to_host", false)
     }
 
     override fun getVideoRenderer(): Flow<VideoRenderer> {

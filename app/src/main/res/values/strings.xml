@@ -202,6 +202,8 @@
     <string name="enable_jit">Enable JIT</string>
     <string name="enable_jit_summary">Improves performance but may cause freezes or crashes.</string>
     <string name="jit_not_supported">JIT is only supported in 64 bit devices.</string>
+    <string name="rtc_sync_to_host">Sync clock with device</string>
+    <string name="rtc_sync_to_host_summary">The DS has its own clock, used by some games for things like berries growing or daily events. That clock only moves forward while you are actually playing, so pausing the game or leaving the app in the background for a while makes it fall behind. Enable this to catch it back up to your device\'s clock automatically. It will only ever move the clock forward, never backward.</string>
     <string name="backup_settings">Backup settings</string>
     <string name="restore_settings">Restore settings</string>
     <string name="settings_backup_success">Settings backup created.\n\nThe following were skipped:\n&#8226; RetroAchievements session\n&#8226; ROM/save directories\n&#8226; DS BIOS directory\n&#8226; DSi BIOS directory</string>

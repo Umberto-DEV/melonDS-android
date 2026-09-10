@@ -19,6 +19,7 @@ data class EmulatorConfiguration(
         val rewindWindowSeconds: Int,
         val useJit: Boolean,
         val consoleType: ConsoleType,
+        val rtcSyncToHost: Boolean,
         val soundEnabled: Boolean,
         val audioInterpolation: AudioInterpolation,
         val audioBitrate: AudioBitrate,

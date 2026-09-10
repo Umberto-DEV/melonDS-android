@@ -33,6 +33,7 @@ interface SettingsRepository {
     fun getDsiBiosDirectory(): Uri?
     fun showBootScreen(): Boolean
     fun isJitEnabled(): Boolean
+    fun isRtcSyncToHostEnabled(): Boolean
 
     fun getVideoRenderer(): Flow<VideoRenderer>
     fun getVideoInternalResolutionScaling(): Flow<Int>
