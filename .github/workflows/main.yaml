@@ -35,6 +35,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Lint and unit tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:lintGitHubProdDebug :app:testGitHubProdDebugUnitTest
+
       - name: Build melonDS Android
         env:
           MELONDS_KEYSTORE: ${{ secrets.MELONDS_KEYSTORE }}
