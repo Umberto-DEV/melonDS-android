@@ -41,6 +41,17 @@ public:
     melonDS::u32 runFrame();
     void stop();
 
+    /**
+     * Mette in scena i salvataggi pendenti: copia il buffer primario nel secondario per
+     * ogni SaveManager, come fa il ciclo dei frame con CheckFlush().
+     *
+     * Va chiamata SOLO da un thread ordinato rispetto all'emulatore - in pratica dopo il
+     * join del thread emulatore - perche' la richiesta di flush scrive il buffer primario
+     * senza lock dal thread emulatore: chiamarla mentre l'emulatore gira significa copiare
+     * sotto una scrittura in corso.
+     */
+    void stageSaves();
+
     void updateMotionData(float ax, float ay, float az, float rx, float ry, float rz);
     float getMotionData(MotionQueryType type);
     void touchScreen(u16 x, u16 y);

@@ -70,6 +70,8 @@ namespace MelonDSAndroid {
     extern bool loadRewindState(melonDS::RewindSaveState rewindSaveState);
     extern RewindWindow getRewindWindow();
     extern bool takeScreenshot();
+    /** Mette in scena i salvataggi pendenti. Solo dopo il join del thread emulatore. */
+    extern void stageSaves();
     extern void stop();
     extern void cleanup();
 }

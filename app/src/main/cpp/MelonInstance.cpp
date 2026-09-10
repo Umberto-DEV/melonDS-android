@@ -412,6 +412,18 @@ u32 MelonInstance::runFrame()
     return nLines;
 }
 
+void MelonInstance::stageSaves()
+{
+    if (ndsSave)
+        ndsSave->CheckFlush();
+
+    if (gbaSave)
+        gbaSave->CheckFlush();
+
+    if (firmwareSave)
+        firmwareSave->CheckFlush();
+}
+
 void MelonInstance::stop()
 {
     retroAchievementsManager = nullptr;

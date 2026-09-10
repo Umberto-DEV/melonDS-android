@@ -366,6 +366,12 @@ namespace MelonDSAndroid
         cleanupOpenGlContext();
     }
 
+    void stageSaves()
+    {
+        if (instance)
+            instance->stageSaves();
+    }
+
     void cleanup()
     {
         cleanupAudio();

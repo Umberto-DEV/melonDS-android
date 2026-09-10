@@ -468,6 +468,12 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
         pthread_cond_destroy(&emuThreadCond);
     }
 
+    // Dopo il join e prima della distruzione dei SaveManager: e' l'unico punto dell'albero
+    // da cui la copia del buffer primario sia sicura, perche' l'emulatore e' fermo.
+    // Senza questa riga una scrittura richiesta e mai messa in scena resta invisibile al
+    // rilascio, che riporta "niente di pendente" con successo.
+    MelonDSAndroid::stageSaves();
+
     MelonDSAndroid::cleanup();
 
     env->DeleteGlobalRef(globalCameraManager);
