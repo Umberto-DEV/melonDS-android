@@ -63,12 +63,16 @@ namespace MelonDSAndroid
         streamBuilder.setErrorCallback(stabilizedOutputCallback);
 
         oboe::Result result = streamBuilder.openStream(audioStream);
-        audioStream->setPerformanceHintEnabled(true);
-        audioStream->setBufferSizeInFrames(std::min(audioStream->getBufferCapacityInFrames(), 2048));
         if (result != oboe::Result::OK) {
+            // AudioStreamBuilder::openStream() guarantees audioStream stays null when it
+            // does not return OK (see oboe/src/common/AudioStreamBuilder.cpp), so nothing
+            // below this branch may dereference it.
             Log(Error, "Failed to init audio stream");
             outputCallback = nullptr;
             stabilizedOutputCallback = nullptr;
+        } else {
+            audioStream->setPerformanceHintEnabled(true);
+            audioStream->setBufferSizeInFrames(std::min(audioStream->getBufferCapacityInFrames(), 2048));
         }
     }
 
