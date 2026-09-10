@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import me.magnum.melonds.domain.model.ConfigurationDirResult
 import me.magnum.melonds.domain.model.ConsoleType
+import me.magnum.melonds.domain.model.FirmwareValidation
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.ConfigurationDirectoryVerifier
 import java.io.FileNotFoundException
@@ -56,12 +57,10 @@ class FileSystemConfigurationDirectoryVerifier(private val context: Context, set
         val firmwareDocument =configurationDir.findFile("firmware.bin") ?: return ConfigurationDirResult.FileStatus.MISSING
         return try {
             context.contentResolver.openAssetFileDescriptor(firmwareDocument.uri, "r")?.use {
-                when (it.length) {
-                    AssetFileDescriptor.UNKNOWN_LENGTH -> ConfigurationDirResult.FileStatus.MISSING
-                    0x20000.toLong(),
-                    0x40000.toLong(),
-                    0x80000.toLong() -> ConfigurationDirResult.FileStatus.PRESENT
-                    else -> ConfigurationDirResult.FileStatus.INVALID
+                if (it.length == AssetFileDescriptor.UNKNOWN_LENGTH) {
+                    ConfigurationDirResult.FileStatus.MISSING
+                } else {
+                    FirmwareValidation.getDsFirmwareStatus(it.length, getFirmwareConsoleType(it))
                 }
             } ?: ConfigurationDirResult.FileStatus.MISSING
         } catch (e: FileNotFoundException) {
@@ -81,10 +80,10 @@ class FileSystemConfigurationDirectoryVerifier(private val context: Context, set
         val firmwareDocument = configurationDir.findFile("firmware.bin") ?: return ConfigurationDirResult.FileStatus.MISSING
         return try {
             context.contentResolver.openAssetFileDescriptor(firmwareDocument.uri, "r")?.use {
-                when (it.length) {
-                    AssetFileDescriptor.UNKNOWN_LENGTH -> ConfigurationDirResult.FileStatus.MISSING
-                    0x20000.toLong() -> ConfigurationDirResult.FileStatus.PRESENT
-                    else -> ConfigurationDirResult.FileStatus.INVALID
+                if (it.length == AssetFileDescriptor.UNKNOWN_LENGTH) {
+                    ConfigurationDirResult.FileStatus.MISSING
+                } else {
+                    FirmwareValidation.getDsiFirmwareStatus(it.length, getFirmwareConsoleType(it))
                 }
             } ?: ConfigurationDirResult.FileStatus.MISSING
         } catch (e: FileNotFoundException) {
@@ -109,6 +108,25 @@ class FileSystemConfigurationDirectoryVerifier(private val context: Context, set
             } ?: ConfigurationDirResult.FileStatus.MISSING
         } catch (e: FileNotFoundException) {
             ConfigurationDirResult.FileStatus.MISSING
+        }
+    }
+
+    /**
+     * Reads the "Console type" byte (GBATEK, DS Firmware Header, offset 01Dh) from an
+     * already-open firmware.bin descriptor. Returns null if the byte can't be read (e.g. a
+     * truncated stream); callers must then treat the console type as unknown rather than
+     * guessing.
+     */
+    private fun getFirmwareConsoleType(firmware: AssetFileDescriptor): Int? {
+        return firmware.createInputStream().use { stream ->
+            var skipped = 0L
+            while (skipped < FirmwareValidation.CONSOLE_TYPE_OFFSET) {
+                val n = stream.skip(FirmwareValidation.CONSOLE_TYPE_OFFSET - skipped)
+                if (n <= 0) return null
+                skipped += n
+            }
+            val consoleType = stream.read()
+            if (consoleType == -1) null else consoleType
         }
     }
 
