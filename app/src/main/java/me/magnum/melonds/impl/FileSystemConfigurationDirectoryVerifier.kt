@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import me.magnum.melonds.domain.model.ConfigurationDirResult
 import me.magnum.melonds.domain.model.ConsoleType
+import me.magnum.melonds.domain.model.FirmwareConsoleType
 import me.magnum.melonds.domain.model.FirmwareValidation
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.ConfigurationDirectoryVerifier
@@ -120,8 +121,8 @@ class FileSystemConfigurationDirectoryVerifier(private val context: Context, set
     private fun getFirmwareConsoleType(firmware: AssetFileDescriptor): Int? {
         return firmware.createInputStream().use { stream ->
             var skipped = 0L
-            while (skipped < FirmwareValidation.CONSOLE_TYPE_OFFSET) {
-                val n = stream.skip(FirmwareValidation.CONSOLE_TYPE_OFFSET - skipped)
+            while (skipped < FirmwareConsoleType.HEADER_OFFSET) {
+                val n = stream.skip(FirmwareConsoleType.HEADER_OFFSET - skipped)
                 if (n <= 0) return null
                 skipped += n
             }

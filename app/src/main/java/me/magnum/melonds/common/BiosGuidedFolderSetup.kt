@@ -7,6 +7,7 @@ import androidx.documentfile.provider.DocumentFile
 import me.magnum.melonds.domain.model.BiosFileClassification
 import me.magnum.melonds.domain.model.BiosSlot
 import me.magnum.melonds.domain.model.ConsoleType
+import me.magnum.melonds.domain.model.FirmwareConsoleType
 import me.magnum.melonds.domain.services.BiosFileClassifier
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -235,15 +236,15 @@ class BiosGuidedFolderSetup(private val context: Context) {
     }
 
     /**
-     * Reads the byte at [BiosFileClassifier.FIRMWARE_CONSOLE_TYPE_OFFSET]. Returns null if it
-     * can't be read, in which case the caller must not treat the file as matching either console.
+     * Reads the byte at [FirmwareConsoleType.HEADER_OFFSET]. Returns null if it can't be read, in
+     * which case the caller must not treat the file as matching either console.
      */
     private fun readFirmwareConsoleTypeByte(file: DocumentFile): Int? {
         return try {
             context.contentResolver.openInputStream(file.uri)?.use { stream ->
                 var skipped = 0L
-                while (skipped < BiosFileClassifier.FIRMWARE_CONSOLE_TYPE_OFFSET) {
-                    val n = stream.skip((BiosFileClassifier.FIRMWARE_CONSOLE_TYPE_OFFSET - skipped).toLong())
+                while (skipped < FirmwareConsoleType.HEADER_OFFSET) {
+                    val n = stream.skip((FirmwareConsoleType.HEADER_OFFSET - skipped).toLong())
                     if (n <= 0) return null
                     skipped += n
                 }

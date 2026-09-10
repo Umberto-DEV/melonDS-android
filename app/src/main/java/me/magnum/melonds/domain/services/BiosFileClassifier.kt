@@ -2,32 +2,30 @@ package me.magnum.melonds.domain.services
 
 import me.magnum.melonds.domain.model.BiosFileClassification
 import me.magnum.melonds.domain.model.BiosSlot
+import me.magnum.melonds.domain.model.FirmwareConsoleType
 
 /**
  * Works out which [BiosSlot] (if any) a file belongs to purely from its content: its size, and,
  * for firmware-sized files, the console-type byte documented in GBATEK's "DS Firmware Header"
  * (offset 01Dh: 57h identifies a DSi/iQueDSi firmware image, every other observed value a DS
- * family one). The file's current name plays no part in this decision, which is the point: the
- * BIOS sets that circulate use all sorts of names (bios7.bin, biosdsi7.bin, dsifirmware.bin...)
- * and the name never tells which of the two console folders a file actually belongs in.
+ * family one) -- read into a [FirmwareConsoleType] by that shared, single place rather than
+ * compared against 0x57 here directly (see its doc comment, and
+ * MELONDS-INTEGRA/CORREZIONI-PRE-PR.md correction 7). The file's current name plays no part in
+ * this decision, which is the point: the BIOS sets that circulate use all sorts of names
+ * (bios7.bin, biosdsi7.bin, dsifirmware.bin...) and the name never tells which of the two console
+ * folders a file actually belongs in.
  *
  * Pure and Android-free on purpose so it can be exercised with plain JUnit.
  */
 object BiosFileClassifier {
 
-    /** GBATEK, "DS Firmware Header", offset 01Dh ("Console type"). */
-    const val FIRMWARE_CONSOLE_TYPE_OFFSET = 0x1D
-
-    /** GBATEK value for a DSi (or iQueDSi) firmware image at [FIRMWARE_CONSOLE_TYPE_OFFSET]. */
-    const val FIRMWARE_CONSOLE_TYPE_DSI = 0x57
-
     private val firmwareSizes = (BiosSlot.DS_FIRMWARE.expectedSizeBytes.toList() + BiosSlot.DSI_FIRMWARE.expectedSizeBytes.toList()).distinct()
 
     /**
      * @param sizeBytes the file's exact size.
-     * @param firmwareConsoleTypeByte the byte read at [FIRMWARE_CONSOLE_TYPE_OFFSET], or null if
-     * it could not be read (e.g. a truncated file) or if [sizeBytes] is not a firmware size, in
-     * which case it plays no part in the decision.
+     * @param firmwareConsoleTypeByte the byte read at [FirmwareConsoleType.HEADER_OFFSET], or
+     * null if it could not be read (e.g. a truncated file) or if [sizeBytes] is not a firmware
+     * size, in which case it plays no part in the decision.
      */
     fun classify(sizeBytes: Long, firmwareConsoleTypeByte: Int?): BiosFileClassification {
         return when (sizeBytes) {
@@ -43,22 +41,23 @@ object BiosFileClassifier {
     }
 
     private fun classifyFirmware(sizeBytes: Long, firmwareConsoleTypeByte: Int?): BiosFileClassification {
-        val isDsiConsoleType = firmwareConsoleTypeByte == FIRMWARE_CONSOLE_TYPE_DSI
+        val consoleType = FirmwareConsoleType.fromHeaderByte(firmwareConsoleTypeByte)
         return when {
             // Only DS accepts these two larger sizes. A DSi console-type byte here would mean
             // the file is internally inconsistent (or not really a firmware dump); don't guess.
             sizeBytes == BiosSlot.DS_FIRMWARE.expectedSizeBytes[1] || sizeBytes == BiosSlot.DS_FIRMWARE.expectedSizeBytes[2] -> {
-                if (isDsiConsoleType) BiosFileClassification.Unrecognized else BiosFileClassification.Unambiguous(BiosSlot.DS_FIRMWARE)
+                if (consoleType == FirmwareConsoleType.DSI) BiosFileClassification.Unrecognized else BiosFileClassification.Unambiguous(BiosSlot.DS_FIRMWARE)
             }
             // 128 KB is valid for both consoles; the header byte is the only way to tell them apart.
             sizeBytes == BiosSlot.DSI_FIRMWARE.expectedSizeBytes[0] -> {
-                if (isDsiConsoleType) {
-                    BiosFileClassification.Unambiguous(BiosSlot.DSI_FIRMWARE)
-                } else if (firmwareConsoleTypeByte != null) {
-                    BiosFileClassification.Unambiguous(BiosSlot.DS_FIRMWARE)
-                } else {
-                    // Couldn't read the header byte: don't place a 128 KB file we can't tell apart.
-                    BiosFileClassification.Unrecognized
+                when (consoleType) {
+                    FirmwareConsoleType.DSI -> BiosFileClassification.Unambiguous(BiosSlot.DSI_FIRMWARE)
+                    FirmwareConsoleType.DS -> BiosFileClassification.Unambiguous(BiosSlot.DS_FIRMWARE)
+                    // Couldn't read the header byte: fail CLOSED here, unlike FirmwareValidation's
+                    // fail-open policy for the same UNDETERMINED case -- this call site auto-places
+                    // a file for the user, so it refuses to guess rather than risk placing a 128 KB
+                    // file we cannot actually tell apart. See FirmwareConsoleType's doc comment.
+                    FirmwareConsoleType.UNDETERMINED -> BiosFileClassification.Unrecognized
                 }
             }
             else -> BiosFileClassification.Unrecognized

@@ -14,31 +14,35 @@
 // inline in FileSystemConfigurationDirectoryVerifier (MELONDS-TESTBED refactor); it carries
 // the same fix as MELONDS-BIOSFIX/firmware-validation.candidate.patch, verified branch for
 // branch to be behaviorally identical -- see MELONDS-INTEGRA/ORDINE.md, step 5/6.
+//
+// The console-type byte itself is now read into a [FirmwareConsoleType] by a single shared
+// place instead of being compared against 0x57 here directly -- see that type's doc comment
+// (MELONDS-INTEGRA/CORREZIONI-PRE-PR.md, correction 7) for why, and for the deliberate
+// fail-open policy this class applies to FirmwareConsoleType.UNDETERMINED below.
 
 package me.magnum.melonds.domain.model
 
 object FirmwareValidation {
-    // GBATEK "DS Firmware Header", offset 01Dh ("Console type"). 57h identifies a DSi (or
-    // iQueDSi) firmware image; DS/DS-lite/iQueDS(-lite) images use FFh/20h/43h/63h.
-    const val CONSOLE_TYPE_OFFSET = 0x1D
-    const val CONSOLE_TYPE_DSI = 0x57
 
     /**
      * @param size length in bytes of firmware.bin, as reported by the AssetFileDescriptor.
-     * @param consoleType the byte at [CONSOLE_TYPE_OFFSET] of the firmware header, or null if
-     *   it could not be read (e.g. a truncated stream after the size check already passed).
+     * @param consoleType the byte at [FirmwareConsoleType.HEADER_OFFSET] of the firmware header,
+     *   or null if it could not be read (e.g. a truncated stream after the size check already
+     *   passed).
      */
     fun getDsFirmwareStatus(size: Long, consoleType: Int?): ConfigurationDirResult.FileStatus {
+        val type = FirmwareConsoleType.fromHeaderByte(consoleType)
         return when (size) {
             0x20000L,
             0x40000L,
             0x80000L ->
-                if (consoleType == CONSOLE_TYPE_DSI) {
+                if (type == FirmwareConsoleType.DSI) {
                     // Right size for DS, but the header says DSi: this is the confirmed defect.
                     ConfigurationDirResult.FileStatus.INVALID
                 } else {
-                    // Unknown/unreadable byte fails OPEN here: a read error on a byte outside
-                    // the fixed defect must not regress files that were previously PRESENT.
+                    // DS, or UNDETERMINED (unreadable byte): fail OPEN here so a read error on a
+                    // byte outside the fixed defect must not regress files that were previously
+                    // PRESENT.
                     ConfigurationDirResult.FileStatus.PRESENT
                 }
             else -> ConfigurationDirResult.FileStatus.INVALID
@@ -46,14 +50,15 @@ object FirmwareValidation {
     }
 
     fun getDsiFirmwareStatus(size: Long, consoleType: Int?): ConfigurationDirResult.FileStatus {
+        val type = FirmwareConsoleType.fromHeaderByte(consoleType)
         return when (size) {
             0x20000L ->
-                if (consoleType == CONSOLE_TYPE_DSI) {
+                if (type == FirmwareConsoleType.DSI) {
                     ConfigurationDirResult.FileStatus.PRESENT
                 } else {
-                    // Right size for DSi, but the header does not say DSi (mirror case: a
-                    // genuine DS firmware, or an unreadable byte) fails CLOSED here: we cannot
-                    // positively confirm this is a DSi firmware, so we do not call it PRESENT.
+                    // DS, or UNDETERMINED (unreadable byte): fail CLOSED here (mirror case) --
+                    // we cannot positively confirm this is a DSi firmware, so we do not call it
+                    // PRESENT.
                     ConfigurationDirResult.FileStatus.INVALID
                 }
             else -> ConfigurationDirResult.FileStatus.INVALID

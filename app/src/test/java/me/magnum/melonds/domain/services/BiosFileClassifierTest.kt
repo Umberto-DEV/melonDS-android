@@ -2,6 +2,7 @@ package me.magnum.melonds.domain.services
 
 import me.magnum.melonds.domain.model.BiosFileClassification
 import me.magnum.melonds.domain.model.BiosSlot
+import me.magnum.melonds.domain.model.FirmwareConsoleType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,7 +37,7 @@ class BiosFileClassifierTest {
 
     @Test
     fun `256KB firmware with a DSi header byte is rejected instead of guessed`() {
-        val result = BiosFileClassifier.classify(0x40000, BiosFileClassifier.FIRMWARE_CONSOLE_TYPE_DSI)
+        val result = BiosFileClassifier.classify(0x40000, FirmwareConsoleType.DSI_HEADER_BYTE)
         assertEquals(BiosFileClassification.Unrecognized, result)
     }
 
