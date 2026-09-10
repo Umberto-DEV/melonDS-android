@@ -22,6 +22,15 @@
 #include "SaveManager.h"
 #include "Platform.h"
 
+// A failing flush is retried on every worker tick, so the log is rate limited
+// after the first report of an episode.
+static const u32 FlushFailureReportInterval = 50;
+
+// Retry backoff, in worker ticks: 1, 2, 4, 8, then held at the cap. It deliberately
+// lives in the attempt schedule and not in the sleep, because run() only checks
+// Running after Sleep: a longer sleep would lengthen every shutdown too.
+static const u32 MaxRetryDelayTicks = 16;
+
 SaveManager::SaveManager(std::string path)
 {
     SecondaryBuffer = nullptr;
@@ -40,6 +49,8 @@ SaveManager::SaveManager(std::string path)
     PreviousFlushVersion = 0;
     TimeAtLastFlushRequest = 0;
 
+    ConsecutiveFlushFailures = 0;
+
     if (!path.empty())
     {
         Running = true;
@@ -53,7 +64,16 @@ SaveManager::~SaveManager()
     {
         Running = false;
         Platform::Thread_Wait(Thread);
-        FlushSecondaryBuffer();
+        // This runs whenever the manager is released, which is at every ROM or firmware
+        // change on a live instance, not only when the application exits.
+        const u32 failuresBeforeRelease = ConsecutiveFlushFailures.load();
+        if (!FlushSecondaryBuffer())
+            Log(LogLevel::Error, "SaveManager: last flush of %s before release failed; generation %u stays unwritten\n",
+                Path.c_str(), FlushVersion);
+        else if (failuresBeforeRelease != 0)
+            // Without this the log would end on an alarm that was in fact resolved.
+            Log(LogLevel::Info, "SaveManager: flush of %s recovered on the last flush before release\n",
+                Path.c_str());
     }
 
     SecondaryBuffer = nullptr;
@@ -72,6 +92,8 @@ std::string SaveManager::GetPath()
 void SaveManager::SetPath(std::string path, bool reload)
 {
     Path = path;
+    // The failure episode belonged to the previous path; it does not carry over.
+    ConsecutiveFlushFailures = 0;
 
     if (reload)
     {
@@ -145,11 +167,24 @@ void SaveManager::CheckFlush()
 
 void SaveManager::run()
 {
+    // Backoff state stays local to this loop: nothing else schedules retries.
+    u32 retryDelayTicks = 0;
+    u32 ticksUntilRetry = 0;
+
     for (;;)
     {
         Platform::Sleep(100000);
 
         if (!Running) return;
+
+        // Skip ticks instead of sleeping longer, so shutdown still costs one tick.
+        // Counted down before the debounce, so a backoff already under way overlaps the
+        // debounce of a new generation instead of being added to it.
+        if (ticksUntilRetry > 0)
+        {
+            ticksUntilRetry--;
+            continue;
+        }
 
         // We debounce for two seconds after last flush request to ensure that writing has finished.
         if (TimeAtLastFlushRequest == 0 || difftime(time(nullptr), TimeAtLastFlushRequest) < 2)
@@ -157,18 +192,40 @@ void SaveManager::run()
             continue;
         }
 
-        FlushSecondaryBuffer();
+        const u32 failuresBeforeAttempt = ConsecutiveFlushFailures.load();
+        if (FlushSecondaryBuffer())
+        {
+            retryDelayTicks = 0;
+            // Only report a recovery if this worker had already reported a failure.
+            if (failuresBeforeAttempt != 0)
+                Log(LogLevel::Info, "SaveManager: flush to %s recovered\n", Path.c_str());
+        }
+        else
+        {
+            // The generation stays pending and eligible, so report the first failure of
+            // an episode and then rate limit the identical repeats.
+            retryDelayTicks = retryDelayTicks ? retryDelayTicks * 2 : 1;
+            if (retryDelayTicks > MaxRetryDelayTicks) retryDelayTicks = MaxRetryDelayTicks;
+            ticksUntilRetry = retryDelayTicks;
+
+            const u32 failures = ConsecutiveFlushFailures.fetch_add(1) + 1;
+            if (failures == 1 || (failures % FlushFailureReportInterval) == 0)
+                Log(LogLevel::Error, "SaveManager: flush to %s failed (%u consecutive attempts)\n",
+                    Path.c_str(), failures);
+        }
     }
 }
 
-void SaveManager::FlushSecondaryBuffer(u8* dst, u32 dstLength)
+bool SaveManager::FlushSecondaryBuffer(u8* dst, u32 dstLength)
 {
-    if (!SecondaryBuffer) return;
+    // Nothing was ever staged. For a file flush there is no pending generation to report,
+    // but a caller asking for memory got nothing copied and must not be told otherwise.
+    if (!SecondaryBuffer) return dst == nullptr;
 
     // When flushing to a file, there's no point in re-writing the exact same data.
-    if (!dst && !NeedsFlush()) return;
+    if (!dst && !NeedsFlush()) return true;
     // When flushing to memory, we don't know if dst already has any data so we only check that we CAN flush.
-    if (dst && dstLength < SecondaryBufferLength) return;
+    if (dst && dstLength < SecondaryBufferLength) return false;
 
     Platform::Mutex_Lock(SecondaryBufferLock);
     if (dst)
@@ -178,19 +235,42 @@ void SaveManager::FlushSecondaryBuffer(u8* dst, u32 dstLength)
     else
     {
         FileHandle* f = Platform::OpenFile(Path, FileMode::Write);
+        bool flushed = false;
         if (f)
         {
-            FileWrite(SecondaryBuffer.get(), SecondaryBufferLength, 1, f);
-            Log(LogLevel::Info, "SaveManager: Wrote %u bytes to %s\n", SecondaryBufferLength, Path.c_str());
-            CloseFile(f);
+            const bool written = FileWrite(SecondaryBuffer.get(), SecondaryBufferLength, 1, f) == 1;
+            // Always close the file, including after a short write.
+            const bool closed = CloseFile(f);
+            flushed = written && closed;
+            if (flushed)
+                Log(LogLevel::Info, "SaveManager: Wrote %u bytes to %s\n", SecondaryBufferLength, Path.c_str());
+        }
+        if (!flushed)
+        {
+            // Keep this generation and its debounce timestamp eligible for retry.
+            Platform::Mutex_Unlock(SecondaryBufferLock);
+            return false;
         }
     }
     PreviousFlushVersion = FlushVersion;
     TimeAtLastFlushRequest = 0;
+    // Cleared where the generation is acknowledged, so a flush to memory clears it as well.
+    ConsecutiveFlushFailures = 0;
     Platform::Mutex_Unlock(SecondaryBufferLock);
+    return true;
 }
 
 bool SaveManager::NeedsFlush()
 {
     return FlushVersion != PreviousFlushVersion;
+}
+
+u32 SaveManager::GetConsecutiveFlushFailures()
+{
+    return ConsecutiveFlushFailures.load();
+}
+
+bool SaveManager::HasPendingFlushError()
+{
+    return ConsecutiveFlushFailures.load() != 0;
 }

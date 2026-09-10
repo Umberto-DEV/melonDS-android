@@ -19,6 +19,7 @@
 #ifndef SAVEMANAGER_H
 #define SAVEMANAGER_H
 
+#include <atomic>
 #include <string>
 #include <unistd.h>
 #include <time.h>
@@ -42,7 +43,15 @@ public:
     void CheckFlush();
 
     bool NeedsFlush();
-    void FlushSecondaryBuffer(u8* dst = nullptr, u32 dstLength = 0);
+    // Returns false whenever the requested flush did not happen: flushing to a file
+    // leaves the pending generation eligible for a later retry, flushing to memory
+    // leaves dst untouched. Returns true when there was nothing pending to write.
+    bool FlushSecondaryBuffer(u8* dst = nullptr, u32 dstLength = 0);
+
+    // Signalling for the periodic worker: a non-zero count means the last periodic
+    // flush attempt failed and the staged generation is still unwritten.
+    u32 GetConsecutiveFlushFailures();
+    bool HasPendingFlushError();
 
 private:
 
@@ -67,6 +76,10 @@ private:
     // a flush cycle is finished.
     u32 PreviousFlushVersion;
     u32 FlushVersion;
+
+    // Written by the periodic worker, polled by the owner; kept atomic because the
+    // rest of this class stays as unsynchronised as it was.
+    std::atomic<u32> ConsecutiveFlushFailures;
 };
 
 #endif // SAVEMANAGER_H
