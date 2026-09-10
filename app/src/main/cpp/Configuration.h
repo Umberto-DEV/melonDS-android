@@ -75,6 +75,10 @@ typedef struct
     bool showBootScreen;
     bool useJit;
     int consoleType;
+    // Off by default (opt-in): when true, the DS RTC is periodically stamped forward to
+    // match the host device's clock. See MelonInstance::syncRTC() / RtcSync.h for the
+    // decision logic and why it never steps the clock backward.
+    bool rtcSyncToHost;
     AudioSettings audioSettings;
     int rewindEnabled;
     int rewindCaptureSpacingSeconds;

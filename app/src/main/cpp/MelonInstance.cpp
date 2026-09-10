@@ -17,6 +17,7 @@
 #include "NDSCart.h"
 #include "net/Net_Slirp.h"
 #include "Platform.h"
+#include "RtcSync.h"
 #include "SDCardArgsBuilder.h"
 
 using namespace std;
@@ -291,6 +292,8 @@ void MelonInstance::reset()
 
 u32 MelonInstance::runFrame()
 {
+    syncRTC();
+
     if (isRenderConfigurationDirty)
     {
         updateRenderer();
@@ -720,6 +723,48 @@ void MelonInstance::setDateTime()
     std::tm* now = std::localtime(&t);
 
     nds->RTC.SetDateTime(now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+}
+
+// Opt-in "Synchronize clock to device time" option. The DS RTC is driven by the emulator's
+// own scheduler (RTC::ScheduleTimer), not by the host clock, and pauseEmulation()/
+// resumeEmulation() only touch audio (see MelonDSAndroid::pause()/resume() in MelonDS.cpp) --
+// so a DS console clock never resyncs on its own after the app spends real time paused or
+// backgrounded (only construction, reset() and loadState() call setDateTime()). Left
+// disabled, this is invisible: existing saves/behavior are unaffected. Enabled, it is called
+// once per frame from runFrame() and forwards the decision to the pure function in RtcSync.h,
+// which never asks to step the clock backward -- see there for why.
+void MelonInstance::syncRTC()
+{
+    if (!currentConfiguration->rtcSyncToHost)
+        return;
+
+    int year, month, day, hour, minute, second;
+    nds->RTC.GetDateTime(year, month, day, hour, minute, second);
+
+    std::tm dsTm{};
+    dsTm.tm_year = year - 1900;
+    dsTm.tm_mon = month - 1;
+    dsTm.tm_mday = day;
+    dsTm.tm_hour = hour;
+    dsTm.tm_min = minute;
+    dsTm.tm_sec = second;
+    dsTm.tm_isdst = -1;
+    std::time_t dsEpochSeconds = std::mktime(&dsTm);
+
+    std::time_t hostEpochSeconds = std::time(nullptr);
+
+    if (dsEpochSeconds == (std::time_t) -1)
+    {
+        // Couldn't normalize the DS clock (e.g. it holds an out-of-range value) -- fall
+        // through to a plain forward stamp rather than acting on garbage.
+        setDateTime();
+        return;
+    }
+
+    if (rtcSyncAction(dsEpochSeconds, hostEpochSeconds) == RtcSyncAction::ADVANCE)
+    {
+        setDateTime();
+    }
 }
 
 void MelonInstance::saveRewindState(RewindSaveState* rewindSaveState)

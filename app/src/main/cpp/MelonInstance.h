@@ -88,6 +88,7 @@ private:
     void updateRenderer();
     void setBatteryLevels();
     void setDateTime();
+    void syncRTC();
     void saveRewindState(RewindSaveState* rewindSaveState);
 
 private:

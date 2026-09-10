@@ -52,6 +52,7 @@ add_library(
         ${ANDROID-CPP}/RetroAchievementsMapper.cpp
         ${ANDROID-CPP}/RewindManager.cpp
         ${ANDROID-CPP}/RomIconBuilder.cpp
+        ${ANDROID-CPP}/RtcSync.cpp
         ${ANDROID-CPP}/SDCardArgsBuilder.cpp
         ${ANDROID-CPP}/SaveManager.cpp
         ${ANDROID-CPP}/UriFileHandler.cpp
