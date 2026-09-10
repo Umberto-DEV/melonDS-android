@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:padding="6dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
@@ -10,16 +10,30 @@
     <ImageView
             android:id="@+id/imageViewFileStatus"
             android:layout_width="32dp"
-            android:layout_height="match_parent"
+            android:layout_height="32dp"
             tools:src="@drawable/ic_status_ok"
             tools:tint="@color/statusOk" />
 
-    <TextView
-            android:id="@+id/textFileName"
+    <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:textColor="?android:attr/textColorPrimary"
-            tools:text="bios7.bin" />
+            android:orientation="vertical">
+
+        <TextView
+                android:id="@+id/textFileName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
+                tools:text="bios7.bin" />
+
+        <TextView
+                android:id="@+id/textFileExpectedSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary"
+                tools:text="Exactly 16 KB" />
+    </LinearLayout>
 </LinearLayout>

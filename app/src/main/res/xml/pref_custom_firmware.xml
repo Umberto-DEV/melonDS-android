@@ -10,6 +10,13 @@
             app:iconSpaceReserved="false"
             android:defaultValue="false" />
 
+    <Preference
+            android:key="guided_bios_setup"
+            android:title="@string/bios_guided_setup_title"
+            android:summary="@string/bios_guided_setup_summary"
+            app:iconSpaceReserved="false"
+            android:dependency="use_custom_bios" />
+
     <SwitchPreference
             android:key="show_bios"
             android:title="@string/show_boot_screen"

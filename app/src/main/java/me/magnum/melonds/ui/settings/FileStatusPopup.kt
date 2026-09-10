@@ -13,9 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import me.magnum.melonds.R
 import me.magnum.melonds.databinding.DialogConfigFilesBinding
 import me.magnum.melonds.databinding.ItemFileStatusBinding
+import me.magnum.melonds.domain.model.BiosSlot
 import me.magnum.melonds.domain.model.ConfigurationDirResult
+import me.magnum.melonds.domain.model.ConsoleType
 
-class FileStatusPopup(context: Context, fileStatuses: Array<Pair<String, ConfigurationDirResult.FileStatus>>) {
+class FileStatusPopup(context: Context, consoleType: ConsoleType, fileStatuses: Array<Pair<String, ConfigurationDirResult.FileStatus>>) {
     private val popup: PopupWindow
 
     init {
@@ -42,7 +44,24 @@ class FileStatusPopup(context: Context, fileStatuses: Array<Pair<String, Configu
                 }
             }
             itemBinding.textFileName.text = it.first
+            itemBinding.textFileExpectedSize.text = getExpectedSizeDescription(context, consoleType, it.first)
             binding.layoutFileItems.addView(itemBinding.root)
+        }
+    }
+
+    /**
+     * A file's name alone never says how big it should be, or which console it belongs to; this
+     * spells it out next to the file name instead of leaving only a status icon to interpret.
+     */
+    private fun getExpectedSizeDescription(context: Context, consoleType: ConsoleType, fileName: String): String {
+        val slot = BiosSlot.entries.firstOrNull { it.consoleType == consoleType && it.canonicalFileName == fileName }
+                ?: return context.getString(R.string.bios_file_size_any) // e.g. nand.bin
+
+        val sizesInKb = slot.expectedSizeBytes.map { it / 1024 }
+        return if (sizesInKb.size == 1) {
+            context.getString(R.string.bios_file_size_exact, sizesInKb.first())
+        } else {
+            context.getString(R.string.bios_file_size_one_of, sizesInKb.joinToString(" / "))
         }
     }
 

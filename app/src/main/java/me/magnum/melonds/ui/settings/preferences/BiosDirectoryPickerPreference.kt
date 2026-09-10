@@ -116,7 +116,7 @@ class BiosDirectoryPickerPreference(context: Context, attrs: AttributeSet?) : St
                 }
             }
             statusView.setOnClickListener {
-                FileStatusPopup(context, dirResult.fileResults).showAt(statusView)
+                FileStatusPopup(context, dirResult.consoleType, dirResult.fileResults).showAt(statusView)
             }
         }
     }
