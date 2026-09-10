@@ -24,6 +24,7 @@ class ExternalScreenRender(
     private var screensVao = 0
 
     private var videoFiltering: VideoFiltering = VideoFiltering.NONE
+    private var textureScale: Int = 1
 
     private var surfaceWidth = 0
     private var surfaceHeight = 0
@@ -34,6 +35,7 @@ class ExternalScreenRender(
     override fun updateRendererConfiguration(newRendererConfiguration: RuntimeRendererConfiguration?) {
         synchronized(viewportLock) {
             videoFiltering = newRendererConfiguration?.videoFiltering ?: VideoFiltering.NONE
+            textureScale = newRendererConfiguration?.resolutionScaling ?: 1
             areRenderSettingsDirty = true
         }
     }
@@ -47,7 +49,7 @@ class ExternalScreenRender(
 
     override fun onSurfaceCreated() {
         shader = ShaderFactory.createShaderProgram(
-            VideoFilterShaderProvider.getShaderSource(videoFiltering)
+            VideoFilterShaderProvider.getShaderSource(videoFiltering, textureScale)
         )
 
         val buffers = IntArray(2)
@@ -155,7 +157,7 @@ class ExternalScreenRender(
         // Delete previous shader
         shader?.delete()
 
-        val shaderSource = VideoFilterShaderProvider.getShaderSource(videoFiltering)
+        val shaderSource = VideoFilterShaderProvider.getShaderSource(videoFiltering, textureScale)
         shader = ShaderFactory.createShaderProgram(shaderSource)
     }
 

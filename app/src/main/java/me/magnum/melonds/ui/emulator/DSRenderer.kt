@@ -225,8 +225,14 @@ class DSRenderer(private val context: Context) : EmulatorRenderer {
         // Delete previous shader
         screenShader?.delete()
 
-        val filtering = rendererConfiguration?.videoFiltering ?: VideoFiltering.NONE
-        val shaderSource = VideoFilterShaderProvider.getShaderSource(filtering)
+        val configuration = rendererConfiguration
+        val filtering = configuration?.videoFiltering ?: VideoFiltering.NONE
+        // The composited screen texture bound at render time is scaled by the current internal
+        // resolution (1x for Software, up to 8x for OpenGL/Compute). Filter shaders that sample
+        // neighbouring texels need this to compute correct offsets instead of assuming the
+        // native 256x386 texture size.
+        val textureScale = configuration?.resolutionScaling ?: 1
+        val shaderSource = VideoFilterShaderProvider.getShaderSource(filtering, textureScale)
         screenShader = ShaderFactory.createShaderProgram(shaderSource)
     }
 
