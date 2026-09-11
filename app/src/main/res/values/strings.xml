@@ -195,6 +195,8 @@
     <string name="dsi_bios_directory">DSi BIOS directory</string>
     <string name="bios_guided_setup_title">Guided BIOS setup</string>
     <string name="bios_guided_setup_summary">Point this at a folder with your BIOS/firmware files, however they\'re named or mixed together, and the DS and DSi folders will be created and filled in for you</string>
+    <string name="bios_guided_setup_explanation">You need two folders: one for DS, one for DSi. Both systems use files with the same names but different contents, so they cannot share a folder.\n\nDS folder: bios7.bin (16 KB), bios9.bin (4 KB), firmware.bin.\nDSi folder: bios7.bin and bios9.bin (64 KB each), firmware.bin (128 KB), nand.bin.\n\nIf your files are named differently that is fine: they are recognised by their size, not their name, and sorted into place for you.\n\nOne exception: the two DSi BIOS images are both exactly 64 KB with nothing inside to tell them apart, so those two must already be named bios7.bin and bios9.bin.\n\nPlaying in DSi mode needs both folders, not just the DSi one.</string>
+    <string name="bios_guided_setup_choose_folder">Choose folder</string>
     <string name="bios_guided_setup_failed">The selected item is not a folder</string>
     <string name="bios_guided_setup_result_title">Guided BIOS setup result</string>
     <string name="bios_guided_setup_created">%1$s %2$s: copied from \"%3$s\"</string>

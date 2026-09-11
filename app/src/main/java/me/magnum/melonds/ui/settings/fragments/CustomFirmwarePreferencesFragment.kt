@@ -54,7 +54,19 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
             }
         }
         findPreference<Preference>("guided_bios_setup")?.setOnPreferenceClickListener {
-            guidedSetupLauncher.launch(null)
+            // Explain what is needed before opening the picker, not after it fails. Two folders
+            // are unavoidable: DS and DSi use the same three file names for different files, so
+            // they cannot share one folder. The one case content cannot resolve is called out
+            // explicitly -- the two DSi BIOS images are both exactly 64 KB with nothing in them
+            // to tell them apart, so only their names can.
+            AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.bios_guided_setup_title)
+                    .setMessage(R.string.bios_guided_setup_explanation)
+                    .setPositiveButton(R.string.bios_guided_setup_choose_folder) { _, _ ->
+                        guidedSetupLauncher.launch(null)
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
             true
         }
 
