@@ -71,7 +71,12 @@ android {
             applicationIdSuffix = ".perf"
             versionNameSuffix = " (PROFILING)"
             signingConfig = signingConfigs.getByName("debug")
-            isDebuggable = true
+            // NOT debuggable: a debuggable app runs under ART with optimisations
+            // disabled, which is a large, constant tax on everything outside the
+            // native core. Measured on device: the stable 2.0.1 is compiled
+            // speed-profile while this build was run-from-apk, i.e. not compiled
+            // at all -- which made every comparison between the two meaningless.
+            isDebuggable = false
             isMinifyEnabled = false
             // The library modules only declare debug/release; without this, dependency
             // resolution for this build type fails.
