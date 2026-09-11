@@ -58,6 +58,30 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".dev"
         }
+        // Performance measurement variant. The "debug" type builds the native code with no
+        // -O flag at all (clang then defaults to -O0), which makes any CPU profile taken from
+        // it meaningless, and "release" cannot be built here because it needs the signing
+        // material from local.properties. This one is debug-signed and installable like debug,
+        // but compiles the native code as RelWithDebInfo: -O2 -g -DNDEBUG, optimised AND with
+        // symbols, which is what simpleperf needs to resolve names.
+        // It exists so that "debug" and "release" can stay exactly as they are.
+        create("profiling") {
+            initWith(getByName("debug"))
+            // Own application id, so it installs next to the .dev build instead of replacing it.
+            applicationIdSuffix = ".perf"
+            versionNameSuffix = " (PROFILING)"
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = true
+            isMinifyEnabled = false
+            // The library modules only declare debug/release; without this, dependency
+            // resolution for this build type fails.
+            matchingFallbacks += listOf("debug")
+            externalNativeBuild {
+                cmake {
+                    arguments("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
+                }
+            }
+        }
     }
 
     flavorDimensions += listOf("version", "build")
@@ -99,6 +123,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+}
+
+// Ship the native libraries unstripped in the profiling APK only, so a profiler reads the
+// symbol names straight off the device. Scoped to this build type through the variant API
+// on purpose: the android.packaging block would apply to debug and release as well.
+androidComponents {
+    onVariants(selector().withBuildType("profiling")) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.add("**/*.so")
     }
 }
 
