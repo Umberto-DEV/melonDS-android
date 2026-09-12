@@ -246,7 +246,7 @@
     <string name="restore_settings">Restore settings</string>
     <string name="settings_backup_success">Settings backup created.\n\nThe following were skipped:\n&#8226; RetroAchievements session\n&#8226; ROM/save directories\n&#8226; DS BIOS directory\n&#8226; DSi BIOS directory</string>
     <string name="settings_backup_error">Failed to backup settings</string>
-    <string name="settings_restore_success">Settings restored.\n\nThe following were unchanged:\n&#8226; RetroAchievements session\n&#8226; ROM/save directories\n&#8226; DS BIOS directory\n&#8226; DSi BIOS directory</string>
+    <string name="settings_restore_success">Settings restored.\n\nRestart the app for the layout and ROM library changes to take effect.\n\nThe following were unchanged:\n&#8226; RetroAchievements session\n&#8226; ROM/save directories\n&#8226; DS BIOS directory\n&#8226; DSi BIOS directory</string>
     <string name="settings_restore_error">Failed to restore settings</string>
     <string name="backup_internal_layout">Backup internal layout</string>
     <string name="backup_external_layout">Backup external layout</string>

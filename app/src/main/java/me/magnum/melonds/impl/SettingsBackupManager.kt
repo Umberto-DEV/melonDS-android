@@ -44,7 +44,12 @@ class SettingsBackupManager @Inject constructor(
 
     fun backup(treeUri: Uri) {
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return
+        backupToDocument(root)
+    }
 
+    // Extracted so tests can exercise the file-writing logic against a plain, file-backed
+    // DocumentFile (DocumentFile.fromFile) instead of needing a real SAF tree Uri.
+    internal fun backupToDocument(root: DocumentFile) {
         val settingsDoc = root.findFile(SETTINGS_FILE)
             ?: root.createFile("application/json", SETTINGS_FILE)
             ?: return
@@ -97,7 +102,11 @@ class SettingsBackupManager @Inject constructor(
 
     fun restore(treeUri: Uri) {
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return
+        restoreFromDocument(root)
+    }
 
+    // See backupToDocument: extracted for testing against a file-backed DocumentFile.
+    internal fun restoreFromDocument(root: DocumentFile) {
         val settingsDoc = root.findFile(SETTINGS_FILE)
         settingsDoc?.uri?.let { uri ->
             context.contentResolver.openInputStream(uri)?.use { input ->
