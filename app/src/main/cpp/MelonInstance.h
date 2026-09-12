@@ -50,13 +50,13 @@ public:
     void stop();
 
     /**
-     * Mette in scena i salvataggi pendenti: copia il buffer primario nel secondario per
-     * ogni SaveManager, come fa il ciclo dei frame con CheckFlush().
+     * Stages pending saves: copies the primary buffer into the secondary one for every
+     * SaveManager, exactly as the frame loop does through CheckFlush().
      *
-     * Va chiamata SOLO da un thread ordinato rispetto all'emulatore - in pratica dopo il
-     * join del thread emulatore - perche' la richiesta di flush scrive il buffer primario
-     * senza lock dal thread emulatore: chiamarla mentre l'emulatore gira significa copiare
-     * sotto una scrittura in corso.
+     * Call it ONLY from a thread ordered after the emulator thread - in practice after that
+     * thread has been joined - because a flush request writes the primary buffer without a
+     * lock from the emulator thread: calling this while the emulator runs would copy under
+     * an in-flight write.
      */
     void stageSaves();
 

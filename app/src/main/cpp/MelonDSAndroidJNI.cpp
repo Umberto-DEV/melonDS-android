@@ -469,10 +469,10 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
         pthread_cond_destroy(&emuThreadCond);
     }
 
-    // Dopo il join e prima della distruzione dei SaveManager: e' l'unico punto dell'albero
-    // da cui la copia del buffer primario sia sicura, perche' l'emulatore e' fermo.
-    // Senza questa riga una scrittura richiesta e mai messa in scena resta invisibile al
-    // rilascio, che riporta "niente di pendente" con successo.
+    // After the join and before the SaveManagers are destroyed: the emulator is stopped, so
+    // copying the primary buffer is safe here and nowhere else. Without this, a write that was
+    // requested but never staged is invisible to the final flush, which then reports success
+    // with nothing pending.
     MelonDSAndroid::stageSaves();
 
     MelonDSAndroid::cleanup();
