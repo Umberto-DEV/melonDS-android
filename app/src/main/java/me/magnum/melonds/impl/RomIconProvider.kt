@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -19,12 +20,15 @@ import java.util.Collections
  * caches.
  * The name of the file for the disk cache is the hash of the ROM's URI.
  */
-class RomIconProvider(private val context: Context, private val romFileProcessorFactory: RomFileProcessorFactory) {
+class RomIconProvider(
+    private val context: Context,
+    private val romFileProcessorFactory: RomFileProcessorFactory,
+    private val iconAccessScope: CoroutineDispatcher,
+) {
     companion object {
         private const val ICON_CACHE_DIR = "rom_icons"
     }
 
-    private val iconAccessScope = Dispatchers.IO.limitedParallelism(1)
     private val memoryIconCache = mutableMapOf<String, Bitmap>()
     private val romIconLocks = Collections.synchronizedMap(mutableMapOf<String, Mutex>())
 

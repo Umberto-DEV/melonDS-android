@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -69,6 +70,7 @@ import me.magnum.melonds.domain.repositories.RomsRepository
 import me.magnum.melonds.domain.repositories.SaveStatesRepository
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.EmulatorManager
+import me.magnum.melonds.di.RomFileAccessDispatcher
 import me.magnum.melonds.impl.emulator.EmulatorSession
 import me.magnum.melonds.impl.layout.UILayoutProvider
 import me.magnum.melonds.ui.emulator.component.RetroAchievementsSubmissionHandler
@@ -113,6 +115,7 @@ class EmulatorViewModel @Inject constructor(
     private val emulatorManager: EmulatorManager,
     private val emulatorSession: EmulatorSession,
     private val retroAchievementsSubmissionHandler: RetroAchievementsSubmissionHandler,
+    @RomFileAccessDispatcher private val romFileAccessDispatcher: CoroutineDispatcher,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -771,7 +774,7 @@ class EmulatorViewModel @Inject constructor(
             }
     }
 
-    private suspend fun getRomInfo(rom: Rom): RomInfo? = withContext(Dispatchers.IO) {
+    private suspend fun getRomInfo(rom: Rom): RomInfo? = withContext(romFileAccessDispatcher) {
         val fileRomProcessor = romFileProcessorFactory.getFileRomProcessorForDocument(rom.uri)
         fileRomProcessor?.getRomInfo(rom)
     }

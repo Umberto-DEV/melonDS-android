@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -40,7 +41,8 @@ class FileSystemRomsRepository(
     private val context: Context,
     private val gson: Gson,
     private val settingsRepository: SettingsRepository,
-    private val romFileProcessorFactory: RomFileProcessorFactory
+    private val romFileProcessorFactory: RomFileProcessorFactory,
+    private val fileAccessDispatcher: CoroutineDispatcher,
 ) : RomsRepository {
 
     companion object {
@@ -49,7 +51,6 @@ class FileSystemRomsRepository(
     }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val fileAccessDispatcher = Dispatchers.IO.limitedParallelism(1)
     private val romListType: Type = object : TypeToken<List<RomDto>>(){}.type
     private val romsChannel = SubjectSharedFlow<List<Rom>>()
     private val scanningStatus = MutableStateFlow(RomScanningStatus.NOT_SCANNING)
