@@ -1041,7 +1041,9 @@ class EmulatorActivity : AppCompatActivity() {
 
         val preferences = PreferenceManager.getDefaultSharedPreferences(this)
         val labels = slots.mapIndexed { index, slot ->
-            val name = preferences.getString("wfc_slot_name_${index + 1}", null)?.takeIf { it.isNotBlank() }
+            // "Connection N" was the placeholder an earlier build stored as a name; treat it as unnamed.
+            val name = preferences.getString("wfc_slot_name_${index + 1}", null)
+                ?.takeIf { it.isNotBlank() && it != "Connection ${index + 1}" }
                 ?: getString(R.string.wfc_slot_default_name, index + 1)
             "$name\n${slot.primaryDns}"
         }.toTypedArray()

@@ -148,8 +148,10 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
         primaryDns.isPersistent = false
         secondaryDns.isPersistent = false
 
-        // The category reads "Slot N" until the user gives the connection a name; the name is
-        // then shown next to the slot number, never replacing it.
+        // "Connection N" was the placeholder an earlier build stored as a name: clear it so the
+        // slot shows as unnamed. The category reads "Slot N" until the user gives the connection
+        // a name; the name is then shown next to the slot number, never replacing it.
+        if (name.text == "Connection ${index + 1}") name.text = ""
         updateSlotCategoryTitle(index, name.text)
         name.setOnPreferenceChangeListener { _, newValue ->
             if (isValidWfcSlotName(newValue as String)) {
