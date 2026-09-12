@@ -38,12 +38,21 @@ class BiosDirectoryPickerPreference(context: Context, attrs: AttributeSet?) : St
     private var imageViewStatus: ImageView? = null
 
     override fun onDirectoryPicked(uri: Uri?) {
-        super.onDirectoryPicked(uri)
+        try {
+            super.onDirectoryPicked(uri)
+        } finally {
+            // super.onDirectoryPicked can throw (e.g. SecurityException from
+            // takePersistableUriPermission on a child URI); always revalidate regardless, so the
+            // displayed status never goes stale because of it.
+            if (uri != null) {
+                validateDirectory(uri)
+            }
+        }
+    }
 
-        if (uri == null)
-            return
-
-        validateDirectory(uri)
+    /** Re-runs validation against whatever directory is currently persisted for this preference. */
+    fun revalidate() {
+        validateDirectory(getPersistedStringSet(emptySet()).firstOrNull()?.toUri())
     }
 
     override fun onDependencyChanged(dependency: Preference, disableDependent: Boolean) {
@@ -80,7 +89,7 @@ class BiosDirectoryPickerPreference(context: Context, attrs: AttributeSet?) : St
     override fun onAttached() {
         super.onAttached()
         // Perform initial validation
-        validateDirectory(getPersistedStringSet(emptySet()).firstOrNull()?.toUri())
+        revalidate()
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {

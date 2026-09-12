@@ -70,9 +70,17 @@ class BiosGuidedFolderSetup(private val context: Context) {
      */
     fun run(parentDirectoryUri: Uri): Report? {
         val parentDir = DocumentFile.fromTreeUri(context, parentDirectoryUri)?.takeIf { it.isDirectory } ?: return null
+        return run(parentDir)
+    }
 
-        val dsDir = parentDir.findFile(DS_FOLDER_NAME)?.takeIf { it.isDirectory } ?: parentDir.createDirectory(DS_FOLDER_NAME)
-        val dsiDir = parentDir.findFile(DSI_FOLDER_NAME)?.takeIf { it.isDirectory } ?: parentDir.createDirectory(DSI_FOLDER_NAME)
+    /**
+     * Same as [run] above, taking an already-resolved directory. Split out mainly so tests can
+     * drive the actual logic with a plain [DocumentFile.fromFile] directory, sidestepping
+     * [DocumentFile.fromTreeUri]'s dependency on a real Storage Access Framework tree Uri.
+     */
+    fun run(parentDir: DocumentFile): Report {
+        val dsDir = findChildIgnoringCase(parentDir, DS_FOLDER_NAME)?.takeIf { it.isDirectory } ?: parentDir.createDirectory(DS_FOLDER_NAME)
+        val dsiDir = findChildIgnoringCase(parentDir, DSI_FOLDER_NAME)?.takeIf { it.isDirectory } ?: parentDir.createDirectory(DSI_FOLDER_NAME)
 
         val looseFiles = parentDir.listFiles().filter { it.isFile }
 
@@ -165,11 +173,9 @@ class BiosGuidedFolderSetup(private val context: Context) {
         val results = mutableListOf<SlotResult>()
         for (slot in missingSlots) {
             val hintDigit = if (slot == bios7) "7" else "9"
-            val hinted = remainingCandidates.firstOrNull { file ->
-                val name = file.name?.lowercase().orEmpty()
-                name.contains("arm$hintDigit") || Regex("(^|[^0-9])$hintDigit([^0-9]|$)").containsMatchIn(name)
-            }
-            if (hinted != null && remainingCandidates.count { it === hinted } == 1) {
+            val matchingHint = remainingCandidates.filter { matchesNameHint(it, hintDigit) }
+            if (matchingHint.size == 1) {
+                val hinted = matchingHint[0]
                 remainingCandidates.remove(hinted)
                 val created = copyInto(hinted, dsiDir, slot.canonicalFileName)
                 results += if (created) {
@@ -183,6 +189,17 @@ class BiosGuidedFolderSetup(private val context: Context) {
         }
         results += presentSlotResults(bios7Present, bios9Present)
         return results
+    }
+
+    /** True when [file]'s name contains a same-console hint for [hintDigit] ("7" or "9"). */
+    private fun matchesNameHint(file: DocumentFile, hintDigit: String): Boolean {
+        val name = file.name?.lowercase().orEmpty()
+        return name.contains("arm$hintDigit") || Regex("(^|[^0-9])$hintDigit([^0-9]|$)").containsMatchIn(name)
+    }
+
+    /** Case-insensitive [DocumentFile.findFile], since providers vary in whether they normalise case. */
+    private fun findChildIgnoringCase(parent: DocumentFile, name: String): DocumentFile? {
+        return parent.listFiles().firstOrNull { it.name?.equals(name, ignoreCase = true) == true }
     }
 
     private fun presentSlotResults(bios7Present: Boolean, bios9Present: Boolean): List<SlotResult> {
@@ -209,19 +226,38 @@ class BiosGuidedFolderSetup(private val context: Context) {
         }
     }
 
+    /**
+     * Copies [source] into a new file named [destName] under [destDir]. On any failure -- an
+     * I/O error, a permission problem, a coroutine cancellation, anything -- the partially
+     * written destination file is removed rather than left behind at 0 bytes; the source is
+     * never touched either way.
+     */
     private fun copyInto(source: DocumentFile, destDir: DocumentFile, destName: String): Boolean {
         val dest = destDir.createFile("application/octet-stream", destName) ?: return false
-        return try {
-            context.contentResolver.openInputStream(source.uri)?.use { input ->
-                context.contentResolver.openOutputStream(dest.uri)?.use { output ->
-                    input.copyTo(output)
-                } ?: return false
-            } ?: return false
-            true
+        var completed = false
+        try {
+            val input = context.contentResolver.openInputStream(source.uri) ?: return false
+            input.use { inStream ->
+                val output = context.contentResolver.openOutputStream(dest.uri) ?: return false
+                output.use { outStream ->
+                    inStream.copyTo(outStream)
+                }
+            }
+            completed = true
+            return true
         } catch (e: IOException) {
-            // Clean up the partial file we just created; never touch the source.
-            dest.delete()
-            false
+            return false
+        } catch (e: SecurityException) {
+            return false
+        } catch (e: IllegalArgumentException) {
+            return false
+        } finally {
+            // Covers the exceptions caught above as well as an uncaught cancellation (e.g. the
+            // fragment was destroyed mid-copy): whatever the reason copying didn't finish, no
+            // partial file is left behind.
+            if (!completed) {
+                dest.delete()
+            }
         }
     }
 

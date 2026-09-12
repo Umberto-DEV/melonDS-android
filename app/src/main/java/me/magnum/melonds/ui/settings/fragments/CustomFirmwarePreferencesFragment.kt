@@ -4,9 +4,13 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.magnum.melonds.R
 import me.magnum.melonds.common.BiosGuidedFolderSetup
 import me.magnum.melonds.common.DirectoryAccessValidator
@@ -98,6 +102,11 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
      * sub-folders melonDS expects, with the recognised files copied into the right one under
      * the right name, then points the DS/DSi BIOS directory preferences at those sub-folders.
      * See [BiosGuidedFolderSetup] for exactly what is and isn't recognised.
+     *
+     * The copy itself (which can mean gigabytes, e.g. a DSi nand.bin) runs off the main thread;
+     * a non-cancellable progress dialog covers the wait. If the fragment's view is destroyed
+     * while it's running, [viewLifecycleOwner]'s scope cancels the job -- [BiosGuidedFolderSetup]
+     * cleans up any partially written file when that happens.
      */
     private fun runGuidedBiosSetup(parentDirectoryUri: Uri, dsBiosDirPreference: BiosDirectoryPickerPreference, dsiBiosDirPreference: BiosDirectoryPickerPreference) {
         if (directoryAccessValidator.getDirectoryAccessForPermission(parentDirectoryUri, Permission.READ_WRITE) != DirectoryAccessValidator.DirectoryAccessResult.OK) {
@@ -109,7 +118,30 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
             return
         }
 
-        val report = BiosGuidedFolderSetup(requireContext()).run(parentDirectoryUri)
+        val appContext = requireContext().applicationContext
+        val progressDialog = AlertDialog.Builder(requireContext())
+                .setMessage(R.string.bios_guided_setup_in_progress)
+                .setCancelable(false)
+                .show()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val report = withContext(Dispatchers.IO) {
+                    BiosGuidedFolderSetup(appContext).run(parentDirectoryUri)
+                }
+                applyGuidedBiosSetupResult(report, parentDirectoryUri, dsBiosDirPreference, dsiBiosDirPreference)
+            } finally {
+                progressDialog.dismiss()
+            }
+        }
+    }
+
+    private fun applyGuidedBiosSetupResult(
+        report: BiosGuidedFolderSetup.Report?,
+        parentDirectoryUri: Uri,
+        dsBiosDirPreference: BiosDirectoryPickerPreference,
+        dsiBiosDirPreference: BiosDirectoryPickerPreference,
+    ) {
         if (report == null) {
             AlertDialog.Builder(requireContext())
                     .setMessage(R.string.bios_guided_setup_failed)
@@ -121,14 +153,36 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
         // One permission grant on the picked folder covers the DS/DSi sub-folders created or
         // found inside it; each is then persisted as its own console's BIOS directory.
         uriPermissionManager.persistDirectoryPermissions(parentDirectoryUri, Permission.READ_WRITE)
-        report.dsDirectory?.takeIf { it.listFiles().isNotEmpty() }?.let { pointPreferenceAt(dsBiosDirPreference, it.uri) }
-        report.dsiDirectory?.takeIf { it.listFiles().isNotEmpty() }?.let { pointPreferenceAt(dsiBiosDirPreference, it.uri) }
+
+        // Only re-point a preference when the console it belongs to actually ended up complete:
+        // an existing, valid directory shouldn't be swapped for one that's still missing files.
+        if (allMandatorySlotsSatisfied(report, ConsoleType.DS)) {
+            report.dsDirectory?.let { pointPreferenceAt(dsBiosDirPreference, it.uri) }
+        }
+        if (allMandatorySlotsSatisfied(report, ConsoleType.DSi)) {
+            report.dsiDirectory?.let { pointPreferenceAt(dsiBiosDirPreference, it.uri) }
+        }
+
+        // pointPreferenceAt() only reliably validates the preference it actually re-pointed
+        // (onDirectoryPicked short-circuits on a SecurityException before validating -- see
+        // BiosDirectoryPickerPreference); revalidate both explicitly so their displayed status
+        // always reflects the outcome of this run.
+        dsBiosDirPreference.revalidate()
+        dsiBiosDirPreference.revalidate()
 
         AlertDialog.Builder(requireContext())
                 .setTitle(R.string.bios_guided_setup_result_title)
                 .setMessage(buildGuidedSetupSummary(report))
                 .setPositiveButton(R.string.ok, null)
                 .show()
+    }
+
+    /** True when every slot [BiosGuidedFolderSetup] tracks for [consoleType] was found (whether newly copied or already there). */
+    private fun allMandatorySlotsSatisfied(report: BiosGuidedFolderSetup.Report, consoleType: ConsoleType): Boolean {
+        val outcomesForConsole = report.slotResults.filter { it.slot.consoleType == consoleType }
+        return outcomesForConsole.isNotEmpty() && outcomesForConsole.all {
+            it.outcome == BiosGuidedFolderSetup.Outcome.CREATED || it.outcome == BiosGuidedFolderSetup.Outcome.ALREADY_PRESENT
+        }
     }
 
     /**
