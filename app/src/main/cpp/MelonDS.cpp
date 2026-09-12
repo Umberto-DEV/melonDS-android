@@ -67,7 +67,9 @@ namespace MelonDSAndroid
         auto instanceArgs = BuildArgsFromConfiguration(*currentConfiguration, instanceId);
         if (!instanceArgs.has_value())
         {
-            // TODO: Handle this somehow?
+            // BIOS, firmware or DSi NAND could not be loaded. Leave the instance null: loadRom()
+            // and bootFirmware() report the failure to Kotlin and every other entry point no-ops.
+            Platform::Log(Platform::LogLevel::Error, "Failed to build the emulator arguments. The emulator instance was not created\n");
             instance = nullptr;
             return;
         }
@@ -120,7 +122,10 @@ namespace MelonDSAndroid
      */
     void updateEmulatorConfiguration(std::unique_ptr<EmulatorConfiguration> emulatorConfiguration) {
         std::shared_ptr<EmulatorConfiguration> sharedConfig = std::move(emulatorConfiguration);
-        instance->updateConfiguration(sharedConfig);
+        // The instance is null when setup() failed; the new configuration is still worth keeping
+        // for the next setup attempt.
+        if (instance)
+            instance->updateConfiguration(sharedConfig);
         updateAudioSettings(sharedConfig->audioSettings);
 
         currentConfiguration = sharedConfig;
@@ -128,6 +133,11 @@ namespace MelonDSAndroid
 
     int loadRom(std::string romPath, std::string sramPath, RomGbaSlotConfig* gbaSlotConfig)
     {
+        // setup() could not build the instance (bad BIOS/firmware/NAND). Report the terminal
+        // "BIOS failed" result the contract above already defines instead of crashing.
+        if (!instance)
+            return 3;
+
         if (!instance->loadRom(std::move(romPath), std::move(sramPath)))
             return 2;
 
@@ -159,6 +169,11 @@ namespace MelonDSAndroid
 
     int bootFirmware()
     {
+        // setup() could not build the instance, which always means one of the BIOS/firmware/NAND
+        // files was missing or unreadable.
+        if (!instance)
+            return ROMManager::FIRMWARE_BAD;
+
         // TODO: Maybe validate BIOS and firmware?
         if (instance->bootFirmware())
             return ROMManager::SUCCESS;
@@ -198,6 +213,10 @@ namespace MelonDSAndroid
 
     void start()
     {
+        // Nothing to start (and nothing to feed the audio stream) when setup() failed.
+        if (!instance)
+            return;
+
         startAudio();
         setupOpenGlContext();
 
@@ -225,10 +244,13 @@ namespace MelonDSAndroid
 
     void resume()
     {
-        startAudio();
+        // Never open or start an audio stream without an emulator behind it: after cleanup() the
+        // callback would only find an expired weak_ptr and play nothing but garbage.
+        if (!instance)
+            return;
 
-        if (instance)
-            instance->onResumed();
+        startAudio();
+        instance->onResumed();
     }
 
     void reset()
@@ -363,7 +385,9 @@ namespace MelonDSAndroid
 
     void stop()
     {
-        instance->stop();
+        if (instance)
+            instance->stop();
+
         cleanupOpenGlContext();
     }
 

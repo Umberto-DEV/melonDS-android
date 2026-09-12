@@ -56,7 +56,10 @@ MelonInstance::MelonInstance(int instanceId, std::shared_ptr<EmulatorConfigurati
         nds = new NDS(std::move(*args), this);
     }
 
-    if (configuration->userInternalFirmwareAndBios)
+    // Only generated firmware keeps its Wi-fi settings in wfcsettings.bin. DSi always boots from
+    // the user's firmware file (see loadFirmware() in EmulatorArgsBuilder.cpp), and a save manager
+    // pointed at wfcsettings.bin would dump the whole 128 KB firmware into it.
+    if (configuration->userInternalFirmwareAndBios && consoleType != 1)
     {
         std::filesystem::path firmwarePath = MelonDSAndroid::internalFilesDir;
         firmwarePath /= "wfcsettings.bin";
@@ -574,7 +577,9 @@ bool MelonInstance::loadState(Savestate* state)
     if (nds->DoSavestate(state))
     {
         setBatteryLevels();
-        setDateTime();
+        // The savestate carries its own RTC, so don't stamp the host time over it. Only the
+        // opt-in sync may touch it, and only forward (see syncRTC).
+        syncRTC();
         return true;
     }
     else

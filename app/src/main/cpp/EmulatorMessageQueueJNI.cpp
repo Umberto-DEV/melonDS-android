@@ -1,11 +1,22 @@
 #include <jni.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstring>
+#include <limits.h>
+#include <mutex>
 #include <Platform.h>
 
 // messagePipes[0] -> read
 // messagePipes[1] -> write
 static int messagePipes[2] = { -1, -1 };
+
+// Events now come from two producers (the emulation thread and the SaveManager worker), so header
+// and payload must reach the pipe as a single write. The biggest payload today is 56 bytes (the
+// achievement progress struct in AndroidMelonEventMessenger.cpp), far below PIPE_BUF (4096), which
+// is what makes a single write atomic.
+static const size_t kMaxEventSize = 256;
+static std::mutex messagePipeMutex;
+static_assert(kMaxEventSize <= PIPE_BUF, "An event must fit in a single atomic pipe write");
 
 extern "C"
 {
@@ -32,6 +43,9 @@ Java_me_magnum_melonds_impl_emulator_EmulatorMessageQueue_initMessagePipe(JNIEnv
 JNIEXPORT void JNICALL
 Java_me_magnum_melonds_impl_emulator_EmulatorMessageQueue_closeMessagePipe(JNIEnv* env, jobject thiz)
 {
+    // Same lock as fireEmulatorEvent: a producer must not be writing to the fd while it is closed.
+    std::lock_guard<std::mutex> lock(messagePipeMutex);
+
     if (messagePipes[0] != -1) {
         close(messagePipes[0]);
         messagePipes[0] = -1;
@@ -46,17 +60,26 @@ Java_me_magnum_melonds_impl_emulator_EmulatorMessageQueue_closeMessagePipe(JNIEn
 
 namespace MelonDSAndroid {
     void fireEmulatorEvent(int type, int dataLength, void* data) {
-        if (messagePipes[1] == -1) {
-            return;
-        }
-
         struct {
             int type;
             int dataLength;
         } event = { type, dataLength };
 
-        write(messagePipes[1], &event, sizeof(event));
+        if (dataLength < 0 || sizeof(event) + (size_t) dataLength > kMaxEventSize) {
+            melonDS::Platform::Log(melonDS::Platform::LogLevel::Error, "Emulator event %d payload of %d bytes is too large, dropping it", type, dataLength);
+            return;
+        }
+
+        char buffer[kMaxEventSize];
+        memcpy(buffer, &event, sizeof(event));
         if (data != nullptr)
-            write(messagePipes[1], data, dataLength);
+            memcpy(buffer + sizeof(event), data, dataLength);
+
+        std::lock_guard<std::mutex> lock(messagePipeMutex);
+        if (messagePipes[1] == -1) {
+            return;
+        }
+
+        write(messagePipes[1], buffer, sizeof(event) + dataLength);
     }
 }

@@ -362,6 +362,9 @@ namespace MelonDSAndroid
         isAudioRunning = false;
         isAudioFastForwardActive = false;
         muteFastForwardAudio = false;
+        // Forget the settings too: they are what startAudio() consults to decide whether to
+        // reopen a stream, and after cleanup there is no emulator left to feed one.
+        currentAudioSettings = { };
         cleanupAudioOutputStream();
         cleanupMicInputStream();
     }

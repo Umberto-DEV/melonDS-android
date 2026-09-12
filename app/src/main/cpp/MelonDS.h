@@ -50,7 +50,7 @@ namespace MelonDSAndroid {
      * @param sramPath The path to the rom's SRAM file
      * @param gbaSlotConfig The config to be used for the GBA slot
      * @return The load result. 0 if everything was loaded successfully, 1 if the NDS ROM was loaded but the GBA ROM
-     * failed to load, 2 if the NDS ROM failed to load
+     * failed to load, 2 if the NDS ROM failed to load, 3 if there is no emulator instance because setup() failed
      */
     extern int loadRom(std::string romPath, std::string sramPath, RomGbaSlotConfig* gbaSlotConfig);
     extern int bootFirmware();

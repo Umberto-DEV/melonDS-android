@@ -35,7 +35,11 @@ namespace
             Firmware::ExtendedWifiAccessPoint(),
         };
         slots.basic = {
-            Firmware::WifiAccessPoint(),
+            // Slot 1 is the emulated access point (SSID melonAP, Normal), exactly as
+            // generateFirmware() builds it in EmulatorArgsBuilder.cpp; leaving it unconfigured
+            // would wipe it on the first visit to the settings screen. The console type is not
+            // known here, so use the DS one: it only changes the MTU stored in the slot.
+            Firmware::WifiAccessPoint(0),
             Firmware::WifiAccessPoint(),
             Firmware::WifiAccessPoint(),
         };
