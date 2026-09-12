@@ -161,3 +161,42 @@ di failure), VIEW è **assente** dal manifest.
   stesso identico scenario che prima lo innescava in modo affidabile.
 - AVD chiuso (`adb emu kill`), nessun processo qemu residuo. `hwasan.apk` e `full.txt` cancellati da `$S`
   dopo l'estrazione dei log; restano `crash.txt` e `hwasan-report.txt` (entrambi vuoti, a conferma dell'esito).
+
+### Slot WFC (schermata Online connections)
+- **AVD**: `melonds-test` (`-s emulator-5554`), `-no-window -gpu host -no-snapshot -no-boot-anim`. Build
+  `assembleGitHubNightlyDebug` arm64-v8a, `adb install -t -r --no-incremental` (pacchetto già presente da
+  sessioni precedenti, mai disinstallato). Percorso UI: ROM list → ⋮ → Settings → System → "Online
+  connections (WFC)" (`uiautomator dump` + `input tap`).
+- **(a) Apertura iniziale — PASS**: slot 1 abilitato con Primary/Secondary DNS `0.0.0.0` (auto), slot 2 e 3
+  disabilitati; coerente con `EmulatorArgsBuilder.cpp` che genera lo slot 1 ("melonAP").
+- **(b) "Use recommended servers" — PASS**: tre slot abilitati, DNS primario/secondario impostati a
+  `167.235.229.36` (slot 1, Mystery Gift), `178.62.43.212` (slot 2, GTS/battaglie), `172.104.88.237`
+  (slot 3, alternativo). Toast "Recommended servers applied".
+- **(c) Uscita e rientro — PASS**: valori riletti identici dopo `KEYCODE_BACK` × N e rientro nella
+  schermata, confermando che la fonte è `wfcsettings.bin` (i widget hanno `isPersistent = false`, non
+  SharedPreferences).
+- **(d) Validazione DNS slot 2 — PASS**: `300.1.1.1` rifiutato (toast "Enter a valid IPv4 address",
+  valore invariato a `178.62.43.212`); `8.8.8.8` accettato e scritto (Secondary DNS resta `178.62.43.212`).
+- **File `files/wfcsettings.bin`**: 2304 byte = `extended[3]` (512 B ciascuno) + `basic[3]` (256 B ciascuno),
+  come da `EmulatorArgsBuilder.cpp:189-225`. Per ogni slot base: `PrimaryDns`@0xC8/`SecondaryDns`@0xCC
+  (4 byte, ordine come i quattro ottetti — `167.235.229.36` = `A7 EB E5 24`, nessuna inversione),
+  `Status`@0xE7 = 0, `ConnectionConfigured`@0xEF, `Checksum`@0xFE-0xFF (CRC-16 poly 0xA001 riflesso, init
+  0x0000, sui primi 0xFE byte — `SPI.cpp::CRC16`, chiamato da `WifiAccessPoint::UpdateChecksum()` in
+  `SPI_Firmware.cpp:76-78`). CRC ricalcolato in Python e confrontato con i 2 byte scritti: **coincide per
+  tutti e tre gli slot base ed estesi**, sia prima che dopo il fix sotto.
+- **Bug trovato e corretto in sessione**: dal dump byte-per-byte, gli slot base 1 e 2 (indice 0-based)
+  avevano `SSID`@0x40 **vuoto** dopo "Use recommended servers" (solo lo slot 0 aveva `"melonAP"`) — il DS
+  non avrebbe trovato la rete pur con DNS e checksum corretti. Fix in `app/src/main/cpp/WfcSettingsJNI.cpp`
+  (commit `12aa1099`, "name a newly enabled slot after the emulated access point"): lo slot appena abilitato
+  riceve ora lo stesso SSID `"melonAP"` dello slot generato. Ricompilato, reinstallato, ripetuto "Use
+  recommended servers": tutti e tre gli slot base mostrano `SSID = "melonAP"`, DNS invariati
+  (`167.235.229.36` / `178.62.43.212` / `172.104.88.237`), CRC coerenti su tutti e tre.
+- **Avvio gioco (hg.nds, renderer software — di default, l'opzione è nascosta perché l'AVD non supporta
+  GLES 3.2)**: avviato sia prima sia dopo il fix SSID, ~25-40 s di attesa, schermata visibile in entrambi i
+  casi (nessuno schermo nero), nessun crash. `logcat -d | grep -iE "wfc|firmware|FATAL|AndroidRuntime"`:
+  solo la riga informativa `melonDS: SaveManager: Wrote 2304 bytes to .../wfcsettings.bin`, nessun
+  `FATAL EXCEPTION` né errore di firmware.
+- **Chiusura**: `adb emu kill` (due sessioni AVD, una per il test iniziale e una per la riverifica dopo il
+  fix), nessun processo `qemu-system-aarch64` residuo dopo il kill. File conservati in `$S`: uno screenshot
+  della schermata WFC dopo il fix (`wfc_fix2.png`), uno screenshot del gioco in esecuzione (`game2.png`) e
+  il dump esadecimale di `wfcsettings.bin` (`wfcsettings_hexdump.txt`).

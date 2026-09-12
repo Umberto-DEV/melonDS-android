@@ -49,6 +49,8 @@ Prove in AVD: PROVE-AVD.md (checklist e risultati).
 - WFC: schermata "Online connections (WFC)" (29213750): tre slot, DNS, checksum, "server consigliati" (1 WiiLink Doni Segreti, 2 Kaeru GTS/lotte, 3 AltWFC). Disegno concordato con la sessione ROM: scelta per posizione, etichetta dal DNS, SSID "melonAP".
 - Messaggio BIOS per caso + WRONG_CONSOLE (25c79cc2); lint: servizio lid via ContextCompat (708b9589); precarico config controller (9460cc5f).
 
+- WFC slot: prova in AVD PASS (a-d): DNS scritti in ordine diretto, 6 checksum coincidenti con il ricalcolo, SSID "melonAP" su tutti gli slot dopo il fix 12aa1099; gioco avviato con il file modificato senza errori. Resta il giro reale sulla Thor fino a Dono Segreto/GTS con la ROM che sceglie lo slot.
+
 ## Aperto
 - StrictMode all'avvio di EmulatorActivity (6 letture preferenze + client HTTPS RetroAchievements sul thread UI): preesistenti, fix S.
 - #1657 idle power draw; caso file:// in BaseRomFileProcessorFactory; cache shader vera; Wi-Fi/WFC > 3 min (solo Thor); build profiling "2.1" da installare sulla Thor (decisione dell'utente).
