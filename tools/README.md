@@ -1,5 +1,23 @@
 # tools/
 
+## Host tests
+
+`tools/host-tests.sh` builds and runs every host-side test. Most need nothing but a C++
+compiler; the two under `tools/host-tests/jit/` link the emulator core, so the script builds
+it first via `tools/core-host-sanitize.sh` (and skips them, rather than failing, if it can't).
+
+`JitInvalidationTest` direct-boots a synthetic cartridge it assembles itself and proves that
+rewriting a literal drops the block that folded it, that invalidation is precise to 16 bytes
+instead of clearing the whole 512-byte range, and that a literal outside any code region (in
+the DTCM) is neither tracked nor folded. It always runs. `JitDifferentialTest` runs a real ROM
+for 600 frames with the JIT and again with the interpreter and compares framebuffer hashes
+every 60 frames; it needs `MELONDS_TEST_ROM=/path/to/rom.nds` and skips without it.
+
+    MELONDS_TEST_ROM=~/roms/game.nds tools/host-tests.sh
+
+Both cover the ARM64 backend only: CMake force-disables the JIT for x86_64 on macOS, so the
+x64 recompiler is not exercised here and needs a Linux x86_64 machine.
+
 ## HWASan opt-in (debug builds)
 
 Build with a native sanitizer enabled (e.g. HWASan on device):
