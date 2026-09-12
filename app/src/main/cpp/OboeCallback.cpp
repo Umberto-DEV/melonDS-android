@@ -11,9 +11,22 @@ OboeCallback::OboeCallback(int volume, void (*onErrorCallback)(void), std::ostre
     audioSampleFrac = 0;
 }
 
+void OboeCallback::setActiveInstance(std::weak_ptr<MelonDSAndroid::MelonInstance> instance) {
+    std::lock_guard<std::mutex> lock(instanceMutex);
+    activeInstance = instance;
+}
+
 oboe::DataCallbackResult
 OboeCallback::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t numFrames) {
-    auto currentInstance = activeInstance.lock();
+    // try_lock, never lock: this runs on the real-time audio thread and must not wait for the
+    // JNI thread. The lock is only ever held for a weak_ptr copy, so the worst case is a single
+    // silent buffer while the active instance is being swapped.
+    std::shared_ptr<MelonDSAndroid::MelonInstance> currentInstance;
+    {
+        std::unique_lock<std::mutex> instanceLock(instanceMutex, std::try_to_lock);
+        if (instanceLock.owns_lock())
+            currentInstance = activeInstance.lock();
+    }
 
     if (!currentInstance)
     {

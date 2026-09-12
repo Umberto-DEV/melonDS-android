@@ -3,11 +3,23 @@
 #include "MicInputOboeCallback.h"
 #include "mic_blow.h"
 #include "OboeCallback.h"
+#include <mutex>
 #include <oboe/Oboe.h>
 
 #define MIC_BUFFER_SIZE 2048
 
 std::weak_ptr<MelonDSAndroid::MelonInstance> activeInstance;
+
+// Guards the output stream globals below. They are written from the JNI thread (setup, update,
+// cleanup, start, pause) and from the detached thread Oboe spawns for onErrorAfterClose, which
+// used to be able to run at the same time and leave a half-built stream behind.
+// It is never taken from the real-time data callback.
+std::mutex audioOutputMutex;
+
+// Whether the caller wants audio playing right now: set by startAudio(), cleared by pauseAudio()
+// and cleanupAudio(). A device disconnect while the app is in the background must not resurrect
+// a stream the user has paused.
+bool isAudioRunning = false;
 
 std::shared_ptr<oboe::AudioStream> audioStream;
 std::shared_ptr<OboeCallback> outputCallback;
@@ -29,6 +41,8 @@ namespace MelonDSAndroid
 
     void resetAudioOutputStream();
 
+    // Callers of setupAudioOutputStream() and cleanupAudioOutputStream() must hold
+    // audioOutputMutex; only the public entry points take it, so a plain mutex is enough.
     void setupAudioOutputStream(int audioLatency, int volume)
     {
         oboe::PerformanceMode performanceMode;
@@ -49,7 +63,7 @@ namespace MelonDSAndroid
         outputCallback = std::make_shared<OboeCallback>(volume, resetAudioOutputStream);
         stabilizedOutputCallback = std::make_shared<oboe::StabilizedCallback>(outputCallback.get());
 
-        outputCallback->activeInstance = activeInstance;
+        outputCallback->setActiveInstance(activeInstance);
 
         oboe::AudioStreamBuilder streamBuilder;
         streamBuilder.setChannelCount(2);
@@ -93,9 +107,18 @@ namespace MelonDSAndroid
 
     void resetAudioOutputStream()
     {
+        // Runs on the detached thread Oboe spawns for onErrorAfterClose, never on the data
+        // callback thread, so closing a stream from under this lock is allowed; and the stream
+        // that errored has already been closed by Oboe, so cleanupAudioOutputStream() sees it
+        // past StreamState::Closing and does not close it a second time.
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
         cleanupAudioOutputStream();
         setupAudioOutputStream(currentAudioSettings.audioLatency, currentAudioSettings.volume);
-        if (audioStream) {
+        // Only if the user is meant to be hearing something: a disconnect that arrives while the
+        // emulator is paused must not start playback behind their back. startAudio() reopens the
+        // stream itself if this reset could not.
+        if (audioStream && isAudioRunning) {
             audioStream->requestStart();
         }
     }
@@ -245,11 +268,15 @@ namespace MelonDSAndroid
 
     void setupAudio(AudioSettings audioSettings)
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
         isMicOn = false;
         actualMicSource = audioSettings.micSource;
         currentAudioSettings = audioSettings;
 
-        if (audioSettings.soundEnabled)
+        // Same condition as updateAudioSettings(): opening a stream at volume 0 only to have
+        // the next settings update close it again is pointless.
+        if (shouldAudioOutputStreamBeActive(audioSettings.soundEnabled, audioSettings.volume))
             setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
 
         if (audioSettings.micSource == 2)
@@ -258,6 +285,8 @@ namespace MelonDSAndroid
 
     void updateAudioSettings(AudioSettings audioSettings)
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
         if (shouldAudioOutputStreamBeActive(audioSettings.soundEnabled, audioSettings.volume)) {
             if (!audioStream) {
                 setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
@@ -266,6 +295,11 @@ namespace MelonDSAndroid
                 cleanupAudioOutputStream();
                 setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
             }
+
+            // A stream that was just built is stopped; without this, changing the volume or the
+            // latency mid-game left the emulator silent until the next pause/resume.
+            if (audioStream && isAudioRunning)
+                audioStream->requestStart();
         } else if (audioStream) {
             cleanupAudioOutputStream();
         }
@@ -286,19 +320,35 @@ namespace MelonDSAndroid
 
     void setAudioActiveInstance(std::shared_ptr<MelonInstance> instance)
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
         activeInstance = instance;
         if (outputCallback)
-            outputCallback->activeInstance = activeInstance;
+            outputCallback->setActiveInstance(activeInstance);
     }
 
     void cleanupAudio()
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
+        isAudioRunning = false;
         cleanupAudioOutputStream();
         cleanupMicInputStream();
     }
 
     void startAudio()
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
+        isAudioRunning = true;
+
+        // Reopen the stream if it is gone. A device disconnect (headphones, Bluetooth) closes
+        // the stream and the reopen in resetAudioOutputStream() can fail while the app is in the
+        // background, leaving audioStream null; without this the emulator stayed silent for the
+        // rest of the session after coming back to the foreground (upstream #1635, #1644).
+        if (!audioStream && shouldAudioOutputStreamBeActive(currentAudioSettings.soundEnabled, currentAudioSettings.volume))
+            setupAudioOutputStream(currentAudioSettings.audioLatency, currentAudioSettings.volume);
+
         if (audioStream)
             audioStream->requestStart();
 
@@ -307,6 +357,10 @@ namespace MelonDSAndroid
 
     void pauseAudio()
     {
+        std::lock_guard<std::mutex> lock(audioOutputMutex);
+
+        isAudioRunning = false;
+
         if (audioStream)
             audioStream->requestPause();
 
