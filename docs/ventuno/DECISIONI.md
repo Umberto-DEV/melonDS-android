@@ -1,0 +1,18 @@
+# Registro delle decisioni — melonDS Nightly 2.1 (ramo `ventuno`)
+Ogni decisione ha data, chi l'ha presa, motivo, effetto. Le decisioni di codice hanno il commit.
+
+## 12 settembre 2026
+- **Un solo ramo di lavoro** (Umberto): `ventuno` per app e motore; niente rami paralleli; i rami delle PR aperte (#1672, lib#16) e `master` non si toccano. Effetto: cancellati dev-app-2026-09, dev-core-2026-09, integra-main-20260911, rimozione-fuffa-20260911 (storia nel bundle local/git-bundles).
+- **Documenti nel repo** (Umberto): decisioni e stato vanno tracciati in `docs/ventuno/`, non in cartelle escluse da git; i documenti che esauriscono lo scopo si cancellano. Regola disco in PULIZIA-DISCO.md.
+- **PR aperte non si toccano** (Umberto): niente commenti, modifiche o nuove PR finché non c'è certezza; il lavoro si accumula su ventuno. Motivo: il manutentore ha chiesto una PR per fix, testata.
+- **RTC** (indicazione del manutentore su #1664, 11/09): sync solo al resume nativo, mai indietro, soglia 30 s. Commit ccc39f63. La nostra versione per frame è abbandonata.
+- **PR di terzi**: integrate con correzioni #1608, #1606, #1625, #1648, #1589 (138baa2b); da #1666 solo tre fix laterali (a8553031), il resto scartato (ripristino automatico anche in RA hardcore, I/O sul main thread, 2499 righe); #1657 non integrata (226 righe di adattamento, stato duplicato); #1664 superata dalla nostra RTC; #1524 solo la causa radice (6aeab3bc), niente toast né largeHeap.
+- **Filtri video**: LCD/Scanlines ancorati alla griglia nativa 256×192, i filtri di ricampionamento seguono la texture (507c35f7).
+- **Croce**: direzioni opposte sullo stesso asse si annullano (37585980); ABXY libero.
+- **Salvataggi**: scrittura non troncante con fallback e ftruncate, niente fsync, niente temp+rename via SAF (5b73ea5d). Avviso all'utente al primo errore.
+- **Audio**: mutex agli entry point, try_lock nel callback real-time, chiusura degli stream precedenti a ogni setup (863f74b9, 06f9c6a1: HWASan aveva trovato l'use-after-free).
+- **HWASan**: variante debug con `-PnativeSanitize=hwaddress` + wrap.sh (900ef4f5, 06f9c6a1).
+- **JIT**: le due modifiche (guardia literal, invalidazione a 16 byte) si dimostrano con test host differenziale + invalidazione con ROM sintetica e prova dei mutanti (77449003); il backend x86_64 non è coperto su Mac.
+- **WiFi/server privati** (Umberto, concordato con la sessione ROM "sacred-gold-plus"): tre slot WFC del firmware per posizione: 1 = Dono Segreto (WiiLink 167.235.229.36), 2 = GTS/lotte/scambi (Kaeru 178.62.43.212), 3 = AltWFC 172.104.88.237. L'app scrive/rilegge wfcsettings.bin con checksum (29213750); la ROM legge gli slot dalla RAM, usa lo slot 1 per il Dono Segreto senza chiedere, elenca gli slot 2-3 per GTS/lotte con etichetta ricavata dal DNS, forza lo slot prima del connect. SSID resta "melonAP" (nome libero = fase 2, 10-20 righe in WifiAP.cpp, da provare sulla Thor). Nessun nome sintetico (l'override DNS nel motore, bc060f4c, resta opzionale). I file BIOS non si toccano. Fatti a supporto: slirp intercetta solo le query verso il suo DNS virtuale (Net_Slirp.cpp:386-389); le modifiche del menu WFC in gioco persistono su Android.
+- **Multiplayer locale**: non implementare in concorrenza con il manutentore (Wi-Fi Direct in corso, #1662); Bluetooth escluso per latenza (RTT ≥12 ms contro un budget di 8-10 ms).
+- **Prove**: nulla è "fatto" senza prova; AVD per logica/software renderer; il percorso OpenGL, il WiFi e i DSiWare si provano solo sulla Thor con l'utente.
