@@ -68,6 +68,14 @@ android {
                         arguments("-DANDROID_SANITIZE=$nativeSanitize", "-DANDROID_STL=c++_shared")
                     }
                 }
+                // HWASan (and other sanitizer) builds need a wrap.sh that sets LD_HWASAN=1 to
+                // run on a device/emulator whose OS image isn't itself built with the sanitizer
+                // (see https://developer.android.com/ndk/guides/hwasan and .../wrap-script).
+                // Android Studio only packages .so files from lib/, so wrap.sh has to live
+                // under resources/lib/<abi>/ instead, and useLegacyPackaging must be turned on
+                // for that directory layout to be packaged as-is.
+                sourceSets.getByName("debug").resources.srcDir("tools/hwasan-resources")
+                packaging.jniLibs.useLegacyPackaging = true
             }
         }
         // Performance measurement variant. The "debug" type builds the native code with no
