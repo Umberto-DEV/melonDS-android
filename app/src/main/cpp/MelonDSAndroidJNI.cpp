@@ -476,11 +476,14 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
 
     MelonDSAndroid::cleanup();
 
-    env->DeleteGlobalRef(globalCameraManager);
-
-    globalCameraManager = nullptr;
+    if (globalCameraManager != nullptr)
+    {
+        env->DeleteGlobalRef(globalCameraManager);
+        globalCameraManager = nullptr;
+    }
 
     delete androidCameraHandler;
+    androidCameraHandler = nullptr;
 }
 
 JNIEXPORT void JNICALL
