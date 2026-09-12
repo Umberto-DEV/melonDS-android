@@ -25,6 +25,9 @@ abstract class FrontendInputHandler : IInputListener {
     override fun onTouch(point: Point) {
     }
 
+    override fun onScreenRelease() {
+    }
+
     abstract fun onPausePressed()
     abstract fun onFastForwardPressed()
     abstract fun onMicrophonePressed()

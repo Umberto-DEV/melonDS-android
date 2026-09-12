@@ -57,6 +57,18 @@ android {
         }
         getByName("debug") {
             applicationIdSuffix = ".dev"
+
+            // Opt-in native sanitizer support (HWASan on device, or ASan/UBSan/etc): pass
+            // -PnativeSanitize=<value> (e.g. hwaddress) to have CMake configure the NDK's
+            // sanitizer for this build only. Off by default. See tools/README.md.
+            val nativeSanitize = project.findProperty("nativeSanitize") as String?
+            if (nativeSanitize != null) {
+                externalNativeBuild {
+                    cmake {
+                        arguments("-DANDROID_SANITIZE=$nativeSanitize", "-DANDROID_STL=c++_shared")
+                    }
+                }
+            }
         }
         // Performance measurement variant. The "debug" type builds the native code with no
         // -O flag at all (clang then defaults to -O0), which makes any CPU profile taken from
@@ -209,6 +221,8 @@ dependencies {
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.test.core)

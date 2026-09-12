@@ -26,7 +26,7 @@ open class LayoutView(context: Context, attrs: AttributeSet?) : FrameLayout(cont
         loadLayout(layoutConfiguration, layoutTarget)
     }
 
-    fun destroyLayout() {
+    open fun destroyLayout() {
         views.clear()
         removeAllViews()
     }
