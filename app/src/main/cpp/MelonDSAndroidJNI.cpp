@@ -637,6 +637,21 @@ Java_me_magnum_melonds_MelonEmulator_updateEmulatorConfiguration(JNIEnv* env, jo
 }
 }
 
+// The two sync helpers above, exposed to the other JNI translation units (WfcSettingsJNI.cpp)
+// that need to touch the machine state from a non-emulator thread. Neither pauseEmulation() nor
+// resumeEmulation() reads its JNI arguments, so there is nothing to forward.
+namespace MelonDSAndroid {
+    bool pauseEmulationThreadForSyncOperation()
+    {
+        return pauseEmuThreadForSyncOperation(nullptr, nullptr);
+    }
+
+    void resumeEmulationThreadAfterSyncOperation(bool wasPaused)
+    {
+        resumeEmuThreadAfterSyncOperation(nullptr, nullptr, wasPaused);
+    }
+}
+
 MelonDSAndroid::RomGbaSlotConfig* buildGbaSlotConfig(GbaSlotType slotType, const char* romPath, const char* savePath)
 {
     if (slotType == GbaSlotType::GBA_ROM && romPath != nullptr)

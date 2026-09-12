@@ -28,6 +28,42 @@ namespace MelonDSAndroid {
         FIRMWARE
     } RunMode;
 
+    /**
+     * One of the three Wi-fi access point slots of the firmware, as the WFC screens see it.
+     * @c name is the slot's SSID (NUL-terminated, at most 32 bytes, as in the firmware).
+     */
+    struct WfcSlotData {
+        bool enabled;
+        char name[33];
+        u8 primaryDns[4];
+        u8 secondaryDns[4];
+    };
+
+    /**
+     * Reads the three Wi-fi access point slots of the firmware the running instance booted with
+     * (generated or the user's file, DS or DSi). Returns false when no instance is running.
+     * @warning The emulator thread must be stopped: see pauseEmulationThreadForSyncOperation().
+     */
+    extern bool readRunningInstanceWfcSlots(WfcSlotData slots[3]);
+
+    /**
+     * Writes one Wi-fi access point slot into the firmware buffer the running instance serves
+     * over SPI, and requests a flush of the region to the firmware's backing file. The console
+     * re-reads the slots from SPI on every connection, so the change applies without a reset.
+     * Returns false when no instance is running or the firmware layout doesn't make sense.
+     * @warning The emulator thread must be stopped: see pauseEmulationThreadForSyncOperation().
+     */
+    extern bool writeRunningInstanceWfcSlot(int slot, const WfcSlotData& slotData);
+
+    /**
+     * Stops the emulator thread for an operation that touches the whole machine state and waits
+     * until it really is stopped. Returns whether it was already paused, which is what
+     * resumeEmulationThreadAfterSyncOperation() needs to restore the previous state.
+     * Implemented in MelonDSAndroidJNI.cpp, next to the thread it synchronises against.
+     */
+    extern bool pauseEmulationThreadForSyncOperation();
+    extern void resumeEmulationThreadAfterSyncOperation(bool wasPaused);
+
     extern OpenGLContext *openGlContext;
     extern AndroidFileHandler* fileHandler;
     extern AndroidCameraHandler* cameraHandler;

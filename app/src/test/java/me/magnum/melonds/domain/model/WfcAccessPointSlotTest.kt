@@ -1,6 +1,6 @@
-// Plain JUnit 4 test, no Android framework classes involved: exercises isValidIpv4() and
-// WfcAccessPointSlot's serialize()/parse() round trip against the "enabled;ssid;dns;dns" format
-// produced by WfcSettingsJNI.cpp.
+// Plain JUnit 4 test, no Android framework classes involved: exercises isValidIpv4(),
+// isValidWfcSlotName() and WfcAccessPointSlot's serialize()/parse() round trip against the
+// "enabled;name;dns;dns" format produced by WfcSettingsJNI.cpp.
 
 package me.magnum.melonds.domain.model
 
@@ -33,15 +33,15 @@ class WfcAccessPointSlotTest {
     }
 
     @Test
-    fun `serialize matches the native enabled-ssid-dns-dns format`() {
-        val slot = WfcAccessPointSlot(enabled = true, ssid = "melonAP", primaryDns = "178.62.43.212", secondaryDns = "0.0.0.0")
+    fun `serialize matches the native enabled-name-dns-dns format`() {
+        val slot = WfcAccessPointSlot(enabled = true, name = "melonAP", primaryDns = "178.62.43.212", secondaryDns = "0.0.0.0")
 
         assertEquals("1;melonAP;178.62.43.212;0.0.0.0", slot.serialize())
     }
 
     @Test
     fun `parse recovers the same slot serialize produced`() {
-        val original = WfcAccessPointSlot(enabled = false, ssid = "", primaryDns = "167.235.229.36", secondaryDns = "172.104.88.237")
+        val original = WfcAccessPointSlot(enabled = false, name = "", primaryDns = "167.235.229.36", secondaryDns = "172.104.88.237")
 
         assertEquals(original, WfcAccessPointSlot.parse(original.serialize()))
     }
@@ -49,7 +49,32 @@ class WfcAccessPointSlotTest {
     @Test
     fun `parse rejects strings that are not four semicolon-separated fields or have a bad enabled flag`() {
         assertNull(WfcAccessPointSlot.parse("not a valid slot"))
-        assertNull(WfcAccessPointSlot.parse("1;ssid;1.2.3.4"))
-        assertNull(WfcAccessPointSlot.parse("2;ssid;1.2.3.4;5.6.7.8"))
+        assertNull(WfcAccessPointSlot.parse("1;name;1.2.3.4"))
+        assertNull(WfcAccessPointSlot.parse("2;name;1.2.3.4;5.6.7.8"))
+    }
+
+    @Test
+    fun `a slot name keeps whatever the user typed, separators aside`() {
+        val slot = WfcAccessPointSlot(enabled = true, name = "Casa mia", primaryDns = "5.161.56.11", secondaryDns = "5.161.56.11")
+
+        assertEquals("1;Casa mia;5.161.56.11;5.161.56.11", slot.serialize())
+        assertEquals(slot, WfcAccessPointSlot.parse(slot.serialize()))
+    }
+
+    @Test
+    fun `slot names are accepted up to the SSID field length`() {
+        assertTrue(isValidWfcSlotName(""))
+        assertTrue(isValidWfcSlotName("Casa mia"))
+        assertTrue(isValidWfcSlotName("a".repeat(WfcAccessPointSlot.MAX_NAME_LENGTH)))
+        // Multi-byte characters count as the bytes they take in the firmware field.
+        assertTrue(isValidWfcSlotName("e".repeat(30) + "\u00e8"))
+    }
+
+    @Test
+    fun `slot names longer than the field, or carrying separators, are rejected`() {
+        assertFalse(isValidWfcSlotName("a".repeat(WfcAccessPointSlot.MAX_NAME_LENGTH + 1)))
+        assertFalse(isValidWfcSlotName("e".repeat(31) + "\u00e8"))
+        assertFalse(isValidWfcSlotName("Casa; mia"))
+        assertFalse(isValidWfcSlotName("Casa\nmia"))
     }
 }

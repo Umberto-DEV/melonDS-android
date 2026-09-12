@@ -9,6 +9,12 @@
             app:iconSpaceReserved="false" />
 
     <Preference
+            android:key="wfc_storage_location"
+            android:title="@string/wfc_storage_location"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
+    <Preference
             android:key="wfc_use_recommended_servers"
             android:title="@string/wfc_use_recommended_servers"
             android:summary="@string/wfc_use_recommended_servers_summary"
@@ -17,6 +23,12 @@
     <PreferenceCategory
             android:title="@string/wfc_slot_mystery_gift"
             app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_1"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
                 android:key="wfc_slot_0_enabled"
                 android:title="@string/wfc_slot_enabled"
@@ -41,6 +53,12 @@
     <PreferenceCategory
             android:title="@string/wfc_slot_gts_battles"
             app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_2"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
                 android:key="wfc_slot_1_enabled"
                 android:title="@string/wfc_slot_enabled"
@@ -65,6 +83,12 @@
     <PreferenceCategory
             android:title="@string/wfc_slot_alternative"
             app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_3"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat
                 android:key="wfc_slot_2_enabled"
                 android:title="@string/wfc_slot_enabled"

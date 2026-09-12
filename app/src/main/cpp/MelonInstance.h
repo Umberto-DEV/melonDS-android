@@ -20,6 +20,23 @@ using namespace melonDS;
 namespace MelonDSAndroid
 {
 
+/**
+ * Copies one WFC slot into a firmware access point block and refreshes its checksum. The SSID is
+ * only replaced when @c slotData.name is not empty, so a caller that doesn't manage names (see
+ * WfcSettingsJNI.cpp) leaves the stored one alone.
+ */
+void applyWfcSlotData(melonDS::Firmware::WifiAccessPoint& accessPoint, const WfcSlotData& slotData);
+
+/** Reads one firmware access point block into a WFC slot. */
+void extractWfcSlotData(const melonDS::Firmware::WifiAccessPoint& accessPoint, WfcSlotData& slotData);
+
+/**
+ * Whether the three access point blocks (and, for DSi firmware, the three extended ones) really
+ * are inside the firmware buffer. The offsets come from the firmware header's user settings
+ * offset (Firmware::GetUserDataOffset()), which a truncated or bogus image can put anywhere.
+ */
+bool wfcAccessPointsInBounds(const melonDS::Firmware& firmware);
+
 class MelonInstance
 {
 
@@ -79,6 +96,26 @@ public:
     void requestNdsSaveWrite(const u8* saveData, u32 saveLength, u32 writeOffset, u32 writeLength);
     void requestGbaSaveWrite(const u8* saveData, u32 saveLength, u32 writeOffset, u32 writeLength);
     void requestFirmwareSaveWrite(const u8* saveData, u32 saveLength, u32 writeOffset, u32 writeLength);
+    /**
+     * Reads the three Wi-fi access point slots out of the firmware buffer this instance serves
+     * over SPI. Returns false if the firmware's layout doesn't make sense (see
+     * wfcAccessPointsInBounds()).
+     *
+     * Call it ONLY with the emulator thread stopped: the console can write the same bytes
+     * through the firmware SPI at any time (SPI.cpp, command 0x0A).
+     */
+    bool readWfcSlots(WfcSlotData slots[3]);
+
+    /**
+     * Writes one Wi-fi access point slot (0-2) into the firmware buffer and requests a flush of
+     * the Wi-fi region to the firmware's backing file, exactly as the console's own writes do
+     * (SPI.cpp, FirmwareMem::Release()). The DS re-reads the slots from SPI whenever it opens a
+     * connection, so the new values are picked up without a reset.
+     *
+     * Call it ONLY with the emulator thread stopped, for the same reason as readWfcSlots().
+     */
+    bool writeWfcSlot(int slot, const WfcSlotData& slotData);
+
     bool saveState(Savestate* state);
     bool loadState(Savestate* state);
     RewindWindow getRewindWindow();

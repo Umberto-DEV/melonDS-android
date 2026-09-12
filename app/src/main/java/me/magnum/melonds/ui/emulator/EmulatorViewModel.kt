@@ -39,6 +39,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.magnum.melonds.MelonEmulator
+import me.magnum.melonds.common.WfcSettings
 import me.magnum.melonds.common.romprocessors.RomFileProcessorFactory
 import me.magnum.melonds.common.runtime.ScreenshotFrameBufferProvider
 import me.magnum.melonds.domain.model.Cheat
@@ -47,6 +48,7 @@ import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.RomInfo
 import me.magnum.melonds.domain.model.RuntimeBackground
 import me.magnum.melonds.domain.model.SaveStateSlot
+import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.emulator.EmulatorEvent
 import me.magnum.melonds.domain.model.emulator.EmulatorSessionUpdateAction
 import me.magnum.melonds.domain.model.emulator.FirmwareLaunchResult
@@ -467,6 +469,7 @@ class EmulatorViewModel @Inject constructor(
                         }
                     }
                     RomPauseMenuOption.VIEW_ACHIEVEMENTS -> _uiEvent.tryEmit(EmulatorUiEvent.ShowAchievementList)
+                    RomPauseMenuOption.INTERNET_CONNECTIONS -> showInternetConnections()
                     RomPauseMenuOption.RESET -> resetEmulator()
                     RomPauseMenuOption.EXIT -> exitEmulator(force = false)
                 }
@@ -480,6 +483,43 @@ class EmulatorViewModel @Inject constructor(
                         _uiEvent.tryEmit(EmulatorUiEvent.CloseEmulator)
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Reads the console's three WFC connections out of the live firmware and asks the UI to show
+     * them. The emulator is already paused by the pause menu; the native call stops the emulator
+     * thread for the duration anyway, since the console can write the same bytes over the
+     * firmware SPI.
+     */
+    private fun showInternetConnections() {
+        sessionCoroutineScope.launch {
+            val slots = withContext(Dispatchers.IO) {
+                WfcSettings.readLiveSlots()?.mapNotNull { WfcAccessPointSlot.parse(it) }
+            }
+
+            _uiEvent.emit(EmulatorUiEvent.ShowWfcConnections(slots ?: emptyList()))
+        }
+    }
+
+    /**
+     * Turns one of the console's three WFC connections on or off without leaving the game. The
+     * DS re-reads the slots from the firmware SPI whenever it opens a connection, so this applies
+     * to the next connection attempt; an already established one is unaffected.
+     *
+     * Only the enabled flag changes: the DNS servers are written back as they were read, and the
+     * slot's SSID is left alone (the free name the user gives a connection is an app-side label,
+     * see WfcSettings).
+     */
+    fun setInternetConnectionEnabled(index: Int, slot: WfcAccessPointSlot, enabled: Boolean) {
+        sessionCoroutineScope.launch {
+            val written = withContext(Dispatchers.IO) {
+                WfcSettings.writeLiveSlot(index, enabled, "", slot.primaryDns, slot.secondaryDns)
+            }
+
+            if (!written) {
+                _uiEvent.emit(EmulatorUiEvent.WfcConnectionWriteFailed)
             }
         }
     }

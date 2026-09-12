@@ -40,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -61,6 +62,7 @@ import me.magnum.melonds.domain.model.ControllerConfiguration
 import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.Rect
 import me.magnum.melonds.domain.model.SaveStateSlot
+import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.layout.Insets
 import me.magnum.melonds.domain.model.layout.LayoutComponent
 import me.magnum.melonds.domain.model.layout.ScreenFold
@@ -578,6 +580,10 @@ class EmulatorActivity : AppCompatActivity() {
                                 }
                             }
                         }
+                        is EmulatorUiEvent.ShowWfcConnections -> showInternetConnectionsDialog(it.slots)
+                        EmulatorUiEvent.WfcConnectionWriteFailed -> {
+                            Toast.makeText(this@EmulatorActivity, R.string.wfc_slot_write_error, Toast.LENGTH_SHORT).show()
+                        }
                         EmulatorUiEvent.ShowAchievementList -> {
                             activeOverlays.addActiveOverlay(EmulatorOverlay.ACHIEVEMENTS_DIALOG)
                             showAchievementList.value = true
@@ -1013,6 +1019,54 @@ class EmulatorActivity : AppCompatActivity() {
             }
             .setOnDismissListener {
                 activeOverlays.removeActiveOverlay(EmulatorOverlay.SAVE_STATES_DIALOG)
+            }
+            .setOnCancelListener {
+                viewModel.resumeEmulator()
+            }
+            .show()
+    }
+
+    /**
+     * The pause menu's quick way to turn the console's three WFC connections on and off without
+     * leaving the game. Each row shows the connection's app-side name (the label the WFC settings
+     * screen stores, since the slot's own SSID stays "melonAP") and, read-only, the primary DNS
+     * the slot points at. Changes are applied to the live firmware when the dialog is confirmed.
+     */
+    private fun showInternetConnectionsDialog(slots: List<WfcAccessPointSlot>) {
+        if (slots.isEmpty()) {
+            Toast.makeText(this, R.string.wfc_live_read_error, Toast.LENGTH_SHORT).show()
+            viewModel.resumeEmulator()
+            return
+        }
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val labels = slots.mapIndexed { index, slot ->
+            val name = preferences.getString("wfc_slot_name_${index + 1}", null)?.takeIf { it.isNotBlank() }
+                ?: getString(R.string.wfc_slot_default_name, index + 1)
+            "$name\n${slot.primaryDns}"
+        }.toTypedArray()
+        val checked = BooleanArray(slots.size) { slots[it].enabled }
+
+        activeOverlays.addActiveOverlay(EmulatorOverlay.PAUSE_MENU)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.internet_connections)
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton(R.string.ok) { dialog, _ ->
+                slots.forEachIndexed { index, slot ->
+                    if (checked[index] != slot.enabled) {
+                        viewModel.setInternetConnectionEnabled(index, slot, checked[index])
+                    }
+                }
+                dialog.dismiss()
+                viewModel.resumeEmulator()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.cancel()
+            }
+            .setOnDismissListener {
+                activeOverlays.removeActiveOverlay(EmulatorOverlay.PAUSE_MENU)
             }
             .setOnCancelListener {
                 viewModel.resumeEmulator()

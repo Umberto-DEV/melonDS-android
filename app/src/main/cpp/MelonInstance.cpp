@@ -1,3 +1,4 @@
+#include <cstring>
 #include <ctime>
 #include <chrono>
 #include <EGL/egl.h>
@@ -559,6 +560,107 @@ void MelonInstance::requestFirmwareSaveWrite(const u8* saveData, u32 saveLength,
 {
     if (firmwareSave)
         firmwareSave->RequestFlush(saveData, saveLength, writeOffset, writeLength);
+}
+
+void applyWfcSlotData(Firmware::WifiAccessPoint& accessPoint, const WfcSlotData& slotData)
+{
+    accessPoint.Status = slotData.enabled ? Firmware::AccessPointStatus::Normal : Firmware::AccessPointStatus::NotConfigured;
+
+    size_t nameLength = strnlen(slotData.name, sizeof(accessPoint.SSID));
+    if (nameLength > 0)
+    {
+        memset(accessPoint.SSID, 0, sizeof(accessPoint.SSID));
+        memcpy(accessPoint.SSID, slotData.name, nameLength);
+        accessPoint.SSIDLength = (u8) nameLength;
+    }
+
+    memcpy(accessPoint.PrimaryDns.data(), slotData.primaryDns, sizeof(slotData.primaryDns));
+    memcpy(accessPoint.SecondaryDns.data(), slotData.secondaryDns, sizeof(slotData.secondaryDns));
+    accessPoint.UpdateChecksum();
+}
+
+void extractWfcSlotData(const Firmware::WifiAccessPoint& accessPoint, WfcSlotData& slotData)
+{
+    slotData.enabled = accessPoint.Status != Firmware::AccessPointStatus::NotConfigured;
+
+    // The SSID is a fixed 32-byte field and isn't guaranteed to be NUL-terminated when full.
+    size_t nameLength = strnlen(accessPoint.SSID, sizeof(accessPoint.SSID));
+    memset(slotData.name, 0, sizeof(slotData.name));
+    memcpy(slotData.name, accessPoint.SSID, nameLength);
+
+    memcpy(slotData.primaryDns, accessPoint.PrimaryDns.data(), sizeof(slotData.primaryDns));
+    memcpy(slotData.secondaryDns, accessPoint.SecondaryDns.data(), sizeof(slotData.secondaryDns));
+}
+
+bool wfcAccessPointsInBounds(const Firmware& firmware)
+{
+    if (!firmware.Buffer() || firmware.Length() == 0)
+        return false;
+
+    u32 userDataOffset = firmware.GetUserDataOffset();
+    // The access points sit 0x400 bytes before the user settings and the DSi's extended ones
+    // 0xA00 bytes before them, so anything closer to the start of the image is out of bounds.
+    if (userDataOffset < 0xA00 || userDataOffset > firmware.Length())
+        return false;
+
+    u32 accessPointsEnd = firmware.GetWifiAccessPointOffset() + sizeof(firmware.GetAccessPoints());
+    return accessPointsEnd <= firmware.Length();
+}
+
+// The extended (DSi) blocks are only meaningful in DSi firmware; in a real DS image that area
+// holds unrelated firmware data and must not be touched. The generated firmware is the other
+// case that owns it: its Wi-fi region is saved to wfcsettings.bin, extended blocks first
+// (see generateFirmware() in EmulatorArgsBuilder.cpp).
+static bool firmwareOwnsExtendedAccessPoints(const Firmware& firmware)
+{
+    return firmware.GetHeader().ConsoleType == Firmware::FirmwareConsoleType::DSi
+        || firmware.GetHeader().Identifier == GENERATED_FIRMWARE_IDENTIFIER;
+}
+
+bool MelonInstance::readWfcSlots(WfcSlotData slots[3])
+{
+    const Firmware& firmware = nds->SPI.GetFirmware();
+    if (!wfcAccessPointsInBounds(firmware))
+        return false;
+
+    const auto& accessPoints = firmware.GetAccessPoints();
+    for (int i = 0; i < 3; i++)
+        extractWfcSlotData(accessPoints[i], slots[i]);
+
+    return true;
+}
+
+bool MelonInstance::writeWfcSlot(int slot, const WfcSlotData& slotData)
+{
+    if (slot < 0 || slot > 2)
+        return false;
+
+    Firmware& firmware = nds->SPI.GetFirmware();
+    if (!wfcAccessPointsInBounds(firmware))
+        return false;
+
+    Firmware::WifiAccessPoint& accessPoint = firmware.GetAccessPoints()[slot];
+    applyWfcSlotData(accessPoint, slotData);
+
+    if (firmwareOwnsExtendedAccessPoints(firmware))
+    {
+        // The extended block embeds its own copy of the base access point; keep them in sync so
+        // the slot behaves the same in DS and DSi mode.
+        u32 extendedOffset = firmware.GetExtendedAccessPointOffset();
+        if (extendedOffset + sizeof(firmware.GetExtendedAccessPoints()) <= firmware.Length())
+        {
+            Firmware::ExtendedWifiAccessPoint& extendedAccessPoint = firmware.GetExtendedAccessPoints()[slot];
+            extendedAccessPoint.Data.Base = accessPoint;
+            extendedAccessPoint.UpdateChecksum();
+        }
+    }
+
+    // Same request the console's own firmware writes end up making (SPI.cpp,
+    // FirmwareMem::Release()): the platform layer decides whether that means the whole firmware
+    // file or just the Wi-fi region of wfcsettings.bin.
+    u32 wifiOffset = firmware.GetWifiAccessPointOffset();
+    Platform::WriteFirmware(firmware, wifiOffset, firmware.Length() - wifiOffset, this);
+    return true;
 }
 
 bool MelonInstance::saveState(Savestate* state)

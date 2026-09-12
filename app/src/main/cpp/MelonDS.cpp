@@ -131,6 +131,23 @@ namespace MelonDSAndroid
         currentConfiguration = sharedConfig;
     }
 
+    bool readRunningInstanceWfcSlots(WfcSlotData slots[3])
+    {
+        // No instance means no firmware buffer to read: the caller falls back to the file.
+        if (!instance)
+            return false;
+
+        return instance->readWfcSlots(slots);
+    }
+
+    bool writeRunningInstanceWfcSlot(int slot, const WfcSlotData& slotData)
+    {
+        if (!instance)
+            return false;
+
+        return instance->writeWfcSlot(slot, slotData);
+    }
+
     int loadRom(std::string romPath, std::string sramPath, RomGbaSlotConfig* gbaSlotConfig)
     {
         // setup() could not build the instance (bad BIOS/firmware/NAND). Report the terminal

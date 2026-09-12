@@ -21,24 +21,42 @@ fun isValidIpv4(address: String): Boolean {
 }
 
 /**
- * One of the three Wi-fi access point slots stored in the emulator's generated "wfcsettings.bin"
- * (see WfcSettingsJNI.cpp). [ssid] is whatever is currently stored in the slot; this screen never
- * changes it, only [enabled], [primaryDns] and [secondaryDns].
+ * True if [name] fits in a firmware access point slot's name field: at most
+ * [WfcAccessPointSlot.MAX_NAME_LENGTH] bytes, no control characters, and none of the separators
+ * used when the slots are handed over the JNI boundary. An empty name is valid and means "leave
+ * the stored one alone".
+ */
+fun isValidWfcSlotName(name: String): Boolean {
+    if (name.toByteArray(Charsets.UTF_8).size > WfcAccessPointSlot.MAX_NAME_LENGTH) {
+        return false
+    }
+
+    return name.none { it == ';' || it.code < 0x20 || it.code == 0x7F }
+}
+
+/**
+ * One of the three Wi-fi access point slots of the firmware the console will use (see
+ * WfcSettingsJNI.cpp). [name] is the name stored in the slot itself (its SSID); the free label
+ * the user gives to a connection is kept by the app instead, because the emulated access point
+ * still answers with the fixed "melonAP" name.
  */
 data class WfcAccessPointSlot(
     val enabled: Boolean,
-    val ssid: String,
+    val name: String,
     val primaryDns: String,
     val secondaryDns: String,
 ) {
     fun serialize(): String {
-        return "${if (enabled) "1" else "0"};$ssid;$primaryDns;$secondaryDns"
+        return "${if (enabled) "1" else "0"};$name;$primaryDns;$secondaryDns"
     }
 
     companion object {
+        /** The firmware's SSID field is 32 bytes, with no terminator when full. */
+        const val MAX_NAME_LENGTH = 32
+
         /**
          * Parses one entry of the array returned by [me.magnum.melonds.common.WfcSettings.readSlots],
-         * formatted as "enabled;ssid;primaryDns;secondaryDns". Returns null if [raw] doesn't match
+         * formatted as "enabled;name;primaryDns;secondaryDns". Returns null if [raw] doesn't match
          * that shape.
          */
         fun parse(raw: String): WfcAccessPointSlot? {
@@ -55,7 +73,7 @@ data class WfcAccessPointSlot(
 
             return WfcAccessPointSlot(
                 enabled = enabled,
-                ssid = parts[1],
+                name = parts[1],
                 primaryDns = parts[2],
                 secondaryDns = parts[3],
             )
