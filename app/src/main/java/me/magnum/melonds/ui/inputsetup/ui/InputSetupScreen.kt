@@ -168,8 +168,10 @@ private fun Input(
                     assignments.joinToString(" / ") { assignment ->
                         when (assignment) {
                             is InputConfig.Assignment.Key -> {
-                                val keyCodeString = KeyEvent.keyCodeToString(assignment.keyCode)
-                                keyCodeString.replace("KEYCODE", "").replace("_", " ").trim()
+                                assignment.keyCodes.joinToString(" + ") { keyCode ->
+                                    val keyCodeString = KeyEvent.keyCodeToString(keyCode)
+                                    keyCodeString.replace("KEYCODE", "").replace("_", " ").trim()
+                                }
                             }
                             is InputConfig.Assignment.Axis -> {
                                 val axisString = MotionEvent.axisToString(assignment.axisCode)
@@ -250,6 +252,7 @@ private fun getInputName(input: Input): String? {
         Input.HINGE -> R.string.input_lid
         Input.PAUSE -> R.string.input_pause
         Input.FAST_FORWARD -> R.string.input_fast_forward
+        Input.FAST_FORWARD_HOLD -> R.string.input_fast_forward_hold
         Input.MICROPHONE -> R.string.input_microphone
         Input.RESET -> R.string.input_reset
         Input.SWAP_SCREENS -> R.string.input_swap_screens

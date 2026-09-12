@@ -3,6 +3,7 @@
 #include "MicInputOboeCallback.h"
 #include "mic_blow.h"
 #include "OboeCallback.h"
+#include <atomic>
 #include <mutex>
 #include <oboe/Oboe.h>
 
@@ -29,6 +30,12 @@ std::shared_ptr<oboe::AudioStream> micInputStream;
 std::shared_ptr<MicInputOboeCallback> micInputCallback;
 
 MelonDSAndroid::AudioSettings currentAudioSettings;
+
+// Read from the real-time data callback without taking audioOutputMutex, so both must stay
+// lock-free (plain atomics), never guarded by a mutex the callback cannot afford to block on.
+std::atomic_bool isAudioFastForwardActive = false;
+std::atomic_bool muteFastForwardAudio = false;
+
 std::mutex micBufferMutex;
 int actualMicSource = 0;
 bool isMicInputEnabled = true;
@@ -271,6 +278,8 @@ namespace MelonDSAndroid
         std::lock_guard<std::mutex> lock(audioOutputMutex);
 
         isMicOn = false;
+        isAudioFastForwardActive = false;
+        muteFastForwardAudio = audioSettings.muteFastForwardAudio;
         actualMicSource = audioSettings.micSource;
         currentAudioSettings = audioSettings;
 
@@ -286,6 +295,8 @@ namespace MelonDSAndroid
     void updateAudioSettings(AudioSettings audioSettings)
     {
         std::lock_guard<std::mutex> lock(audioOutputMutex);
+
+        muteFastForwardAudio = audioSettings.muteFastForwardAudio;
 
         if (shouldAudioOutputStreamBeActive(audioSettings.soundEnabled, audioSettings.volume)) {
             if (!audioStream) {
@@ -318,6 +329,16 @@ namespace MelonDSAndroid
         currentAudioSettings = audioSettings;
     }
 
+    void setAudioFastForwardActive(bool active)
+    {
+        isAudioFastForwardActive = active;
+    }
+
+    bool shouldMuteAudioOutput()
+    {
+        return isAudioFastForwardActive.load() && muteFastForwardAudio.load();
+    }
+
     void setAudioActiveInstance(std::shared_ptr<MelonInstance> instance)
     {
         std::lock_guard<std::mutex> lock(audioOutputMutex);
@@ -332,6 +353,8 @@ namespace MelonDSAndroid
         std::lock_guard<std::mutex> lock(audioOutputMutex);
 
         isAudioRunning = false;
+        isAudioFastForwardActive = false;
+        muteFastForwardAudio = false;
         cleanupAudioOutputStream();
         cleanupMicInputStream();
     }

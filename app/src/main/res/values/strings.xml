@@ -262,6 +262,7 @@
     <string name="bitrate">Bitrate</string>
     <string name="volume">Volume</string>
     <string name="volume_percentage">%1$d%%</string>
+    <string name="mute_fast_forward_audio">Mute audio while fast forwarding</string>
     <string name="audio_latency">Audio latency</string>
     <string name="microphone_source">Microphone source</string>
     <string name="controller_layout">Controller layout</string>
@@ -369,6 +370,7 @@
     <string name="input_lid">Toggle Lid</string>
     <string name="input_pause">Pause</string>
     <string name="input_fast_forward">Fast Forward (Toggle)</string>
+    <string name="input_fast_forward_hold">Fast Forward (Hold)</string>
     <string name="input_microphone">Toggle Microphone</string>
     <string name="input_toggle_soft_input">Toggle Soft Input</string>
     <string name="input_reset">@string/reset</string>
@@ -457,6 +459,7 @@
     <string name="view_achievement">View achievement</string>
     <string name="completed_achievements"><b>%1$d</b> of <b>%2$d</b> (%3$d%%)</string>
     <string name="submitting_achievements">Submitting RetroAchievements…</string>
+    <string name="notification_ds_sleep">DS Sleep</string>
     <string name="achievements_loaded">Achievements loaded</string>
     <string name="achievements_unlocked_compact">Unlocked: %1$d/%2$d</string>
     <string name="game_has_no_achievements">This game has no achievements</string>

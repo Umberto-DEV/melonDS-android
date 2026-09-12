@@ -29,12 +29,18 @@ class MelonTouchHandler : IInputListener {
         MelonEmulator.onScreenRelease()
     }
 
-    private fun handleHingePress() {
-        isLidClosed = !isLidClosed
-        if (isLidClosed) {
-            MelonEmulator.onInputDown(Input.HINGE)
-        } else {
-            MelonEmulator.onInputUp(Input.HINGE)
+    fun setLidClosed(closed: Boolean) {
+        if (closed != isLidClosed) {
+            isLidClosed = closed
+            if (isLidClosed) {
+                MelonEmulator.onInputDown(Input.HINGE)
+            } else {
+                MelonEmulator.onInputUp(Input.HINGE)
+            }
         }
+    }
+
+    private fun handleHingePress() {
+        setLidClosed(!isLidClosed)
     }
 }

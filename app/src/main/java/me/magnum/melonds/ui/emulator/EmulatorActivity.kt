@@ -8,6 +8,7 @@ import android.hardware.input.InputManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.PowerManager
 import android.view.Display
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -51,7 +52,9 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import me.magnum.melonds.MelonEmulator
 import me.magnum.melonds.R
+import me.magnum.melonds.common.Permission
 import me.magnum.melonds.common.PermissionHandler
+import me.magnum.melonds.common.UriPermissionManager
 import me.magnum.melonds.databinding.ActivityEmulatorBinding
 import me.magnum.melonds.domain.model.ConsoleType
 import me.magnum.melonds.domain.model.ControllerConfiguration
@@ -164,6 +167,9 @@ class EmulatorActivity : AppCompatActivity() {
     @Inject
     lateinit var appForegroundStateObserver: AppForegroundStateObserver
 
+    @Inject
+    lateinit var uriPermissionManager: UriPermissionManager
+
     private var presentation: ExternalPresentation? = null
 
     private lateinit var handler: Handler
@@ -194,10 +200,12 @@ class EmulatorActivity : AppCompatActivity() {
     private lateinit var choreographerFrameRenderer: ChoreographerFrameRenderer
     private lateinit var mainScreenRenderer: DSRenderer
     private lateinit var melonTouchHandler: MelonTouchHandler
+    private var lidClosedByScreenOff = false
     private lateinit var nativeInputListener: INativeInputListener
     private val frontendInputHandler = object : FrontendInputHandler() {
         var fastForwardEnabled = false
             private set
+        private var fastForwardHoldEnabled = false
         var microphoneEnabled = true
             private set
 
@@ -214,7 +222,17 @@ class EmulatorActivity : AppCompatActivity() {
             fastForwardEnabled = !fastForwardEnabled
             binding.viewLayoutControls.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
             presentation?.layoutView?.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
-            MelonEmulator.setFastForwardEnabled(fastForwardEnabled)
+            updateFastForwardState()
+        }
+
+        override fun onFastForwardHoldPressed() {
+            fastForwardHoldEnabled = true
+            updateFastForwardState()
+        }
+
+        override fun onFastForwardHoldReleased() {
+            fastForwardHoldEnabled = false
+            updateFastForwardState()
         }
 
         override fun onMicrophonePressed() {
@@ -242,6 +260,17 @@ class EmulatorActivity : AppCompatActivity() {
 
         override fun onRewind() {
             viewModel.onOpenRewind()
+        }
+
+        fun resetFastForwardHold() {
+            if (fastForwardHoldEnabled) {
+                fastForwardHoldEnabled = false
+                updateFastForwardState()
+            }
+        }
+
+        private fun updateFastForwardState() {
+            MelonEmulator.setFastForwardEnabled(fastForwardEnabled || fastForwardHoldEnabled)
         }
     }
     private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -284,6 +313,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        intent.data?.let { uriPermissionManager.tryPersistFilePermissions(it, Permission.READ) }
         handler = Handler(mainLooper)
         lifecycleOwnerProvider.setCurrentLifecycleOwner(this)
         binding = ActivityEmulatorBinding.inflate(layoutInflater)
@@ -684,6 +714,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        intent.data?.let { uriPermissionManager.tryPersistFilePermissions(it, Permission.READ) }
 
         val launchArgs = LaunchArgs.fromIntent(intent)
         // Invalid arguments. Ignore completely
@@ -716,8 +747,17 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        cancelPendingLidPause()
         choreographerFrameRenderer.startRendering()
         emulatorMotionManager.resume()
+
+        // Open the virtual lid only if the device actually went to sleep (not on app switch, etc). This must
+        // not depend on activeOverlays: the lid can be closed while a dialog/overlay is showing, and it must
+        // still reopen when the screen comes back on.
+        if (lidClosedByScreenOff) {
+            lidClosedByScreenOff = false
+            melonTouchHandler.setLidClosed(false)
+        }
 
         if (!activeOverlays.hasActiveOverlays()) {
             disableScreenTimeOut()
@@ -727,6 +767,9 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) {
+            frontendInputHandler.resetFastForwardHold()
+        }
         setupFullscreen()
     }
 
@@ -1008,12 +1051,41 @@ class EmulatorActivity : AppCompatActivity() {
         viewModel.setSystemOrientation(orientation)
     }
 
+    // Most games play sound for <2secs after closing the lid
+    private val lidClosePauseDelayMs = 3000L
+
+    private val pauseAfterLidCloseRunnable = Runnable {
+        choreographerFrameRenderer.stopRendering()
+        viewModel.pauseEmulator(false)
+        stopService(Intent(this, LidCloseService::class.java))
+    }
+
+    private fun isScreenOff(): Boolean {
+        return getSystemService<PowerManager>()?.isInteractive == false
+    }
+
+    private fun cancelPendingLidPause() {
+        handler.removeCallbacks(pauseAfterLidCloseRunnable)
+        stopService(Intent(this, LidCloseService::class.java))
+    }
+
     override fun onPause() {
         super.onPause()
         enableScreenTimeOut()
-        choreographerFrameRenderer.stopRendering()
         emulatorMotionManager.pause()
-        viewModel.pauseEmulator(false)
+        frontendInputHandler.resetFastForwardHold()
+
+        if (isScreenOff()) {
+            lidClosedByScreenOff = true
+            melonTouchHandler.setLidClosed(true)
+            startForegroundService(Intent(this, LidCloseService::class.java))
+
+            // Delay pausing the emulator just enough to let games play sounds after closing the lid
+            handler.postDelayed(pauseAfterLidCloseRunnable, lidClosePauseDelayMs)
+        } else { // App switch, etc.
+            choreographerFrameRenderer.stopRendering()
+            viewModel.pauseEmulator(false)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
