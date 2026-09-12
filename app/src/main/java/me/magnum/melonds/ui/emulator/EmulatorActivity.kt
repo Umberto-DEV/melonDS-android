@@ -1078,7 +1078,7 @@ class EmulatorActivity : AppCompatActivity() {
         if (isScreenOff()) {
             lidClosedByScreenOff = true
             melonTouchHandler.setLidClosed(true)
-            startForegroundService(Intent(this, LidCloseService::class.java))
+            ContextCompat.startForegroundService(this, Intent(this, LidCloseService::class.java))
 
             // Delay pausing the emulator just enough to let games play sounds after closing the lid
             handler.postDelayed(pauseAfterLidCloseRunnable, lidClosePauseDelayMs)
