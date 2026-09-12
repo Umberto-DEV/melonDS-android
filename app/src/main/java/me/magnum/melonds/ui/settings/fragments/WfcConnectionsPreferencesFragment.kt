@@ -10,6 +10,7 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
+import androidx.preference.PreferenceCategory
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
 import dagger.hilt.android.AndroidEntryPoint
@@ -147,11 +148,12 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
         primaryDns.isPersistent = false
         secondaryDns.isPersistent = false
 
-        if (name.text.isNullOrEmpty()) {
-            name.text = getString(R.string.wfc_slot_default_name, index + 1)
-        }
+        // The category reads "Slot N" until the user gives the connection a name; the name is
+        // then shown next to the slot number, never replacing it.
+        updateSlotCategoryTitle(index, name.text)
         name.setOnPreferenceChangeListener { _, newValue ->
             if (isValidWfcSlotName(newValue as String)) {
+                updateSlotCategoryTitle(index, newValue)
                 true
             } else {
                 Toast.makeText(requireContext(), R.string.wfc_invalid_name, Toast.LENGTH_SHORT).show()
@@ -173,6 +175,16 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
         }
 
         return widgets
+    }
+
+    private fun updateSlotCategoryTitle(index: Int, name: String?) {
+        val category = findPreference<PreferenceCategory>("wfc_slot_category_${index + 1}") ?: return
+        val trimmed = name?.trim().orEmpty()
+        category.title = if (trimmed.isEmpty()) {
+            getString(resources.getIdentifier("wfc_slot_title_${index + 1}", "string", requireContext().packageName))
+        } else {
+            getString(R.string.wfc_slot_title_named, index + 1, trimmed)
+        }
     }
 
     private fun onDnsChanged(index: Int, widgets: SlotWidgets, primaryDns: String?, secondaryDns: String?): Boolean {

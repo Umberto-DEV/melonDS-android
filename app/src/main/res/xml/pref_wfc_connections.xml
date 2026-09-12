@@ -21,7 +21,8 @@
             app:iconSpaceReserved="false" />
 
     <PreferenceCategory
-            android:title="@string/wfc_slot_mystery_gift"
+            android:key="wfc_slot_category_1"
+            android:title="@string/wfc_slot_title_1"
             app:iconSpaceReserved="false">
         <EditTextPreference
                 android:key="wfc_slot_name_1"
@@ -51,7 +52,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-            android:title="@string/wfc_slot_gts_battles"
+            android:key="wfc_slot_category_2"
+            android:title="@string/wfc_slot_title_2"
             app:iconSpaceReserved="false">
         <EditTextPreference
                 android:key="wfc_slot_name_2"
@@ -81,7 +83,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-            android:title="@string/wfc_slot_alternative"
+            android:key="wfc_slot_category_3"
+            android:title="@string/wfc_slot_title_3"
             app:iconSpaceReserved="false">
         <EditTextPreference
                 android:key="wfc_slot_name_3"
