@@ -19,9 +19,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -95,6 +97,13 @@ class SharedPreferencesSettingsRepository(
         preferences.registerOnSharedPreferenceChangeListener(this)
         setDefaultThemeIfRequired()
         setDefaultMacAddressIfRequired()
+
+        // Warm the lazily-loaded controller configuration off the main thread now, since this repository is already
+        // constructed at app startup; otherwise its first read happens on the UI thread (e.g. when EmulatorActivity's
+        // ViewModel is first accessed) and shows up as a disk-read StrictMode violation.
+        preferencesCoroutineScope.launch(Dispatchers.IO) {
+            controllerConfiguration
+        }
 
         renderConfigurationFlow = combine(
             getVideoRenderer(),
