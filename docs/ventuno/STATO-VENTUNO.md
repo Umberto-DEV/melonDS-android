@@ -1,5 +1,5 @@
 # melonDS Nightly 2.1 — ramo `ventuno` (stato al 12/09/2026, ore 12:40)
-Base: PR #1672 (21 commit, = build sulla Thor) + motore lib#16 (3ad4e940). Da allora 21 commit app + 1 motore, tutti su origin/ventuno e fork/ventuno. **La Thor ha ancora la build precedente**: il ramo è divergente finché l'utente non installa una build nuova.
+Base: PR #1672 (21 commit, = build sulla Thor) + motore lib#16 (3ad4e940). Da allora 21 commit app + 1 motore, tutti su origin/ventuno e fork/ventuno. **Sulla Thor dal 12/09 18:02 c'è la 2.1 = app 2db22d30 + motore bc060f4c** (congelata per i collaudi 1.2).
 
 ## Commit oltre la PR (dal più recente)
 138baa2b feat(community): integrate five open upstream pull requests with corrections

@@ -114,7 +114,7 @@ nella stessa cartella.
    prima di install:
    ```
    adb -s 20e51bf7 uninstall me.magnum.melonds.nightly.perf
-   adb -s 20e51bf7 install ~/Developer/android-test/apk/ventuno-2.1-20260912/me.magnum.melonds.nightly.perf-ventuno-app_2db22d30-core_bc060f4c.apk
+   adb -s 20e51bf7 install -t ~/Developer/android-test/apk/ventuno-2.1-20260912/me.magnum.melonds.nightly.perf-ventuno-app_2db22d30-core_bc060f4c.apk
    ```
 3. Verifica: `adb -s 20e51bf7 shell pm path me.magnum.melonds.nightly.perf` e
    `adb -s 20e51bf7 shell dumpsys package me.magnum.melonds.nightly.perf | grep -E "versionName|lastUpdateTime"`
@@ -132,7 +132,7 @@ nella stessa cartella.
 2. Firma diversa dalla precedente installata → serve di nuovo uninstall → install, non `install -r`:
    ```
    adb -s 20e51bf7 uninstall me.magnum.melonds.nightly.perf
-   adb -s 20e51bf7 install ~/Developer/android-test/thor/backup-20260912/apk/nightly.perf-installed.apk
+   adb -s 20e51bf7 install -t ~/Developer/android-test/thor/backup-20260912/apk/nightly.perf-installed.apk
    ```
 3. Rifare la configurazione manuale del punto 5 (§5): la disinstallazione l'ha cancellata di nuovo.
 4. Verificare `pm path`/`dumpsys package` (come §5.3) prima di dichiarare il ripristino concluso.
@@ -148,3 +148,6 @@ nella stessa cartella.
 - [ ] Thor: se installata build nuova, permessi/config reimpostati e verificati.
 - [ ] `me.magnum.melonds` 2.0.1 sulla Thor non toccata.
 - [ ] Nessuna modifica a file tracciati da git in questa sessione, salvo istruzione esplicita.
+
+
+> Nota (12/09 18:02): le APK costruite con `-Pandroid.injected.build.abi` sono marcate TEST_ONLY: senza `-t` l'installazione fallisce con `INSTALL_FAILED_TEST_ONLY`. Installazione della 2.1 sulla Thor eseguita alle 18:02 del 12/09/2026 con `adb -s 20e51bf7 install -t` dopo `uninstall` (firma diversa dalla precedente).

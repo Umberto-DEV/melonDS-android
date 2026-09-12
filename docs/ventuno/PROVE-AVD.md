@@ -200,3 +200,31 @@ di failure), VIEW è **assente** dal manifest.
   fix), nessun processo `qemu-system-aarch64` residuo dopo il kill. File conservati in `$S`: uno screenshot
   della schermata WFC dopo il fix (`wfc_fix2.png`), uno screenshot del gioco in esecuzione (`game2.png`) e
   il dump esadecimale di `wfcsettings.bin` (`wfcsettings_hexdump.txt`).
+
+### Prova finale ciclo di vita (build 35 commit)
+AVD `melonds-test` (`-s emulator-5554` sempre, mai il seriale fisico), `-no-window -gpu host -no-snapshot
+-no-boot-anim`. APK normale da `~/Developer/android-test/apk/ventuno-2.1-20260912/debug-avd/…app_2db22d30-core_bc060f4c-debug-arm64.apk`,
+APK HWASan da `$S/../apk/hwasan.apk`, pacchetto `me.magnum.melonds.nightly.dev`. Permesso SAF su
+`/sdcard/Download/roms` e prefs (renderer software, risoluzione 1, filtro none) già presenti da sessioni
+precedenti, riusati senza modifiche.
+
+| # | Passo | Esito |
+|---|-------|-------|
+| A1 | Avvio `hg.nds` dalla lista ROM, 30 s | PASS — pid vivo, `EmulatorActivity` in focus, schermo di gioco visibile |
+| A2 | Menu pausa apri/chiudi (`KEYCODE_BACK`) | PASS — pausa mostrata e richiusa, gioco ripreso (frame cambiato) |
+| A3 | Settings → Audio → "Mute audio while fast forwarding" ON → torna al gioco | PASS — toggle applicato, gioco ripreso correttamente dopo il resume |
+| A4 | Settings → System → Online connections (WFC) durante il gioco | PASS — sola lettura, messaggio "Close the game to change the online connections" presente, tutti i controlli disabilitati |
+| A5 | HOME, 10 s, riapertura via `am start` su `EmulatorActivity` | PASS — pid vivo, activity riportata in foreground, `dumpsys audio` conferma stream `state:started` |
+| A6 | `KEYCODE_POWER` off, 5 s, `KEYCODE_POWER` on | PASS — gioco ripreso; `LidCloseService` risultava già a 0 istanze dopo 5 s (il servizio gira solo ~3 s per il fade audio, poi si ferma da solo: comportamento atteso, non un bug) |
+| A7 | Exit → lista ROM → riavvio `hg.nds` → 10 s → Exit di nuovo | PASS — entrambi gli Exit e il riavvio confermati da `dumpsys window` |
+| A8 | Dalla lista ROM: Settings → System → Online connections (WFC), fuori dal gioco | PASS — schermata editabile, nessun messaggio di blocco, "Use recommended servers" disponibile |
+| A9 | Analisi `logcat -d` (6863 righe) | PASS — 0 crash reali (i 20 hit su `FATAL|AndroidRuntime|SIGSEGV|Fatal signal` sono tutti `AndroidRuntime` dei comandi `monkey`/`uiautomator` di test, non del processo dell'app); StrictMode: 23 violazioni distinte nell'intera sessione (18 DiskRead, 3 CustomViolation/newSSLContext, 2 LeakedClosableViolation), di cui solo 3 all'avvio effettivo (contro le 8 note in precedenza); nessuna riga "melonDS" con "error" |
+| B1 | Verifica strumentazione HWASan | PASS — `lib/arm64-v8a/wrap.sh` presente nell'APK, 12 simboli `hwasan` in `libmelonDS-android-frontend.so` |
+| B2-B7 | Passi 1, 2, 5, 6, 7 ripetuti + quick save/load dal menu pausa | PASS — tutti i passi confermati (pid vivo e activity corretta ad ogni verifica); quick save su Quick Slot con thumbnail e timestamp, quick load eseguito senza crash |
+| B8 | Analisi `logcat -d` (5258 righe) | PASS — nessun report `HWAddressSanitizer`/`SUMMARY:`, nessun `FATAL EXCEPTION` |
+| C | Chiusura (`adb emu kill`, verifica `qemu-system` assente) | PASS — nessun processo residuo |
+
+**Nota di processo**: uno script di pulizia della cartella scratchpad (`for k in $KEEP`, senza quoting
+corretto in zsh) ha cancellato per errore anche i 3 screenshot e `hwasan-report.txt` che andavano
+conservati, insieme ai log temporanei previsti per la cancellazione — nessun file tracciato da git è stato
+toccato, solo lo scratchpad di sessione. I contenuti erano comunque già stati ispezionati e riportati sopra.
