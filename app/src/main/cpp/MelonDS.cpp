@@ -226,6 +226,9 @@ namespace MelonDSAndroid
     void resume()
     {
         startAudio();
+
+        if (instance)
+            instance->onResumed();
     }
 
     void reset()

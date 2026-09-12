@@ -9,12 +9,10 @@ RtcSyncAction rtcSyncAction(int64_t dsEpochSeconds, int64_t hostEpochSeconds, in
 
     if (drift >= minDriftSeconds)
     {
-        // The DS clock is behind the host: the app was paused/backgrounded (pause()/
-        // resume() only touch audio, they never re-sync the RTC -- see MelonDS.cpp), it
-        // ran under 100% speed for a while, or it was never set at all. Catching it up is
-        // exactly what the option promises, and it is always safe: the RTC-tamper checks
-        // used by several DS Pokemon titles only trip on the clock going BACKWARD, never
-        // forward.
+        // The DS clock is behind the host: the app was paused/backgrounded, it ran under
+        // 100% speed for a while, or it was never set at all. Catching it up is exactly
+        // what the option promises, and it is always safe: the RTC-tamper checks used by
+        // several DS Pokemon titles only trip on the clock going BACKWARD, never forward.
         return RtcSyncAction::ADVANCE;
     }
 

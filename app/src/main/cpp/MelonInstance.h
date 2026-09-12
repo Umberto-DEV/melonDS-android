@@ -39,6 +39,14 @@ public:
     void start();
     void reset();
     melonDS::u32 runFrame();
+
+    /**
+     * Called when the emulator resumes after being paused (menu closed, app foregrounded,
+     * ...). The DS RTC does not advance while the emulator is paused, so this is the point
+     * at which the opt-in "Synchronize clock to device time" option gets a chance to catch
+     * the DS clock up to the host -- see syncRTC() for the decision logic.
+     */
+    void onResumed();
     void stop();
 
     /**

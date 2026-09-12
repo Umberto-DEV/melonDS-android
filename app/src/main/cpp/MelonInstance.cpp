@@ -292,8 +292,6 @@ void MelonInstance::reset()
 
 u32 MelonInstance::runFrame()
 {
-    syncRTC();
-
     if (isRenderConfigurationDirty)
     {
         updateRenderer();
@@ -719,13 +717,13 @@ void MelonInstance::setDateTime()
 }
 
 // Opt-in "Synchronize clock to device time" option. The DS RTC is driven by the emulator's
-// own scheduler (RTC::ScheduleTimer), not by the host clock, and pauseEmulation()/
-// resumeEmulation() only touch audio (see MelonDSAndroid::pause()/resume() in MelonDS.cpp) --
-// so a DS console clock never resyncs on its own after the app spends real time paused or
-// backgrounded (only construction, reset() and loadState() call setDateTime()). Left
-// disabled, this is invisible: existing saves/behavior are unaffected. Enabled, it is called
-// once per frame from runFrame() and forwards the decision to the pure function in RtcSync.h,
-// which never asks to step the clock backward -- see there for why.
+// own scheduler (RTC::ScheduleTimer), not by the host clock, so a DS console clock never
+// resyncs on its own after the app spends real time paused or backgrounded. Left disabled,
+// this is invisible: existing saves/behavior are unaffected. Enabled, it is called once when
+// the emulator resumes (see onResumed(), called from MelonDSAndroid::resume() in MelonDS.cpp)
+// -- construction already covers the first frame after load via its own unconditional
+// setDateTime() call -- and forwards the decision to the pure function in RtcSync.h, which
+// never asks to step the clock backward -- see there for why.
 void MelonInstance::syncRTC()
 {
     if (!currentConfiguration->rtcSyncToHost)
@@ -748,16 +746,22 @@ void MelonInstance::syncRTC()
 
     if (dsEpochSeconds == (std::time_t) -1)
     {
-        // Couldn't normalize the DS clock (e.g. it holds an out-of-range value) -- fall
-        // through to a plain forward stamp rather than acting on garbage.
-        setDateTime();
+        // Couldn't normalize the DS clock (e.g. it holds an out-of-range value). Log and
+        // leave it alone rather than acting on garbage -- there is no safe direction to
+        // stamp it in, and we never step the clock backward.
+        Platform::Log(Platform::LogLevel::Warn, "syncRTC: mktime failed to normalize DS RTC value, skipping sync\n");
         return;
     }
 
-    if (rtcSyncAction(dsEpochSeconds, hostEpochSeconds) == RtcSyncAction::ADVANCE)
+    if (rtcSyncAction(dsEpochSeconds, hostEpochSeconds, kRtcSyncMinDriftSeconds) == RtcSyncAction::ADVANCE)
     {
         setDateTime();
     }
+}
+
+void MelonInstance::onResumed()
+{
+    syncRTC();
 }
 
 void MelonInstance::saveRewindState(RewindSaveState* rewindSaveState)
