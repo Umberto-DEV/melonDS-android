@@ -30,17 +30,17 @@ class FirmwareValidationTest {
     }
 
     @Test
-    fun `REGRESSION -- a 128 KiB DSi firmware misfiled into the DS folder is rejected`() {
+    fun `REGRESSION -- a 128 KiB DSi firmware misfiled into the DS folder is flagged as the wrong console`() {
         // 0x20000 is a valid DS size too, so size alone cannot tell a DSi firmware placed in the
         // DS folder apart from a genuine DS one.
-        assertEquals(ConfigurationDirResult.FileStatus.INVALID, FirmwareValidation.getDsFirmwareStatus(0x20000L, DSI_CONSOLE_TYPE))
+        assertEquals(ConfigurationDirResult.FileStatus.WRONG_CONSOLE, FirmwareValidation.getDsFirmwareStatus(0x20000L, DSI_CONSOLE_TYPE))
     }
 
     @Test
-    fun `REGRESSION -- a 128 KiB DS firmware misfiled into the DSi folder is rejected (mirror case)`() {
+    fun `REGRESSION -- a 128 KiB DS firmware misfiled into the DSi folder is flagged as the wrong console (mirror case)`() {
         // Same mechanism, mirrored: a genuine 128 KiB DS firmware dropped into the DSi folder
         // would also pass on size alone without the console-type check.
-        assertEquals(ConfigurationDirResult.FileStatus.INVALID, FirmwareValidation.getDsiFirmwareStatus(0x20000L, DS_CONSOLE_TYPE))
+        assertEquals(ConfigurationDirResult.FileStatus.WRONG_CONSOLE, FirmwareValidation.getDsiFirmwareStatus(0x20000L, DS_CONSOLE_TYPE))
     }
 
     @Test

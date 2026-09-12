@@ -80,13 +80,8 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
             val validationResult = viewModel.getConsoleConfigurationDirectoryStatus(newConsoleType)
             if (validationResult.status != ConfigurationDirResult.Status.VALID) {
-                val textRes = when (validationResult.consoleType) {
-                    ConsoleType.DS -> R.string.ds_incorrect_bios_dir_info
-                    ConsoleType.DSi -> R.string.dsi_incorrect_bios_dir_info
-                }
-
                 AlertDialog.Builder(requireContext())
-                        .setMessage(textRes)
+                        .setMessage(getIncorrectBiosDirMessage(validationResult))
                         .setPositiveButton(R.string.ok, null)
                         .show()
             }
@@ -96,6 +91,51 @@ class CustomFirmwarePreferencesFragment : BasePreferenceFragment(), PreferenceFr
     }
 
     override fun getTitle() = getString(R.string.custom_bios_firmware)
+
+    /**
+     * Used to show the same generic "not correct" text for three different problems: a missing
+     * file, a file with the wrong size, and a folder that actually holds the other console's
+     * BIOS/firmware. Now picked per aggregate state: WRONG_CONSOLE takes priority (it names the
+     * likely actual cause via the existing ds/dsi_incorrect_bios_dir_info text), then MISSING
+     * files are named explicitly since they're the most actionable problem, then INVALID (wrong
+     * size) files.
+     */
+    private fun getIncorrectBiosDirMessage(validationResult: ConfigurationDirResult): String {
+        val wrongConsoleFiles = validationResult.fileResults.filter { it.second == ConfigurationDirResult.FileStatus.WRONG_CONSOLE }.map { it.first }
+        val missingFiles = validationResult.fileResults.filter { it.second == ConfigurationDirResult.FileStatus.MISSING }.map { it.first }
+        val invalidFiles = validationResult.fileResults.filter { it.second == ConfigurationDirResult.FileStatus.INVALID }.map { it.first }
+
+        return when {
+            wrongConsoleFiles.isNotEmpty() -> {
+                val textRes = when (validationResult.consoleType) {
+                    ConsoleType.DS -> R.string.ds_incorrect_bios_dir_info
+                    ConsoleType.DSi -> R.string.dsi_incorrect_bios_dir_info
+                }
+                getString(textRes)
+            }
+            missingFiles.isNotEmpty() -> {
+                val textRes = when (validationResult.consoleType) {
+                    ConsoleType.DS -> R.string.ds_bios_dir_missing_files_info
+                    ConsoleType.DSi -> R.string.dsi_bios_dir_missing_files_info
+                }
+                getString(textRes, missingFiles.joinToString(", "))
+            }
+            invalidFiles.isNotEmpty() -> {
+                val textRes = when (validationResult.consoleType) {
+                    ConsoleType.DS -> R.string.ds_bios_dir_invalid_size_files_info
+                    ConsoleType.DSi -> R.string.dsi_bios_dir_invalid_size_files_info
+                }
+                getString(textRes, invalidFiles.joinToString(", "))
+            }
+            else -> {
+                val textRes = when (validationResult.consoleType) {
+                    ConsoleType.DS -> R.string.ds_incorrect_bios_dir_info
+                    ConsoleType.DSi -> R.string.dsi_incorrect_bios_dir_info
+                }
+                getString(textRes)
+            }
+        }
+    }
 
     /**
      * Turns a single folder of loosely-named BIOS/firmware files into the "DS" and "DSi"

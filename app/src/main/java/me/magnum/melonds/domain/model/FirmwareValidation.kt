@@ -29,7 +29,7 @@ object FirmwareValidation {
             0x80000L ->
                 if (type == FirmwareConsoleType.DSI) {
                     // Right size for DS, but the header says DSi: this is the confirmed defect.
-                    ConfigurationDirResult.FileStatus.INVALID
+                    ConfigurationDirResult.FileStatus.WRONG_CONSOLE
                 } else {
                     // DS, or UNDETERMINED (unreadable byte): fail OPEN here so a read error on a
                     // byte outside the fixed defect must not regress files that were previously
@@ -44,13 +44,15 @@ object FirmwareValidation {
         val type = FirmwareConsoleType.fromHeaderByte(consoleType)
         return when (size) {
             0x20000L ->
-                if (type == FirmwareConsoleType.DSI) {
-                    ConfigurationDirResult.FileStatus.PRESENT
-                } else {
-                    // DS, or UNDETERMINED (unreadable byte): fail CLOSED here (mirror case) --
-                    // we cannot positively confirm this is a DSi firmware, so we do not call it
-                    // PRESENT.
-                    ConfigurationDirResult.FileStatus.INVALID
+                when (type) {
+                    FirmwareConsoleType.DSI -> ConfigurationDirResult.FileStatus.PRESENT
+                    // Right size for DSi, but the header says DS: mirror of the confirmed defect
+                    // above -- we can positively tell this is the other console's firmware.
+                    FirmwareConsoleType.DS -> ConfigurationDirResult.FileStatus.WRONG_CONSOLE
+                    // UNDETERMINED (unreadable byte): fail CLOSED here (mirror case) -- we cannot
+                    // positively confirm this is a DSi firmware, so we do not call it PRESENT, but
+                    // an unreadable byte is not a confirmed "wrong console" either.
+                    FirmwareConsoleType.UNDETERMINED -> ConfigurationDirResult.FileStatus.INVALID
                 }
             else -> ConfigurationDirResult.FileStatus.INVALID
         }

@@ -38,13 +38,21 @@ class FileStatusPopup(context: Context, consoleType: ConsoleType, fileStatuses: 
                     itemBinding.imageViewFileStatus.setImageResource(R.drawable.ic_status_warn)
                     ImageViewCompat.setImageTintList(itemBinding.imageViewFileStatus, ColorStateList.valueOf(ContextCompat.getColor(context, R.color.statusWarn)))
                 }
+                ConfigurationDirResult.FileStatus.WRONG_CONSOLE -> {
+                    itemBinding.imageViewFileStatus.setImageResource(R.drawable.ic_status_warn)
+                    ImageViewCompat.setImageTintList(itemBinding.imageViewFileStatus, ColorStateList.valueOf(ContextCompat.getColor(context, R.color.statusWarn)))
+                }
                 ConfigurationDirResult.FileStatus.MISSING -> {
                     itemBinding.imageViewFileStatus.setImageResource(R.drawable.ic_status_error)
                     ImageViewCompat.setImageTintList(itemBinding.imageViewFileStatus, ColorStateList.valueOf(ContextCompat.getColor(context, R.color.statusError)))
                 }
             }
             itemBinding.textFileName.text = it.first
-            itemBinding.textFileExpectedSize.text = getExpectedSizeDescription(context, consoleType, it.first)
+            itemBinding.textFileExpectedSize.text = if (it.second == ConfigurationDirResult.FileStatus.WRONG_CONSOLE) {
+                context.getString(R.string.bios_file_wrong_console)
+            } else {
+                getExpectedSizeDescription(context, consoleType, it.first)
+            }
             binding.layoutFileItems.addView(itemBinding.root)
         }
     }

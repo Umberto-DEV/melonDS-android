@@ -121,6 +121,10 @@
     <string name="incorrect_bios_dir">Incorrect BIOS directory</string>
     <string name="ds_incorrect_bios_dir_info">The BIOS directory for the DS system is not correct. Make sure that the selected directory contains the following files:\n&#8226; bios7.bin\n&#8226; bios9.bin\n&#8226; firmware.bin</string>
     <string name="dsi_incorrect_bios_dir_info">The BIOS directory for the DSi system is not correct. Make sure that the selected directory that contains the following files:\n&#8226; bios7.bin\n&#8226; bios9.bin\n&#8226; firmware.bin\n&#8226; nand.bin</string>
+    <string name="ds_bios_dir_missing_files_info">The BIOS directory for the DS system is missing: %1$s</string>
+    <string name="dsi_bios_dir_missing_files_info">The BIOS directory for the DSi system is missing: %1$s</string>
+    <string name="ds_bios_dir_invalid_size_files_info">The BIOS directory for the DS system has an incorrect size: %1$s</string>
+    <string name="dsi_bios_dir_invalid_size_files_info">The BIOS directory for the DSi system has an incorrect size: %1$s</string>
     <string name="storage_permission_required">Storage permission required</string>
     <string name="storage_permission_required_info">Storage permission is required to load ROMs from your device. Please grant access to storage on the next dialog.</string>
     <string name="microphone_permission_required">Audio recording permission required</string>
@@ -209,6 +213,7 @@
     <string name="bios_file_size_exact">Exactly %1$d KB</string>
     <string name="bios_file_size_one_of">%1$s KB</string>
     <string name="bios_file_size_any">Any size</string>
+    <string name="bios_file_wrong_console">Firmware of the other console</string>
     <string name="show_boot_screen">Show boot screen</string>
     <string name="mac_address">MAC address</string>
     <string name="randomize_mac_address">Randomize MAC address</string>
