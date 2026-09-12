@@ -74,7 +74,7 @@ android {
                 // Android Studio only packages .so files from lib/, so wrap.sh has to live
                 // under resources/lib/<abi>/ instead, and useLegacyPackaging must be turned on
                 // for that directory layout to be packaged as-is.
-                sourceSets.getByName("debug").resources.srcDir("tools/hwasan-resources")
+                sourceSets.getByName("debug").resources.srcDir(rootProject.file("tools/hwasan-resources"))
                 packaging.jniLibs.useLegacyPackaging = true
             }
         }

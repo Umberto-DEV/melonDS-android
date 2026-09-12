@@ -277,6 +277,13 @@ namespace MelonDSAndroid
     {
         std::lock_guard<std::mutex> lock(audioOutputMutex);
 
+        // A previous session may still own a running stream (setupEmulator after a quick
+        // background/foreground cycle). Opening a new one over it destroys the old stream while
+        // its callback thread is still inside it: HWASan reported the use-after-free in
+        // AudioStreamAAudio::callOnAudioReady. Stop and close it first, like updateAudioSettings().
+        cleanupAudioOutputStream();
+        cleanupMicInputStream();
+
         isMicOn = false;
         isAudioFastForwardActive = false;
         muteFastForwardAudio = audioSettings.muteFastForwardAudio;
