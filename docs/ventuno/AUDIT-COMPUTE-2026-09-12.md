@@ -24,7 +24,7 @@ Scritto e mai letto: DepthBlend scrive sempre 6 uint/pixel (shaders.h:1466-1472)
 1. Scala = quella che lo schermo mostra (4x/5x invece di 6x): nessun codice, −50% memoria, −55% pixel. Quasi sicuro. Misura: /proc/pid/stat, batterystats, kgsl/gpubusy, FanBase.
 2. Contatore di overflow dei work tile (~20 righe): strumentazione, prerequisito per toccare il ×16. Quasi sicuro.
 3. Ciclo varianti: bind indirect fuori dal ciclo, salto di DepthBlend/FinalPass/barriera con numYSpans==0 (~10 righe). Quasi sicuro; controllo a schermo su un menu.
-4. Non scrivere il layer .y senza AA/fog (2 varianti shader, ~30 righe): fino a −2,5 GB/s a 6x. Da misurare prima (verificare se HGSS accende l'AA in DISP3DCNT).
+4. Non scrivere il layer .y senza AA/fog: SCARTATO per HGSS (misura del cantiere ROM, 6 scene × 600 frame: anti-aliasing sempre acceso, fog sempre spento, il registro non cambia dentro una scena). Resta valido solo per giochi senza AA.
 5. Ridurre maxYSpanIndices con contatore (fino a −50 MB a 6x). Da misurare.
 6. SaveManager su condition variable (~25 righe): −30 risvegli/s. Quasi sicuro, guadagno piccolo.
 Esclusi: ristrettura bit barriere, unificazione dispatch, Vulkan, cache shader (vale l'avvio, non il frame).
