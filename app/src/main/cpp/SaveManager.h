@@ -48,11 +48,6 @@ public:
     // leaves dst untouched. Returns true when there was nothing pending to write.
     bool FlushSecondaryBuffer(u8* dst = nullptr, u32 dstLength = 0);
 
-    // Signalling for the periodic worker: a non-zero count means the last periodic
-    // flush attempt failed and the staged generation is still unwritten.
-    u32 GetConsecutiveFlushFailures();
-    bool HasPendingFlushError();
-
 private:
 
     void run();
@@ -65,7 +60,9 @@ private:
     u32 Length;
     bool FlushRequested;
 
-    Platform::Thread* Thread;
+    // Left null when the manager has no path to write to: the constructor then creates no
+    // worker, and the destructor must not free a thread that was never created.
+    Platform::Thread* Thread = nullptr;
     Platform::Mutex* SecondaryBufferLock;
     std::unique_ptr<u8[]> SecondaryBuffer;
     u32 SecondaryBufferLength;

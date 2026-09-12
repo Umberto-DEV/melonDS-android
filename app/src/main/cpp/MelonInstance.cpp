@@ -390,14 +390,7 @@ u32 MelonInstance::runFrame()
         frameQueue.discardRenderedFrame(renderFrame);
     }
 
-    if (ndsSave)
-        ndsSave->CheckFlush();
-
-    if (gbaSave)
-        gbaSave->CheckFlush();
-
-    if (firmwareSave)
-        firmwareSave->CheckFlush();
+    stageSaves();
 
     frame++;
     bool needsRewindCapture = rewindManager.ShouldCaptureState(frame);

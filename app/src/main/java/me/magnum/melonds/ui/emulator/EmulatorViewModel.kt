@@ -658,6 +658,7 @@ class EmulatorViewModel @Inject constructor(
                 when (it) {
                     is EmulatorEvent.RumbleStart -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStart(it.duration))
                     EmulatorEvent.RumbleStop -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStop)
+                    EmulatorEvent.SaveFlushFailed -> _toastEvent.tryEmit(ToastEvent.SaveDataWriteFailed)
                     is EmulatorEvent.Stop -> {
                         when (it.reason) {
                             EmulatorEvent.Stop.Reason.GBAModeNotSupported -> _toastEvent.tryEmit(ToastEvent.GbaModeNotSupported)

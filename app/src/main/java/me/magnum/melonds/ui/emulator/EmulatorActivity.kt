@@ -475,6 +475,7 @@ class EmulatorActivity : AppCompatActivity() {
                         ToastEvent.RewindNotAvailableWhileRAHardcoreModeEnabled -> R.string.rewind_unavailable_ra_hardcore_enabled to Toast.LENGTH_LONG
                         ToastEvent.StateLoadFailed -> R.string.failed_load_state to Toast.LENGTH_SHORT
                         ToastEvent.StateSaveFailed -> R.string.failed_save_state to Toast.LENGTH_SHORT
+                        ToastEvent.SaveDataWriteFailed -> R.string.failed_write_save_data to Toast.LENGTH_LONG
                         ToastEvent.StateStateDoesNotExist -> R.string.cant_load_empty_slot to Toast.LENGTH_SHORT
                         ToastEvent.CannotUseSaveStatesWhenRAHardcoreIsEnabled -> R.string.save_states_unavailable_ra_hardcore_enabled to Toast.LENGTH_LONG
                         ToastEvent.CannotLoadStateWhenRunningFirmware,

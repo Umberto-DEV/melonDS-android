@@ -97,6 +97,7 @@
     <string name="save_state_slot">%1$s.</string>
     <string name="failed_save_state">Failed to save state</string>
     <string name="failed_load_state">Failed to load state</string>
+    <string name="failed_write_save_data">Save data could not be written. Retrying.</string>
     <string name="cant_load_empty_slot">Can\'t load an empty save state slot</string>
     <string name="failed_reset_emulation">Failed to reset emulation</string>
     <string name="save_states_not_supported">Save states are not supported while running the firmware</string>

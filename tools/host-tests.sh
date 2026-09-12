@@ -47,8 +47,18 @@ run_test() {
     echo
 }
 
+# SaveManager and the FileMode translation need the core's headers (Platform.h, types.h), but
+# none of its object files: the test provides its own minimal Platform implementation.
+CORE_INCLUDE="$REPO_ROOT/melonDS-android-lib/src"
+if [ ! -f "$CORE_INCLUDE/Platform.h" ]; then
+    echo "Missing $CORE_INCLUDE/Platform.h -- run: git submodule update --init --recursive" >&2
+    exit 1
+fi
+
 run_test "RtcSyncTest" "$CPP_DIR/RtcSync.cpp" "$CPP_DIR/RtcSyncTest.cpp"
 run_test "AudioOutputPolicyTest" "$CPP_DIR/AudioOutputPolicy.cpp" "$CPP_DIR/AudioOutputPolicyTest.cpp"
+run_test "FileModeStringTest" -I"$CORE_INCLUDE" -I"$CPP_DIR" "$CPP_DIR/FileModeString.cpp" "$CPP_DIR/FileModeStringTest.cpp"
+run_test "SaveManagerFlushTest" -I"$CORE_INCLUDE" -I"$CPP_DIR" "$CPP_DIR/FileModeString.cpp" "$CPP_DIR/SaveManager.cpp" "$CPP_DIR/SaveManagerFlushTest.cpp"
 
 echo "== Summary =="
 for i in "${!TEST_NAMES[@]}"; do

@@ -20,11 +20,24 @@
 #include <string.h>
 
 #include "SaveManager.h"
+#include "EmulatorMessageQueueJNI.h"
 #include "Platform.h"
 
 // A failing flush is retried on every worker tick, so the log is rate limited
 // after the first report of an episode.
 static const u32 FlushFailureReportInterval = 50;
+
+// Truncates an open file to a given length. Platform has no entry point for this, and on
+// Android a FileHandle is a FILE* (see PlatformAndroid.cpp); the host test's platform stub
+// keeps the same rule so that this cast stays honest there too.
+static bool TruncateFile(FileHandle* file, u32 length)
+{
+    FILE* stdFile = reinterpret_cast<FILE*>(file);
+    if (fflush(stdFile) != 0)
+        return false;
+
+    return ftruncate(fileno(stdFile), static_cast<off_t>(length)) == 0;
+}
 
 // Retry backoff, in worker ticks: 1, 2, 4, 8, then held at the cap. It deliberately
 // lives in the attempt schedule and not in the sleep, because run() only checks
@@ -79,7 +92,10 @@ SaveManager::~SaveManager()
     SecondaryBuffer = nullptr;
 
     Platform::Mutex_Free(SecondaryBufferLock);
-    Platform::Thread_Free(Thread);
+    // An empty path means no worker was ever created (see the constructor), and Thread_Free
+    // deletes what it is given.
+    if (Thread)
+        Platform::Thread_Free(Thread);
 
     Buffer = nullptr;
 }
@@ -209,6 +225,10 @@ void SaveManager::run()
             ticksUntilRetry = retryDelayTicks;
 
             const u32 failures = ConsecutiveFlushFailures.fetch_add(1) + 1;
+            if (failures == 1)
+                // Once per episode, not once per retry: the user gets a single toast telling
+                // them the save data is not reaching storage, not one every few seconds.
+                MelonDSAndroid::fireEmulatorEvent(MelonDSAndroid::EVENT_SAVE_FLUSH_FAILED);
             if (failures == 1 || (failures % FlushFailureReportInterval) == 0)
                 Log(LogLevel::Error, "SaveManager: flush to %s failed (%u consecutive attempts)\n",
                     Path.c_str(), failures);
@@ -234,14 +254,30 @@ bool SaveManager::FlushSecondaryBuffer(u8* dst, u32 dstLength)
     }
     else
     {
-        FileHandle* f = Platform::OpenFile(Path, FileMode::Write);
+        // Preserve is what keeps the destination from being emptied at open time: the direct
+        // path then gets "r+b" and the SAF path gets "rw", and neither truncates. A process
+        // kill half way through the write therefore leaves a full-length save holding a mix of
+        // old and new data -- which the games' own checksums and double banks can fall back
+        // on -- instead of the empty file a truncating open leaves behind (upstream #1594,
+        // #1531). The in-RAM buffer dies with the process, so there is nothing to retry with.
+        const FileMode preservingMode = static_cast<FileMode>(FileMode::Read | FileMode::Write | FileMode::Preserve);
+        FileHandle* f = Platform::OpenFile(Path, preservingMode);
+        if (!f)
+            // Not every SAF provider is required to honour "rw". Losing the save outright is
+            // worse than losing the guarantee, so fall back to the old truncating open.
+            f = Platform::OpenFile(Path, FileMode::Write);
+
         bool flushed = false;
         if (f)
         {
             const bool written = FileWrite(SecondaryBuffer.get(), SecondaryBufferLength, 1, f) == 1;
+            // Nothing truncates any more, so a destination left over from another emulator (or
+            // from a larger save type) would keep its tail and be read back at the wrong length.
+            const bool trimmed = !written || FileLength(f) <= SecondaryBufferLength
+                    || TruncateFile(f, SecondaryBufferLength);
             // Always close the file, including after a short write.
             const bool closed = CloseFile(f);
-            flushed = written && closed;
+            flushed = written && trimmed && closed;
             if (flushed)
                 Log(LogLevel::Info, "SaveManager: Wrote %u bytes to %s\n", SecondaryBufferLength, Path.c_str());
         }
@@ -263,14 +299,4 @@ bool SaveManager::FlushSecondaryBuffer(u8* dst, u32 dstLength)
 bool SaveManager::NeedsFlush()
 {
     return FlushVersion != PreviousFlushVersion;
-}
-
-u32 SaveManager::GetConsecutiveFlushFailures()
-{
-    return ConsecutiveFlushFailures.load();
-}
-
-bool SaveManager::HasPendingFlushError()
-{
-    return ConsecutiveFlushFailures.load() != 0;
 }
