@@ -228,3 +228,6 @@ precedenti, riusati senza modifiche.
 corretto in zsh) ha cancellato per errore anche i 3 screenshot e `hwasan-report.txt` che andavano
 conservati, insieme ai log temporanei previsti per la cancellazione — nessun file tracciato da git è stato
 toccato, solo lo scratchpad di sessione. I contenuti erano comunque già stati ispezionati e riportati sopra.
+
+### «Scambia schermi» blocca lo schermo — NON è un difetto (12/09 18:47)
+Il pulsante toccato (primo dopo L nel layout predefinito, icona freccia curva su schermo, coordinate ~367,1800) è il **coperchio** (BUTTON_HINGE, DefaultLayoutProvider.kt:159), non «scambia schermi» (assente dal layout predefinito). Chiudere il coperchio manda HGSS in stand-by: il gioco azzera POWCNT bit0 (log "CLEARING POWCNT BIT0") e gli schermi si spengono: comportamento corretto del DS. Riprova: chiusura → schermo spento; riapertura al secondo tocco → il gioco riprende (screenshot con intro in corso, FPS 60). Nessuna regressione.
