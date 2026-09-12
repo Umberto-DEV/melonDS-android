@@ -1,0 +1,8 @@
+# Allineamento con melonDS desktop (12/09/2026)
+Domanda: la ROM che usa i 3 slot WFC con DNS privati dipende da qualcosa che esiste solo nella 2.1 Android? **No.**
+- Il selettore di slot di DWC e la lettura degli slot dal firmware sono logica del gioco: identici su ogni emulatore e sull'hardware.
+- Il DNS manuale nello slot esce verso Internet reale via libslirp su qualunque melonDS con rete "indirect" (Net_Slirp intercetta solo le query verso il DNS virtuale, `dst==kDNSIP`): comportamento vanilla, non nostro.
+- Desktop 1.1/master: Config → Wifi settings sceglie solo indirect/direct; nessuna UI per i 3 slot: si impostano dal menu WFC del gioco, che scrive nel firmware (SPI.cpp:264 → WriteFirmware); col firmware interno il frontend Qt salva la sola porzione AP in wfcsettings.bin per istanza (EmuInstance.cpp:963-1010, 1596-1630). Stessa persistenza di Android.
+- Nostri commit motore vs desktop: SCFG (c552b389) = upstream 60f2ced9/ce3dc37529 (mar 2026, NON nella 1.1); wifi power-down (53aff8bc) = upstream 10a173b5 (giu 2026, NON nella 1.1); guardia compute e edge list: PR desktop #2751 OPEN; guardia JIT: solo lib#16 OPEN; override DNS opzionale: solo ventuno. Quindi un giocatore con melonDS 1.1 desktop NON ha SCFG né wifi power-down: per i giochi DS in modalità DSi e per la WFC oltre 67 s serve la master (o attendere una release > 1.1).
+- Passi per un giocatore desktop: Wifi settings → Indirect; nel gioco, menu WFC: 3 connessioni con DNS manuale (WiiLink 5.161.56.11 / Kaeru 178.62.43.212 / AltWFC 172.104.88.237); MAC randomizzato se due istanze. L'AP emulato non verifica WEP/WPA.
+- Cose solo Android 2.1: comodità (schermata slot con consigliati, toast salvataggio) e le correzioni di robustezza; nulla di cui la ROM abbia bisogno.
