@@ -151,6 +151,10 @@ Java_me_magnum_melonds_common_WfcSettings_writeSlot(JNIEnv* env, jobject thiz, j
 
     Firmware::WifiAccessPoint& ap = slots.basic[slot];
     ap.Status = enabled ? Firmware::AccessPointStatus::Normal : Firmware::AccessPointStatus::NotConfigured;
+    // A slot that was never configured has an empty SSID; the console looks the network up by name,
+    // so give it the emulated access point's name, as the generated slot 1 already has.
+    if (enabled && strnlen(ap.SSID, sizeof(ap.SSID)) == 0)
+        strncpy(ap.SSID, melonDS::DEFAULT_SSID, sizeof(ap.SSID));
     ap.PrimaryDns = primaryDns;
     ap.SecondaryDns = secondaryDns;
     ap.UpdateChecksum();
