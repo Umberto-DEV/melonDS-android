@@ -70,11 +70,12 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
 
         // Author: Gigaherz
         // License: Public domain
-        fun lcdShader(textureScale: Int): ShaderProgramSource {
-            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
-            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+        //
+        // Unlike the resampling filters below, this shader simulates the physical LCD panel, whose
+        // cell grid is fixed at the native 256x386 resolution regardless of the internal render scale.
+        fun lcdShader(): ShaderProgramSource {
             return ShaderProgramSource(
-            TextureFiltering.NEAREST,
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -86,7 +87,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    gl_Position = vec4(vPos, 0.0, 1.0);\n" +
                     "    uv = vUV;\n" +
                     "    alpha = vAlpha;\n" +
-                    "    omega = 3.141592654 * 2.0 * vec2($textureWidth, $textureHeight);\n" +
+                    "    omega = 3.141592654 * 2.0 * vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" +
                     "}",
             "#ifdef GL_FRAGMENT_PRECISION_HIGH\n" +
                     "precision highp float;\n" +
@@ -118,11 +119,12 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
 
         // Author: Themaister
         // This code is hereby placed in the public domain.
-        fun scanlinesShader(textureScale: Int): ShaderProgramSource {
-            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
-            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+        //
+        // Unlike the resampling filters below, this shader simulates the physical LCD panel, whose
+        // scanline grid is fixed at the native 256x386 resolution regardless of the internal render scale.
+        fun scanlinesShader(): ShaderProgramSource {
             return ShaderProgramSource(
-            TextureFiltering.NEAREST,
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -130,14 +132,14 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "varying float alpha;\n" +
                     "varying vec2 omega;\n" +
                     "" +
-                    "vec2 inputSize = vec2($textureWidth, $textureHeight);\n" + // What is this?
-                    "vec2 outputSize = vec2($textureWidth, $textureHeight);\n" + // What is this?
+                    "vec2 inputSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" + // What is this?
+                    "vec2 outputSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" + // What is this?
                     "" +
                     "void main()\n" +
                     "{\n" +
                     "    gl_Position = vec4(vPos, 0.0, 1.0);\n" +
                     "    uv = vUV;\n" +
-                    "    vec2 textureSize = vec2($textureWidth, $textureHeight);\n" +
+                    "    vec2 textureSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" +
                     "    alpha = vAlpha;\n" +
                     "    omega = vec2(3.1415 * outputSize.x * textureSize.x / inputSize.x, 2.0 * 3.1415 * textureSize.y);\n" +
                     "}",
@@ -186,7 +188,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
             val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
             val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
             return ShaderProgramSource(
-            TextureFiltering.NEAREST,
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -258,7 +260,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
             val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
             val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
             return ShaderProgramSource(
-            TextureFiltering.NEAREST,
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -360,7 +362,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
             val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
             val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
             return ShaderProgramSource(
-            TextureFiltering.NEAREST,
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -461,7 +463,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
             val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
             val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
             return ShaderProgramSource(
-            TextureFiltering.LINEAR,
+                TextureFiltering.LINEAR,
             DEFAULT_VERT_SHADER,
             "#ifdef GL_FRAGMENT_PRECISION_HIGH\n" +
                     "precision highp float;\n" +

@@ -54,6 +54,7 @@
         <item>hq4x</item>
         <item>quilez</item>
         <item>lcd</item>
+        <item>scanlines</item>
     </string-array>
 
     <string-array name="dsi_camera_source_values">

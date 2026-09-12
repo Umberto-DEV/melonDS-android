@@ -10,15 +10,17 @@ object VideoFilterShaderProvider {
      * aligned with the texture's real size instead of assuming the native 256x386 one.
      */
     fun getShaderSource(filtering: VideoFiltering, textureScale: Int): ShaderProgramSource {
+        val scale = textureScale.coerceAtLeast(1)
         return when (filtering) {
             VideoFiltering.NONE -> ShaderProgramSource.NoFilterShader
             VideoFiltering.LINEAR -> ShaderProgramSource.LinearShader
-            VideoFiltering.XBR2 -> ShaderProgramSource.xbrShader(textureScale)
-            VideoFiltering.HQ2X -> ShaderProgramSource.hq2xShader(textureScale)
-            VideoFiltering.HQ4X -> ShaderProgramSource.hq4xShader(textureScale)
-            VideoFiltering.QUILEZ -> ShaderProgramSource.quilezShader(textureScale)
-            VideoFiltering.LCD -> ShaderProgramSource.lcdShader(textureScale)
-            VideoFiltering.SCANLINES -> ShaderProgramSource.scanlinesShader(textureScale)
+            VideoFiltering.XBR2 -> ShaderProgramSource.xbrShader(scale)
+            VideoFiltering.HQ2X -> ShaderProgramSource.hq2xShader(scale)
+            VideoFiltering.HQ4X -> ShaderProgramSource.hq4xShader(scale)
+            VideoFiltering.QUILEZ -> ShaderProgramSource.quilezShader(scale)
+            // LCD and Scanlines simulate the physical panel at native resolution; they don't take a scale.
+            VideoFiltering.LCD -> ShaderProgramSource.lcdShader()
+            VideoFiltering.SCANLINES -> ShaderProgramSource.scanlinesShader()
         }
     }
 }
