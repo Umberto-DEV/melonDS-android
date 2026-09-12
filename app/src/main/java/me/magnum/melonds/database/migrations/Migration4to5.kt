@@ -24,7 +24,9 @@ class Migration4to5 : Migration(4, 5) {
         db.execSQL("INSERT INTO `_new_game` (`id`,`name`,`game_code`,`game_checksum`) SELECT `id`,`name`,`game_code`,`game_checksum` FROM `game`")
         db.execSQL("DROP TABLE `game`")
         db.execSQL("ALTER TABLE `_new_game` RENAME TO `game`")
-        // Delete duplicate entries in game before creating new UNIQUE INDEX
+        // Delete duplicate entries in game before creating new UNIQUE INDEX.
+        // Avoid ROW_NUMBER()/window functions here: SQLite < 3.25 (bundled by Android <= 10 and some OEM builds) rejects
+        // them with a syntax error; GROUP BY + MIN(id) achieves the same "keep the lowest id" result on every API level.
         db.execSQL("DELETE FROM game WHERE id NOT IN (SELECT MIN(id) FROM game GROUP BY game_code, game_checksum)")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `game_code_checksum_index` ON `game` (`game_code`, `game_checksum`)")
 
