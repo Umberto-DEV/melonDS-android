@@ -2,9 +2,6 @@
 // in app/build.gradle.kts -- no new dependency). Runs on the JVM with `./gradlew testDebugUnitTest`,
 // no emulator, no Android framework classes involved anywhere in this file or in the production
 // code it calls (me.magnum.melonds.domain.model.FirmwareValidation).
-//
-// Provenance: MELONDS-TESTBED/prototype/FirmwareValidationTest.kt, promoted here as part of
-// MELONDS-INTEGRA (see ORDINE.md, step 5/6: this refactor replaces MELONDS-BIOSFIX's inline patch).
 
 package me.magnum.melonds.domain.model
 
@@ -14,8 +11,8 @@ import org.junit.Test
 class FirmwareValidationTest {
 
     companion object {
-        // GBATEK "DS Firmware Header", offset 01Dh ("Console type"), as confirmed on two real
-        // firmware dumps in MELONDS-BIOSFIX/ANALISI.md.
+        // GBATEK "DS Firmware Header", offset 01Dh ("Console type"): a real DS sample has 0xFF
+        // there, a real DSi sample 0x57.
         private const val DS_CONSOLE_TYPE = 0xFF
         private const val DSI_CONSOLE_TYPE = 0x57
     }
@@ -34,25 +31,23 @@ class FirmwareValidationTest {
 
     @Test
     fun `REGRESSION -- a 128 KiB DSi firmware misfiled into the DS folder is rejected`() {
-        // THE reported defect: 0x20000 is a valid DS size too, so size alone cannot tell a
-        // DSi firmware placed in the DS folder apart from a genuine DS one.
-        // Fails against step1 (PRESENT is returned); passes against step2.
+        // 0x20000 is a valid DS size too, so size alone cannot tell a DSi firmware placed in the
+        // DS folder apart from a genuine DS one.
         assertEquals(ConfigurationDirResult.FileStatus.INVALID, FirmwareValidation.getDsFirmwareStatus(0x20000L, DSI_CONSOLE_TYPE))
     }
 
     @Test
     fun `REGRESSION -- a 128 KiB DS firmware misfiled into the DSi folder is rejected (mirror case)`() {
-        // Same mechanism, unreported but closed by the same discriminant (see ANALISI.md):
-        // a genuine 128 KiB DS firmware dropped into the DSi folder used to pass on size alone.
-        // Fails against step1 (PRESENT is returned); passes against step2.
+        // Same mechanism, mirrored: a genuine 128 KiB DS firmware dropped into the DSi folder
+        // would also pass on size alone without the console-type check.
         assertEquals(ConfigurationDirResult.FileStatus.INVALID, FirmwareValidation.getDsiFirmwareStatus(0x20000L, DS_CONSOLE_TYPE))
     }
 
     @Test
     fun `an unreadable console-type byte fails open for DS and fails closed for DSi`() {
-        // Deliberate asymmetry (see step2-fix.kt doc comments): a read error on the byte must
-        // not regress a DS file that was previously accepted on size alone (fail open), but must
-        // not let an uninspectable file into the DSi folder either (fail closed).
+        // Deliberate asymmetry: a read error on the byte must not regress a DS file that was
+        // previously accepted on size alone (fail open), but must not let an uninspectable file
+        // into the DSi folder either (fail closed).
         assertEquals(ConfigurationDirResult.FileStatus.PRESENT, FirmwareValidation.getDsFirmwareStatus(0x20000L, null))
         assertEquals(ConfigurationDirResult.FileStatus.INVALID, FirmwareValidation.getDsiFirmwareStatus(0x20000L, null))
     }

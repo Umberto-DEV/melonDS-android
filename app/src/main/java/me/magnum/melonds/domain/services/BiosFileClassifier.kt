@@ -8,12 +8,10 @@ import me.magnum.melonds.domain.model.FirmwareConsoleType
  * Works out which [BiosSlot] (if any) a file belongs to purely from its content: its size, and,
  * for firmware-sized files, the console-type byte documented in GBATEK's "DS Firmware Header"
  * (offset 01Dh: 57h identifies a DSi/iQueDSi firmware image, every other observed value a DS
- * family one) -- read into a [FirmwareConsoleType] by that shared, single place rather than
- * compared against 0x57 here directly (see its doc comment, and
- * MELONDS-INTEGRA/CORREZIONI-PRE-PR.md correction 7). The file's current name plays no part in
- * this decision, which is the point: the BIOS sets that circulate use all sorts of names
- * (bios7.bin, biosdsi7.bin, dsifirmware.bin...) and the name never tells which of the two console
- * folders a file actually belongs in.
+ * family one), read into a [FirmwareConsoleType] by that shared, single place. The file's current
+ * name plays no part in this decision: the BIOS sets that circulate use all sorts of names
+ * (bios7.bin, biosdsi7.bin, dsifirmware.bin...) that never tell which console folder a file
+ * belongs in.
  *
  * Pure and Android-free on purpose so it can be exercised with plain JUnit.
  */

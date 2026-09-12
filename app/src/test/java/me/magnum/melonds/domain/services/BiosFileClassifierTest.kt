@@ -43,14 +43,14 @@ class BiosFileClassifierTest {
 
     @Test
     fun `128KB firmware with DS header byte is DS firmware, this is the misfiled-DSi-firmware defect`() {
-        // A real DS sample's byte at 0x1D is 0xFF (see MELONDS-BIOSFIX/ANALISI.md).
+        // A real DS sample's byte at 0x1D is 0xFF.
         val result = BiosFileClassifier.classify(0x20000, 0xFF)
         assertEquals(BiosFileClassification.Unambiguous(BiosSlot.DS_FIRMWARE), result)
     }
 
     @Test
     fun `128KB firmware with DSi header byte is DSi firmware`() {
-        // A real DSi sample's byte at 0x1D is 0x57 (see MELONDS-BIOSFIX/ANALISI.md).
+        // A real DSi sample's byte at 0x1D is 0x57.
         val result = BiosFileClassifier.classify(0x20000, 0x57)
         assertEquals(BiosFileClassification.Unambiguous(BiosSlot.DSI_FIRMWARE), result)
     }

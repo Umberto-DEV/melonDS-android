@@ -1,24 +1,15 @@
-// Defect (confirmed by MELONDS-BIOSFIX, see its ANALISI.md and firmware-validation.candidate.patch):
-// getDsFirmwareStatus() accepted 0x20000/0x40000/0x80000 on size alone; getDsiFirmwareStatus()
-// accepted only 0x20000, also on size alone. A genuine DSi firmware.bin (128 KiB = 0x20000)
-// misfiled into the DS folder therefore passed DS validation, because 0x20000 is a valid size
-// for both consoles -- size alone cannot tell them apart.
+// The DS and DSi firmware.bin can be the same size (128 KiB / 0x20000), so file size alone
+// cannot tell them apart: a DSi firmware.bin misfiled into the DS folder would still pass DS
+// validation on size alone.
 //
-// Fix: additionally require the "Console type" byte documented in GBATEK's "DS Firmware
-// Header" at offset 01Dh to be consistent with the folder being validated (57h = DSi/iQueDSi;
-// anything else, or an unreadable byte, is treated as "not DSi"). Verified against two real
-// firmware dumps in MELONDS-BIOSFIX/ANALISI.md: DS sample has 0xFF at 0x1D, DSi sample has
-// 0x57 at 0x1D, matching GBATEK exactly.
+// Fix: additionally require the "Console type" byte documented in GBATEK's "DS Firmware Header"
+// at offset 01Dh to be consistent with the folder being validated (57h = DSi/iQueDSi; anything
+// else, or an unreadable byte, is treated as "not DSi").
 //
-// This object is the pure, Android-free extraction of the decision logic that used to live
-// inline in FileSystemConfigurationDirectoryVerifier (MELONDS-TESTBED refactor); it carries
-// the same fix as MELONDS-BIOSFIX/firmware-validation.candidate.patch, verified branch for
-// branch to be behaviorally identical -- see MELONDS-INTEGRA/ORDINE.md, step 5/6.
-//
-// The console-type byte itself is now read into a [FirmwareConsoleType] by a single shared
-// place instead of being compared against 0x57 here directly -- see that type's doc comment
-// (MELONDS-INTEGRA/CORREZIONI-PRE-PR.md, correction 7) for why, and for the deliberate
-// fail-open policy this class applies to FirmwareConsoleType.UNDETERMINED below.
+// The console-type byte is read into a [FirmwareConsoleType] by a single shared place instead of
+// being compared against 0x57 here directly. This class deliberately fails OPEN on
+// FirmwareConsoleType.UNDETERMINED: a byte that could not be read must not be treated as "wrong
+// console".
 
 package me.magnum.melonds.domain.model
 

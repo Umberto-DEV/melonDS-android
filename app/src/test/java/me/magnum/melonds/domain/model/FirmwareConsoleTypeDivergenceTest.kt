@@ -2,8 +2,8 @@
 // (fail-closed) on the exact same undeterminable input, so a future refactor that "aligns" them
 // by accident is caught here rather than discovered as a user-visible inconsistency again.
 //
-// The concrete case that surfaced this (MELONDS-INTEGRA/CORREZIONI-PRE-PR.md, correction 7): a
-// 0x20000-byte firmware file whose console-type byte could not be read. Today:
+// The concrete case: a 0x20000-byte firmware file whose console-type byte could not be read.
+// Today:
 //   - FirmwareValidation.getDsFirmwareStatus  -> PRESENT      (fail open: don't regress a file
 //     that size alone used to accept)
 //   - BiosFileClassifier.classify             -> Unrecognized (fail closed: don't auto-place a

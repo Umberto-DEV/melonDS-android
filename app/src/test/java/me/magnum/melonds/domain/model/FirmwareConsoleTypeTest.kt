@@ -1,6 +1,6 @@
 // Plain JUnit 4 test, same pattern as FirmwareValidationTest: pure logic, no Android framework
 // classes. Covers the single shared byte-to-state extraction described in
-// FirmwareConsoleType's doc comment (MELONDS-INTEGRA/CORREZIONI-PRE-PR.md, correction 7).
+// FirmwareConsoleType's doc comment.
 //
 // Both directions matter here: a mutant that returns the same FirmwareConsoleType regardless of
 // the input byte would pass a suite that only checked one case, so all three distinct outcomes
@@ -20,7 +20,7 @@ class FirmwareConsoleTypeTest {
 
     @Test
     fun `a genuine DS header byte reads as DS`() {
-        // Real DS sample byte, per MELONDS-BIOSFIX/ANALISI.md.
+        // Real DS sample byte at header offset 0x1D.
         assertEquals(FirmwareConsoleType.DS, FirmwareConsoleType.fromHeaderByte(0xFF))
     }
 
