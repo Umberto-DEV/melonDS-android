@@ -165,7 +165,10 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
         const val WFC_SETTINGS_FILE_NAME = "wfcsettings.bin"
         const val DEFAULT_DNS = "0.0.0.0"
 
-        const val RECOMMENDED_MYSTERY_GIFT_DNS = "167.235.229.36" // WiiLink
+        // Verified 2026-09-12 with real DNS queries for nas/gpcm/dls1/conntest.nintendowifi.net:
+        // WiiLink's resolver answers all four (dls1 = Mystery Gift), Kaeru and AltWFC answer theirs.
+        // 167.235.229.36 is NOT WiiLink (it points at Kaeru and has no dls1 record).
+        const val RECOMMENDED_MYSTERY_GIFT_DNS = "5.161.56.11" // WiiLink
         const val RECOMMENDED_GTS_BATTLES_DNS = "178.62.43.212" // Kaeru
         const val RECOMMENDED_ALTERNATIVE_DNS = "172.104.88.237" // AltWFC
     }
