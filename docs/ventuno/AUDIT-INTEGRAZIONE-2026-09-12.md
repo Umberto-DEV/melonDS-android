@@ -29,3 +29,8 @@ Stato: in correzione sul ramo ventuno (vedi DECISIONI.md e la sezione "Esito" in
 - Schermata WFC visibile anche con firmware importato o DSi, dove non ha effetto; wfcsettings.bin assente dall'export manuale; readSlots null mostrato come 0.0.0.0; I/O su main thread nella schermata; override DNS del motore senza chiamanti; nessun componente a schermo per FAST_FORWARD_HOLD.
 ## Percorsi puliti
 Verificatore firmware DSi; compatibilità JSON InputConfigDto; R8 su tutti i simboli JNI (verificato con seeds.txt); StrictMode solo debuggable; wrap.sh non in release; mutex SetHostOverrides; releaseAll copre tutti gli handler; path/layout wfcsettings.bin coerenti.
+
+## Esito (12/09 sera)
+- Corretti su ventuno: B1-B13 (commit 1fa63f4a lato nativo, 7d163d49 lato app) e i rischi: useLegacyPackaging scoped, FOREGROUND_SERVICE esplicito, restore che ricarica la configurazione controller, pressedKeys svuotati a perdita di focus, syncRTC prima dello sblocco del thread.
+- Non corretti (registrati): stop sincrono sul thread UI; sessionCoroutineScope non cancellato allo stop; loadState non resetta la finestra di rewind; SCFG direct boot DSi da provare; frizioni (schermata WFC visibile con firmware importato/DSi, wfcsettings.bin fuori dall'export manuale, override DNS senza chiamanti, nessun bottone a schermo per FF hold).
+- Verifica: test unitari e host, build debug e HWASan, prova in AVD (ciclo di vita completo) — vedi PROVE-AVD.md.
