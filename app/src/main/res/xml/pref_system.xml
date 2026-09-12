@@ -15,6 +15,12 @@
             app:iconSpaceReserved="false"
             android:fragment="me.magnum.melonds.ui.settings.fragments.CustomFirmwarePreferencesFragment" />
 
+    <Preference
+            android:title="@string/category_wfc_connections"
+            android:summary="@string/category_wfc_connections_summary"
+            app:iconSpaceReserved="false"
+            android:fragment="me.magnum.melonds.ui.settings.fragments.WfcConnectionsPreferencesFragment" />
+
     <SwitchPreference
             android:key="enable_jit"
             android:title="@string/enable_jit"
