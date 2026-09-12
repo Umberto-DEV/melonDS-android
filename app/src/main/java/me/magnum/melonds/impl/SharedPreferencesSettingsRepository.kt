@@ -77,8 +77,8 @@ class SharedPreferencesSettingsRepository(
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private val controllerConfiguration by lazy {
-        val initialConfiguration = try {
+    private fun readControllerConfigurationFromDisk(): ControllerConfiguration {
+        return try {
             val configFile = File(context.filesDir, CONTROLLER_CONFIG_FILE)
             configFile.inputStream().use {
                 val loadedConfiguration = json.decodeFromStream<ControllerConfigurationDto>(it)
@@ -87,9 +87,9 @@ class SharedPreferencesSettingsRepository(
         } catch (_: Exception) {
             controllerConfigurationFactory.buildDefaultControllerConfiguration()
         }
-
-        MutableStateFlow(initialConfiguration)
     }
+
+    private val controllerConfiguration by lazy { MutableStateFlow(readControllerConfigurationFromDisk()) }
     private val preferenceSharedFlows = mutableMapOf<String, MutableSharedFlow<Unit>>()
     private val renderConfigurationFlow: SharedFlow<RendererConfiguration>
 
@@ -470,6 +470,10 @@ class SharedPreferencesSettingsRepository(
 
     override fun observeControllerConfiguration(): StateFlow<ControllerConfiguration> {
         return controllerConfiguration
+    }
+
+    override fun reloadControllerConfiguration() {
+        controllerConfiguration.value = readControllerConfigurationFromDisk()
     }
 
     override fun getSelectedLayoutId(): UUID {

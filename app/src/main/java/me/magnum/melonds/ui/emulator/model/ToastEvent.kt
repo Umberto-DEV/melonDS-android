@@ -11,6 +11,7 @@ sealed class ToastEvent {
     data object QuickSaveSuccessful : ToastEvent()
     data object QuickLoadSuccessful : ToastEvent()
     data object CannotUseSaveStatesWhenRAHardcoreIsEnabled : ToastEvent()
+    data object CannotFastForwardWhenRAHardcoreIsEnabled : ToastEvent()
     data object CannotSaveStateWhenRunningFirmware : ToastEvent()
     data object CannotLoadStateWhenRunningFirmware : ToastEvent()
     data object CannotSwitchRetroAchievementsMode : ToastEvent()

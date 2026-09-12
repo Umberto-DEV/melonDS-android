@@ -102,6 +102,7 @@
     <string name="failed_reset_emulation">Failed to reset emulation</string>
     <string name="save_states_not_supported">Save states are not supported while running the firmware</string>
     <string name="save_states_unavailable_ra_hardcore_enabled">Save states are unavailable while Hardcore mode is enabled</string>
+    <string name="fast_forward_unavailable_ra_hardcore_enabled">Fast-forward is unavailable while Hardcore mode is enabled</string>
     <string name="rewind_time_seconds">%1$ss</string> <!-- Ex: 43.56s -->
     <string name="rewind_time_minutes_seconds">%1$dm%2$ss</string> <!-- Ex: 2m37.93s -->
     <string name="rewind_not_enabled">Rewind is not enabled</string>
@@ -233,6 +234,8 @@
     <string name="wfc_recommended_servers_applied">Recommended servers applied</string>
     <string name="wfc_slot_write_error">Failed to save Wi-fi settings</string>
     <string name="wfc_invalid_ip_address">Enter a valid IPv4 address</string>
+    <string name="wfc_read_error">Could not read the WFC settings file</string>
+    <string name="wfc_close_game_to_change">Close the game to change the online connections</string>
     <string name="wfc_slot_enabled">Enabled</string>
     <string name="wfc_slot_primary_dns">Primary DNS</string>
     <string name="wfc_slot_secondary_dns">Secondary DNS</string>
@@ -304,7 +307,7 @@
     <string name="enable_rich_presence">Enable rich presence</string>
     <string name="rich_presence_summary">Allows other RetroAchievement users to see what you are playing</string>
     <string name="hardcore_mode">Hardcore mode</string>
-    <string name="hardcore_mode_summary">Allows hardcore achievements to be earned. Cheats, save states, slow-motion, and rewind are disabled</string>
+    <string name="hardcore_mode_summary">Allows hardcore achievements to be earned. Cheats, save states, fast-forward, and rewind are disabled</string>
     <string name="show_active_challenge_indicators">Show active challenge indicators</string>
     <string name="show_active_challenge_indicators_summary">Shows on-screen indicators while certain achievements can be earned</string>
     <string name="show_progress_indicators">Show progress indicators</string>

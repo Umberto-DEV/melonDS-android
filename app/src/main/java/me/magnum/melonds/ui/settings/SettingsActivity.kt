@@ -29,6 +29,10 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         const val KEY_ENTRY_POINT = "entry_point"
 
         const val CUSTOM_FIRMWARE_ENTRY_POINT = "custom_firmware_entry_point"
+
+        // Set when Settings is opened from the emulator's pause menu with a session still alive, so
+        // screens whose file the core also writes to (e.g. WFC connections) can lock themselves.
+        const val EXTRA_LAUNCHED_FROM_EMULATOR = "launched_from_emulator"
     }
 
     private lateinit var binding: ActivitySettingsBinding

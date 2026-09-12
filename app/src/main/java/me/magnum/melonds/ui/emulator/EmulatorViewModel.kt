@@ -155,6 +155,15 @@ class EmulatorViewModel @Inject constructor(
     private val _toastEvent = EventSharedFlow<ToastEvent>()
     val toastEvent = _toastEvent.asSharedFlow()
 
+    // Survives being missed while the Activity is stopped (unlike the no-replay toastEvent above), so the
+    // failure is still surfaced the next time the UI comes back to STARTED.
+    private val _pendingSaveWriteFailure = MutableStateFlow(false)
+    val pendingSaveWriteFailure = _pendingSaveWriteFailure.asStateFlow()
+
+    fun consumePendingSaveWriteFailure() {
+        _pendingSaveWriteFailure.value = false
+    }
+
     private val _raIntegrationEvent = Channel<RAIntegrationEvent>(Channel.UNLIMITED)
     val integrationEvent = _raIntegrationEvent.receiveAsFlow()
 
@@ -337,6 +346,8 @@ class EmulatorViewModel @Inject constructor(
             }
 
             dispatchSessionUpdateActions(sessionUpdateActions)
+            // Resume only after the configuration above has actually been applied to the running session.
+            emulatorManager.resumeEmulator()
         }
     }
 
@@ -471,6 +482,14 @@ class EmulatorViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun isFastForwardAllowed(): Boolean {
+        return emulatorSession.isFastForwardAllowed()
+    }
+
+    fun notifyCannotFastForwardWhenRAHardcoreIsEnabled() {
+        _toastEvent.tryEmit(ToastEvent.CannotFastForwardWhenRAHardcoreIsEnabled)
     }
 
     fun onOpenRewind() {
@@ -661,7 +680,7 @@ class EmulatorViewModel @Inject constructor(
                 when (it) {
                     is EmulatorEvent.RumbleStart -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStart(it.duration))
                     EmulatorEvent.RumbleStop -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStop)
-                    EmulatorEvent.SaveFlushFailed -> _toastEvent.tryEmit(ToastEvent.SaveDataWriteFailed)
+                    EmulatorEvent.SaveFlushFailed -> _pendingSaveWriteFailure.value = true
                     is EmulatorEvent.Stop -> {
                         when (it.reason) {
                             EmulatorEvent.Stop.Reason.GBAModeNotSupported -> _toastEvent.tryEmit(ToastEvent.GbaModeNotSupported)

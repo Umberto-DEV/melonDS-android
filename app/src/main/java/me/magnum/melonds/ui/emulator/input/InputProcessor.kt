@@ -81,6 +81,11 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
         return keyIsInCombination(keyEvent.keyCode)
     }
 
+    // Clears keys tracked as held down; needed on focus loss since no ACTION_UP is guaranteed to arrive.
+    fun clearPressedKeys() {
+        pressedKeys.clear()
+    }
+
     override fun onMotionEvent(motionEvent: MotionEvent): Boolean {
         if (motionEvent.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK)) {
             val deviceAxis = axisStates.filterKeys { it.deviceId == null || it.deviceId == motionEvent.deviceId }

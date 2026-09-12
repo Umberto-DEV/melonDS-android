@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import me.magnum.melonds.domain.repositories.SettingsRepository
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 class SettingsBackupManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val preferences: SharedPreferences,
+    private val settingsRepository: SettingsRepository,
 ) {
     companion object {
         private const val SETTINGS_FILE = "settings.json"
@@ -148,6 +150,9 @@ class SettingsBackupManager @Inject constructor(
                     input.copyTo(output)
                 }
             }
+            // The repository caches this file's content in memory; without this it keeps serving the
+            // pre-restore configuration until the process restarts.
+            settingsRepository.reloadControllerConfiguration()
         }
 
         val layoutsDoc = root.findFile(LAYOUTS_FILE)

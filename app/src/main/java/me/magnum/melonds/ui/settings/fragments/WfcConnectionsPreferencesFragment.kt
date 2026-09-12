@@ -2,15 +2,20 @@ package me.magnum.melonds.ui.settings.fragments
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.magnum.melonds.R
 import me.magnum.melonds.common.WfcSettings
 import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.isValidIpv4
 import me.magnum.melonds.ui.settings.PreferenceFragmentTitleProvider
+import me.magnum.melonds.ui.settings.SettingsActivity
 import java.io.File
 
 /**
@@ -48,6 +53,18 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
         }
 
         loadCurrentSlots()
+
+        // The core keeps its own SaveManager on this same file while a session is running (even paused);
+        // its next flush would silently overwrite anything written here, so lock the screen instead.
+        if (requireActivity().intent.getBooleanExtra(SettingsActivity.EXTRA_LAUNCHED_FROM_EMULATOR, false)) {
+            findPreference<Preference>("wfc_connections_info")!!.summary = getString(R.string.wfc_close_game_to_change)
+            findPreference<Preference>("wfc_use_recommended_servers")!!.isEnabled = false
+            slotWidgets.forEach {
+                it.enabled.isEnabled = false
+                it.primaryDns.isEnabled = false
+                it.secondaryDns.isEnabled = false
+            }
+        }
     }
 
     private fun buildSlotWidgets(index: Int, recommendedDns: String): SlotWidgets {
@@ -65,6 +82,7 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
         enabled.setOnPreferenceChangeListener { _, newValue ->
             writeSlot(index, newValue as Boolean, widgets.primaryDns.text ?: DEFAULT_DNS, widgets.secondaryDns.text ?: DEFAULT_DNS)
+            true
         }
         primaryDns.setOnPreferenceChangeListener { _, newValue ->
             onDnsChanged(index, widgets, primaryDns = newValue as String, secondaryDns = null)
@@ -85,38 +103,57 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
             return false
         }
 
-        return writeSlot(index, widgets.enabled.isChecked, newPrimaryDns, newSecondaryDns)
+        writeSlot(index, widgets.enabled.isChecked, newPrimaryDns, newSecondaryDns)
+        return true
     }
 
-    private fun writeSlot(index: Int, enabled: Boolean, primaryDns: String, secondaryDns: String): Boolean {
-        val success = WfcSettings.writeSlot(settingsFilePath, index, enabled, primaryDns, secondaryDns)
-        if (!success) {
-            Toast.makeText(requireContext(), R.string.wfc_slot_write_error, Toast.LENGTH_SHORT).show()
+    private fun writeSlot(index: Int, enabled: Boolean, primaryDns: String, secondaryDns: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val success = WfcSettings.writeSlot(settingsFilePath, index, enabled, primaryDns, secondaryDns)
+            withContext(Dispatchers.Main) {
+                if (!success) {
+                    Toast.makeText(requireContext(), R.string.wfc_slot_write_error, Toast.LENGTH_SHORT).show()
+                    // The widget already flipped to the new value optimistically; put it back in sync with the file.
+                    loadCurrentSlots()
+                }
+            }
         }
-        return success
     }
 
     private fun applyRecommendedServers() {
-        val allSucceeded = slotWidgets.withIndex().all { (index, widgets) ->
-            WfcSettings.writeSlot(settingsFilePath, index, true, widgets.recommendedDns, widgets.recommendedDns)
-        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            val allSucceeded = slotWidgets.withIndex().all { (index, widgets) ->
+                WfcSettings.writeSlot(settingsFilePath, index, true, widgets.recommendedDns, widgets.recommendedDns)
+            }
 
-        loadCurrentSlots()
-        Toast.makeText(
-            requireContext(),
-            if (allSucceeded) R.string.wfc_recommended_servers_applied else R.string.wfc_slot_write_error,
-            Toast.LENGTH_SHORT,
-        ).show()
+            withContext(Dispatchers.Main) {
+                loadCurrentSlots()
+                Toast.makeText(
+                    requireContext(),
+                    if (allSucceeded) R.string.wfc_recommended_servers_applied else R.string.wfc_slot_write_error,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
     }
 
     private fun loadCurrentSlots() {
-        val rawSlots = WfcSettings.readSlots(settingsFilePath)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val rawSlots = WfcSettings.readSlots(settingsFilePath)
 
-        slotWidgets.forEachIndexed { index, widgets ->
-            val slot = rawSlots?.getOrNull(index)?.let { WfcAccessPointSlot.parse(it) }
-            widgets.enabled.isChecked = slot?.enabled ?: false
-            widgets.primaryDns.text = slot?.primaryDns ?: DEFAULT_DNS
-            widgets.secondaryDns.text = slot?.secondaryDns ?: DEFAULT_DNS
+            withContext(Dispatchers.Main) {
+                if (rawSlots == null) {
+                    Toast.makeText(requireContext(), R.string.wfc_read_error, Toast.LENGTH_SHORT).show()
+                    return@withContext
+                }
+
+                slotWidgets.forEachIndexed { index, widgets ->
+                    val slot = rawSlots.getOrNull(index)?.let { WfcAccessPointSlot.parse(it) }
+                    widgets.enabled.isChecked = slot?.enabled ?: false
+                    widgets.primaryDns.text = slot?.primaryDns ?: DEFAULT_DNS
+                    widgets.secondaryDns.text = slot?.secondaryDns ?: DEFAULT_DNS
+                }
+            }
         }
     }
 

@@ -11,6 +11,12 @@ plugins {
     alias(libs.plugins.room)
 }
 
+// Opt-in native sanitizer support (HWASan on device, or ASan/UBSan/etc): pass -PnativeSanitize=<value>
+// (e.g. hwaddress) to have CMake configure the NDK's sanitizer for this build only. Off by default.
+// See tools/README.md. Hoisted to file scope so both the debug buildType block and the androidComponents
+// block below (needed to scope packaging options to just this variant) can see it.
+val nativeSanitize = project.findProperty("nativeSanitize") as String?
+
 android {
     signingConfigs {
         create("release") {
@@ -58,10 +64,6 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".dev"
 
-            // Opt-in native sanitizer support (HWASan on device, or ASan/UBSan/etc): pass
-            // -PnativeSanitize=<value> (e.g. hwaddress) to have CMake configure the NDK's
-            // sanitizer for this build only. Off by default. See tools/README.md.
-            val nativeSanitize = project.findProperty("nativeSanitize") as String?
             if (nativeSanitize != null) {
                 externalNativeBuild {
                     cmake {
@@ -73,9 +75,10 @@ android {
                 // (see https://developer.android.com/ndk/guides/hwasan and .../wrap-script).
                 // Android Studio only packages .so files from lib/, so wrap.sh has to live
                 // under resources/lib/<abi>/ instead, and useLegacyPackaging must be turned on
-                // for that directory layout to be packaged as-is.
+                // for that directory layout to be packaged as-is (done below, scoped to just this
+                // variant via androidComponents: "packaging" here resolves to the top-level android.packaging
+                // extension, which would apply it to release too).
                 sourceSets.getByName("debug").resources.srcDir(rootProject.file("tools/hwasan-resources"))
-                packaging.jniLibs.useLegacyPackaging = true
             }
         }
         // Performance measurement variant. The "debug" type builds the native code with no
@@ -157,6 +160,11 @@ android {
 androidComponents {
     onVariants(selector().withBuildType("profiling")) { variant ->
         variant.packaging.jniLibs.keepDebugSymbols.add("**/*.so")
+    }
+    if (nativeSanitize != null) {
+        onVariants(selector().withBuildType("debug")) { variant ->
+            variant.packaging.jniLibs.useLegacyPackaging = true
+        }
     }
 }
 

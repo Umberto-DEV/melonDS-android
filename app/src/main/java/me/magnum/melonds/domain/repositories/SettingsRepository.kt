@@ -59,6 +59,8 @@ interface SettingsRepository {
 
     fun getControllerConfiguration(): ControllerConfiguration
     fun observeControllerConfiguration(): StateFlow<ControllerConfiguration>
+    // Re-reads controller_config.json from disk, for callers (e.g. settings restore) that write that file directly
+    fun reloadControllerConfiguration()
     fun getSelectedLayoutId(): UUID
     fun getSoftInputBehaviour(): Flow<SoftInputBehaviour>
     fun isTouchHapticFeedbackEnabled(): Flow<Boolean>
