@@ -3,10 +3,10 @@ name: melonDS Android PlayStore Release
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-    if: github.actor == 'rafaelvcaetano'
 
 jobs:
   playstore-release:
+    if: github.repository == 'rafaelvcaetano/melonDS-android' && github.actor == 'rafaelvcaetano'
     runs-on: ubuntu-latest
 
     steps:
@@ -21,21 +21,21 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Build melonDS Android
         env:
           MELONDS_KEYSTORE: ${{ secrets.MELONDS_KEYSTORE }}
           MELONDS_KEYSTORE_PASSWORD: ${{ secrets.MELONDS_KEYSTORE_PASSWORD }}
           MELONDS_KEY_PASSWORD: ${{ secrets.MELONDS_KEYSTORE_PLAYSTORE_PASSWORD }}
-          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
-          echo "$MELONDS_KEYSTORE" | base64 -d > ${{runner.workspace}}/keystore.jks
-          echo "MELONDS_KEYSTORE=${{runner.workspace}}/keystore.jks" >> local.properties
+          echo "$MELONDS_KEYSTORE" | base64 -d > ${{ runner.temp }}/keystore.jks
+          echo "MELONDS_KEYSTORE=${{ runner.temp }}/keystore.jks" >> local.properties
           echo "MELONDS_KEYSTORE_PASSWORD=$MELONDS_KEYSTORE_PASSWORD" >> local.properties
           echo "MELONDS_KEY_ALIAS=melonds-playstore" >> local.properties
           echo "MELONDS_KEY_PASSWORD=$MELONDS_KEY_PASSWORD" >> local.properties
-          chmod +x ./gradlew
-          ./gradlew :app:assemblePlayStoreProdRelease
+          sh ./gradlew :app:assemblePlayStoreProdRelease
 
       - name: Get Version
         id: release_params
