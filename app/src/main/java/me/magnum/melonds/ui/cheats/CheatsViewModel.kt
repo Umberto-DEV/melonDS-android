@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -23,11 +24,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.magnum.melonds.common.suspendRunCatching
 import me.magnum.melonds.domain.model.Cheat
+import me.magnum.melonds.common.cheats.WildEncounterCheat
+import me.magnum.melonds.common.cheats.NatureEncounterCheat
 import me.magnum.melonds.domain.model.CheatFolder
 import me.magnum.melonds.domain.model.CheatInFolder
 import me.magnum.melonds.domain.model.Game
 import me.magnum.melonds.domain.repositories.CheatsRepository
-import me.magnum.melonds.extensions.removeFirst
 import me.magnum.melonds.parcelables.RomInfoParcelable
 import me.magnum.melonds.parcelables.cheat.CheatFolderParcelable
 import me.magnum.melonds.parcelables.cheat.CheatParcelable
@@ -56,6 +58,7 @@ class CheatsViewModel @Inject constructor(
     private val deletedCheats = mutableListOf<DeletedCheat>()
 
     private val selectedGame = savedStateHandle.getStateFlow<GameParcelable?>(KEY_SELECTED_GAME, null).map { it?.toGame() }
+    val wildEncounterSupported = selectedGame.map { it != null && WildEncounterCheat.supports(it.gameCode, it.gameChecksum) }
     private val selectedCheatFolder = savedStateHandle.getStateFlow<CheatFolderParcelable?>(KEY_SELECTED_FOLDER, null).map { it?.toCheatFolder() }
 
     val games by lazy {
@@ -173,6 +176,47 @@ class CheatsViewModel @Inject constructor(
     private val _cheatChangesCommittedEvent = Channel<Boolean>(Channel.CONFLATED)
     val cheatChangesCommittedEvent = _cheatChangesCommittedEvent.receiveAsFlow()
 
+    private val _cheatModificationFailedEvent = Channel<Unit>(Channel.CONFLATED)
+    val cheatModificationFailedEvent = _cheatModificationFailedEvent.receiveAsFlow()
+
+    private fun stageCheats(changes: List<Cheat>) {
+        modifiedCheatSet.update { old ->
+            (old.filter { existing -> changes.none { it.id == existing.id } } + changes).also {
+                savedStateHandle[KEY_MODIFIED_CHEATS] = it.map(CheatParcelable::fromCheat)
+            }
+        }
+    }
+
+    private fun modifyCheats(action: suspend () -> Unit) {
+        if (committingCheatsChangesState.value) return
+        // Set this before launching so Back cannot commit an incomplete selection.
+        _committingCheatsChangesState.value = true
+        viewModelScope.launch {
+            try {
+                suspendRunCatching { action() }
+                    .onFailure { _cheatModificationFailedEvent.trySend(Unit) }
+            } finally {
+                _committingCheatsChangesState.value = false
+            }
+        }
+    }
+
+    private suspend fun currentGameCheats(game: Game): List<Cheat> {
+        val all = cheatsRepository.getAllGameCheats(game).first().flatMap { it.cheats }
+        val pending = modifiedCheatSet.value.associateBy { it.id }
+        return all.map { pending[it.id] ?: it }
+    }
+
+    private fun disabledConflicts(selected: Cheat, current: List<Cheat>): List<Cheat> =
+        current.filter { other ->
+            other.id != selected.id && other.enabled &&
+                when {
+                    NatureEncounterCheat.recognizes(selected.code) -> NatureEncounterCheat.recognizes(other.code)
+                    WildEncounterCheat.isConfigurable(selected.code) -> WildEncounterCheat.conflicts(other.code)
+                    else -> WildEncounterCheat.isConfigurable(other.code)
+                }
+        }.map { it.copy(enabled = false) }
+
     fun setSelectedGame(game: Game) {
         savedStateHandle[KEY_SELECTED_GAME] = GameParcelable.fromGame(game)
         _openFoldersEvent.trySend(OpenScreenEvent(game.name))
@@ -217,24 +261,20 @@ class CheatsViewModel @Inject constructor(
     }
 
     fun toggleCheat(cheat: Cheat) {
-        if (committingCheatsChangesState.value) {
-            // Already commiting changes. Cannot modify cheats now
-            return
-        }
-
-        modifiedCheatSet.update {
-            val cheatIndex = it.indexOfFirst { it.id == cheat.id }
-            val updatedCheat = cheat.copy(enabled = !cheat.enabled)
-
-            it.toMutableList().apply {
-                if (cheatIndex >= 0) {
-                    this[cheatIndex] = updatedCheat
-                } else {
-                    add(updatedCheat)
-                }
-            }.also {
-                savedStateHandle[KEY_MODIFIED_CHEATS] = it.map { CheatParcelable.fromCheat(it) }
+        if (committingCheatsChangesState.value) return
+        val effective = modifiedCheatSet.value.firstOrNull { it.id == cheat.id } ?: cheat
+        val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame()
+        if (!effective.enabled && game != null && WildEncounterCheat.supports(game.gameCode, game.gameChecksum)
+            && (WildEncounterCheat.conflicts(effective.code) || NatureEncounterCheat.recognizes(effective.code))) {
+            modifyCheats {
+                val current = currentGameCheats(game)
+                val selected = requireNotNull(current.firstOrNull { it.id == effective.id })
+                // A selector replaces every modifier. A standalone species or level
+                // replaces selectors while preserving the other standalone component.
+                stageCheats(disabledConflicts(selected, current) + selected.copy(enabled = true))
             }
+        } else {
+            stageCheats(listOf(effective.copy(enabled = !effective.enabled)))
         }
     }
 
@@ -247,36 +287,64 @@ class CheatsViewModel @Inject constructor(
         }
     }
 
-    fun updateCheat(originalCheat: Cheat, cheatSubmissionForm: CheatSubmissionForm) {
-        if (!cheatSubmissionForm.isValid()) return
-        if (originalCheat.name == cheatSubmissionForm.name && originalCheat.description == cheatSubmissionForm.description && originalCheat.code == cheatSubmissionForm.code) {
-            // No changes were made. Do nothing
-            return
+    fun configureWildEncounter(original: Cheat, form: CheatSubmissionForm) {
+        if (committingCheatsChangesState.value || !form.isValid()) return
+        val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame() ?: return
+        if (!WildEncounterCheat.supports(game.gameCode, game.gameChecksum) || !WildEncounterCheat.isConfigurable(original.code) || WildEncounterCheat.selection(form.code) == null) return
+        modifyCheats {
+            val current = currentGameCheats(game)
+            val selected = requireNotNull(current.firstOrNull { it.id == original.id })
+            val configured = selected.copy(name = form.name, description = form.description, code = form.code, enabled = true)
+            stageCheats(WildEncounterCheat.configure(configured, current))
         }
+    }
 
-        val updatedCheat = originalCheat.copy(
+    fun updateCheat(originalCheat: Cheat, cheatSubmissionForm: CheatSubmissionForm) {
+        if (!cheatSubmissionForm.isValid() || committingCheatsChangesState.value) return
+        val effective = modifiedCheatSet.value.firstOrNull { it.id == originalCheat.id } ?: originalCheat
+        if (effective.name == cheatSubmissionForm.name && effective.description == cheatSubmissionForm.description && effective.code == cheatSubmissionForm.code) return
+        val updatedCheat = effective.copy(
             name = cheatSubmissionForm.name,
             description = cheatSubmissionForm.description.takeUnless { it.isBlank() },
             code = cheatSubmissionForm.code,
         )
-        viewModelScope.launch {
+        modifyCheats {
             cheatsRepository.updateCheat(updatedCheat)
+            modifiedCheatSet.update { pending ->
+                pending.map { if (it.id == updatedCheat.id) updatedCheat else it }.also {
+                    savedStateHandle[KEY_MODIFIED_CHEATS] = it.map(CheatParcelable::fromCheat)
+                }
+            }
         }
     }
 
     fun deleteCheat(cheat: Cheat) {
         val selectedFolder = savedStateHandle.get<CheatFolderParcelable>(KEY_SELECTED_FOLDER) ?: return
-
-        viewModelScope.launch {
-            cheatsRepository.deleteCheat(cheat)
-            deletedCheats.add(DeletedCheat(cheat, selectedFolder.toCheatFolder()))
+        modifyCheats {
+            val effective = modifiedCheatSet.value.firstOrNull { it.id == cheat.id } ?: cheat
+            cheatsRepository.deleteCheat(effective)
+            deletedCheats.add(DeletedCheat(effective, selectedFolder.toCheatFolder()))
+            modifiedCheatSet.update { pending ->
+                pending.filterNot { it.id == cheat.id }.also {
+                    savedStateHandle[KEY_MODIFIED_CHEATS] = it.map(CheatParcelable::fromCheat)
+                }
+            }
         }
     }
 
     fun undoCheatDeletion(cheat: Cheat) {
-        val deletedCheat = deletedCheats.removeFirst { it.cheat.id == cheat.id } ?: return
-        viewModelScope.launch {
-            cheatsRepository.addCheat(deletedCheat.folder, deletedCheat.cheat)
+        val deletedCheat = deletedCheats.firstOrNull { it.cheat.id == cheat.id } ?: return
+        modifyCheats {
+            val restored = deletedCheat.cheat
+            val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame()
+            val conflicts = if (restored.enabled && game != null &&
+                WildEncounterCheat.supports(game.gameCode, game.gameChecksum) && (WildEncounterCheat.conflicts(restored.code) || NatureEncounterCheat.recognizes(restored.code))) {
+                disabledConflicts(restored, currentGameCheats(game))
+            } else emptyList()
+            // addCheat allocates a new ID; the deleted ID must not be staged again.
+            cheatsRepository.addCheat(deletedCheat.folder, restored)
+            stageCheats(conflicts)
+            deletedCheats.remove(deletedCheat)
         }
     }
 
@@ -298,7 +366,7 @@ class CheatsViewModel @Inject constructor(
         _committingCheatsChangesState.value = true
         viewModelScope.launch {
             suspendRunCatching {
-                cheatsRepository.updateCheatsStatus(modifiedCheatSet.value)
+                cheatsRepository.updateCheats(modifiedCheatSet.value)
             }.fold(
                 onSuccess = { _cheatChangesCommittedEvent.trySend(true) },
                 onFailure = { _cheatChangesCommittedEvent.trySend(false) },

@@ -4,6 +4,7 @@ sealed class EmulatorEvent {
     data class RumbleStart(val duration: Int) : EmulatorEvent()
     data object RumbleStop : EmulatorEvent()
     data object SaveFlushFailed : EmulatorEvent()
+    data class WildEncounterToggled(val active: Boolean) : EmulatorEvent()
     data class Stop(val reason: Reason) : EmulatorEvent() {
         enum class Reason {
             GBAModeNotSupported,

@@ -17,6 +17,7 @@ interface CheatsRepository {
     fun getFolderCheats(folder: CheatFolder): Flow<List<Cheat>>
     suspend fun getRomEnabledCheats(romInfo: RomInfo): List<Cheat>
     suspend fun updateCheatsStatus(cheats: List<Cheat>)
+    suspend fun updateCheats(cheats: List<Cheat>)
     suspend fun addCheatFolder(folderName: String, game: Game)
     suspend fun deleteImportedCheatDatabases()
     suspend fun addCheatDatabase(databaseName: String): CheatDatabase

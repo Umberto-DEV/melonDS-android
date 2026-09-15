@@ -6,6 +6,9 @@ namespace MelonDSAndroid {
     // from SaveManager, which is not a MelonEventMessenger, so it lives here instead. Keep in
     // sync with EmulatorEventType.kt.
     static constexpr int EVENT_SAVE_FLUSH_FAILED = 103;
+    // SGP selector state changed. Payload: int32_t, 0 = OFF, 1 = ON.
+    // Matches EventWildEncounterToggle in EmulatorEventType.kt.
+    static constexpr int EVENT_WILD_ENCOUNTER_TOGGLE = 104;
 
     void fireEmulatorEvent(int type, int dataLength, void* data);
     // inline: the header is included from more than one translation unit.

@@ -9,6 +9,7 @@
 #include "MelonDS.h"
 #include "SaveManager.h"
 #include "RewindManager.h"
+#include "WildEncounterToggle.h"
 #include "renderer/FrameQueue.h"
 #include "renderer/Renderer.h"
 #include "renderer/ScreenshotRenderer.h"
@@ -131,6 +132,7 @@ public:
 
 private:
     void updateRenderer();
+    void notifyWildEncounterChange(bool previous);
     void setBatteryLevels();
     void setDateTime();
     void syncRTC();
@@ -149,6 +151,8 @@ private:
     std::unique_ptr<SaveManager> gbaSave;
     std::unique_ptr<SaveManager> firmwareSave;
     u32 inputMask;
+    bool wildEncounterSupported = false;
+    WildEncounterToggle wildEncounterToggle;
 
     std::shared_ptr<EmulatorConfiguration> currentConfiguration;
     FrameQueue frameQueue;

@@ -1,6 +1,10 @@
 # melonDS Android port
 Android port of [melonDS](https://melonds.kuribo64.net/), a DS and DSi emulator.
 
+## This fork: 2.1.1
+
+The `ventuno` build includes the Sacred Gold Plus wild Pokémon picker: search all 493 species, choose a level, and toggle it in game with L+R. [Usage, build and validation](docs/ventuno/SGP-CHEATS-2.1.1.md). Download the ARM64 APK from this fork’s [2.1.1 release](https://github.com/Umberto-DEV/melonDS-android/releases/tag/v2.1.1).
+
 [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=me.magnum.melonds&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1)[<img src="https://raw.githubusercontent.com/Kunzisoft/Github-badge/main/get-it-on-github.png" alt="Get it on GitHub" height="80">](https://github.com/rafaelvcaetano/melonDS-android/releases/latest)
 
 |Rom List|Dark Theme|Pocket Physics|Layout Editor|

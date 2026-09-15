@@ -20,6 +20,7 @@
 #include "Platform.h"
 #include "RtcSync.h"
 #include "SDCardArgsBuilder.h"
+#include "EmulatorMessageQueueJNI.h"
 
 using namespace std;
 using namespace melonDS;
@@ -27,6 +28,16 @@ using namespace melonDS::Platform;
 
 namespace MelonDSAndroid
 {
+
+namespace {
+struct WildEncounterMemory {
+    NDS& nds;
+    uint8_t read8(uint32_t address) { return nds.ARM9Read8(address); }
+    uint32_t read32(uint32_t address) { return nds.ARM9Read32(address); }
+    void write8(uint32_t address, uint8_t value) { nds.ARM9Write8(address, value); }
+    void write16(uint32_t address, uint16_t value) { nds.ARM9Write16(address, value); }
+};
+}
 
 const int kRewindBufferSize = 1024 * 1024 * 20; // Use 20MB per savestate
 const int kRewindScreenshotSize = 256 * 384 * 4;
@@ -148,6 +159,7 @@ bool MelonInstance::loadRom(std::string romPath, std::string sramPath)
         .SRAMLength = sramFileLength,
     };
 
+    const bool supportsWildSelector = WildEncounterToggle::supportsHeader(romData.get(), romFileLength);
     auto cart = NDSCart::ParseROM(std::move(romData), romFileLength, this, std::move(cartargs));
     if (!cart)
     {
@@ -155,6 +167,11 @@ bool MelonInstance::loadRom(std::string romPath, std::string sramPath)
     }
 
     nds->SetNDSCart(std::move(cart));
+    wildEncounterSupported = supportsWildSelector;
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.configure(std::nullopt, inputMask);
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     ndsSave = std::make_unique<SaveManager>(sramPath);
 
     return true;
@@ -274,6 +291,9 @@ void MelonInstance::start()
 
 void MelonInstance::reset()
 {
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     nds->Reset();
     setBatteryLevels();
     setDateTime();
@@ -361,7 +381,12 @@ u32 MelonInstance::runFrame()
         nds->GPU.GetRenderer3D().SetOutputTexture(backBuffer, renderFrame->frameTexture);
     }
 
+    WildEncounterMemory wildMemory{*nds};
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.beforeFrame(wildMemory, inputMask);
+    notifyWildEncounterChange(wasWildActive);
     u32 nLines = nds->RunFrame();
+    wildEncounterToggle.afterFrame(wildMemory);
     retroAchievementsManager->FrameUpdate();
 
     if (!isRendererAccelerated)
@@ -499,12 +524,28 @@ bool MelonInstance::takeScreenshot()
     return screenshotRenderer->takeScreenshot();
 }
 
+void MelonInstance::notifyWildEncounterChange(bool previous)
+{
+    if (previous == wildEncounterToggle.active()) return;
+    int32_t active = wildEncounterToggle.active() ? 1 : 0;
+    fireEmulatorEvent(EVENT_WILD_ENCOUNTER_TOGGLE, sizeof(active), &active);
+}
+
 void MelonInstance::loadCheats(std::list<Cheat> cheats)
 {
     std::vector<ARCode> codeList;
+    std::optional<WildEncounterToggle::Selection> wildSelection;
 
     for (auto cheat : cheats)
     {
+        if (wildEncounterSupported)
+        {
+            if (auto selection = WildEncounterToggle::parse(cheat.code))
+            {
+                wildSelection = selection;
+                continue; // The wrapper owns its transient writes and L+R state.
+            }
+        }
         ARCode arCode {
             .Enabled = true,
             .Code = cheat.code,
@@ -513,6 +554,9 @@ void MelonInstance::loadCheats(std::list<Cheat> cheats)
     }
 
     nds->AREngine.Cheats = codeList;
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.configure(wildSelection, inputMask);
+    notifyWildEncounterChange(wasWildActive);
 }
 
 int MelonInstance::sendNetPacket(u8* data, int length)
@@ -673,6 +717,9 @@ bool MelonInstance::saveState(Savestate* state)
 
 bool MelonInstance::loadState(Savestate* state)
 {
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     if (!retroAchievementsManager->DoSavestate(state))
         return false;
 

@@ -27,7 +27,8 @@ import java.io.InputStream
  * Robolectric (see [BiosGuidedFolderSetup.run] overload taking a [DocumentFile] directly).
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
+// Preserve the file-backed ContentResolver behavior used by these fixtures.
+@Config(application = Application::class, sdk = [28])
 class BiosGuidedFolderSetupTest {
 
     @get:Rule

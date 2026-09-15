@@ -185,11 +185,14 @@ fun CheatsScreen(
             }
             composable<CheatsNavigation.FolderCheats> {
                 val cheats by viewModel.folderCheats.collectAsStateWithLifecycle(CheatsScreenUiState.Loading())
+                val wildEncounterSupported by viewModel.wildEncounterSupported.collectAsStateWithLifecycle(false)
 
                 CheatListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = padding,
                     cheats = cheats,
+                    wildEncounterSupported = wildEncounterSupported,
+                    onConfigureWildEncounter = viewModel::configureWildEncounter,
                     onCheatClick = { viewModel.toggleCheat(it) },
                     onAddNewCheat = viewModel::addNewCheat,
                     onUpdateCheat = viewModel::updateCheat,

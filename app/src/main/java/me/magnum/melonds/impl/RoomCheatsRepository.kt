@@ -2,6 +2,7 @@ package me.magnum.melonds.impl
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
@@ -113,6 +114,19 @@ class RoomCheatsRepository(private val context: Context, private val database: M
         }
 
         database.cheatDao().updateCheatsStatus(cheatEntities)
+    }
+
+    override suspend fun updateCheats(cheats: List<Cheat>) {
+        database.withTransaction {
+            cheats.forEach { cheat ->
+                val original = requireNotNull(database.cheatDao().getCheat(requireNotNull(cheat.id))) {
+                    "Cheat was removed before its changes could be saved"
+                }
+                database.cheatDao().insertCheat(original.copy(
+                    name = cheat.name, description = cheat.description, code = cheat.code, enabled = cheat.enabled,
+                ))
+            }
+        }
     }
 
     override suspend fun addCheatFolder(folderName: String, game: Game) {

@@ -24,6 +24,9 @@ enum class EmulatorEventType(val event: Int) {
      */
     EventSaveFlushFailed(103),
 
+    /** Wild selector state changed. Data: active (`i32`, 0 or 1). */
+    EventWildEncounterToggled(104),
+
     /**
      * RA achievement primed. Data:
      * * achievement ID (`i64`)

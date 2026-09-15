@@ -109,7 +109,8 @@ private class FakeSettingsRepository : SettingsRepository {
  * tree Uri, since a document tree provider isn't available under Robolectric.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
+// Preserve the file-backed ContentResolver behavior used by these fixtures.
+@Config(application = Application::class, sdk = [28])
 class SettingsBackupManagerTest {
 
     private lateinit var context: Application
