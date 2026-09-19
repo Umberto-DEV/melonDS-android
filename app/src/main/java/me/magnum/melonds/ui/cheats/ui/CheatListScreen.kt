@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,6 +67,9 @@ fun CheatListScreen(
     }
 }
 
+/** Keys of the families whose members are shown; survives rotation, never persisted. */
+private val ExpandedFamiliesSaver = listSaver<Set<String>, String>(save = { it.toList() }, restore = { it.toSet() })
+
 /** What the lazy list actually renders: a family row, or a cheat row (plain, or an expanded family member). */
 private sealed class ListRow(val key: String) {
     class CheatRow(val cheat: Cheat, key: String) : ListRow(key)
@@ -85,7 +89,7 @@ private fun List(
     onDeleteCheatClick: (Cheat) -> Unit,
 ) {
     var cheatFormDialogState by rememberSaveable(stateSaver = CheatFormDialogState.Saver) { mutableStateOf(CheatFormDialogState.Hidden) }
-    var expandedFamilies by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    var expandedFamilies by rememberSaveable(stateSaver = ExpandedFamiliesSaver) { mutableStateOf(emptySet<String>()) }
     var dialogFamilyKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     val dialogFamily = items.filterIsInstance<CheatListItem.Family>().firstOrNull { it.key == dialogFamilyKey }?.family
@@ -151,7 +155,7 @@ private fun List(
                             onClick = { dialogFamilyKey = row.item.key.toString() },
                             onToggleExpanded = {
                                 val key = row.item.key.toString()
-                                expandedFamilies = ArrayList(if (key in expandedFamilies) expandedFamilies - key else expandedFamilies + key)
+                                expandedFamilies = if (key in expandedFamilies) expandedFamilies - key else expandedFamilies + key
                             },
                         )
                         is ListRow.CheatRow -> CheatItem(
