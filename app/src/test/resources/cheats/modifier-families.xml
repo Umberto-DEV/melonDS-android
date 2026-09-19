@@ -1,0 +1,930 @@
+<?xml version='1.0' encoding='utf-8'?>
+<codelist>
+  <name>modifier-families fixture (DeadSkullzJr 20250812 + SGP 1.2.1 EN excerpts)</name>
+  <game>
+    <name>Pokemon - Black Version (USA, Europe)</name>
+    <gameid>IRBO 106820A5</gameid>
+    <folder>
+      <name>Encounter Codes</name>
+      <cheat>
+        <name>Wild Pokemon Modifier v1</name>
+        <note>(Press L+R): You will get 649 Master Ball and 100 Ultra Ball, toss to change amounts to Pokemon number and level respectively. Press Select before heading into grass.</note>
+        <codes>94000130 FCFF0000 02233FAC 02890001 02233FB0 00640002 D2000000 00000000 94000130 FFFB0000 DA000000 02233FAE D3000000 00000000 D7000000 02250010 D3000000 00000000 DA000000 02233FB2 D3000000 00000000 D7000000 02250012 D3000000 00000000 D9000000 02250010 D3000000 00000000 C0000000 0000002F D6000000 02250010 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Modifier v2</name>
+        <note>(Press L+R): Make the first two items in you Items Bag have an amount 649 and 100. Toss the number of items needed to get the national Pokedex number for the Pokemon wanted for the first item and the level number for the second item. Press Select, then go encounter a wild Pokemon.</note>
+        <codes>94000130 FCFF0000 12233FAE 00000289 12233FB2 00000064 D2000000 00000000 94000130 FFFB0000 DA000000 02233FB2 D3000000 00000000 D7000000 02250012 D3000000 00000000 D7000000 02250013 D3000000 00000000 DA000000 02233FAE D3000000 00000000 D7000000 02250010 D3000000 00000000 D9000000 02250010 D3000000 00000000 C0000000 00000036 D6000000 02250010 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Encounter Random Wild Pokemon</name>
+        <note>Randomizes the Pokemon in the wild.</note>
+        <codes>923FFFFE 00000001 62250010 00000000 DA000000 02250010 D4000000 00000029 D7000000 02250010 D3000000 00000000 82250010 00000289 D4000000 FFFFFD77 D7000000 02250010 D2000000 00000000 923FFFFE 00000001 123FFFFE 00000000 DA000000 02250010 C0000000 0000001E D7000000 02250014 DC000000 00000002 D2000000 00000000 A2257010 00000000 923FFC3C FFF00000 923FFFFE 00000000 123FFFFE 00000001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Dream World Pokemon Encounters</name>
+        <note>(Press L+R): Make the first two items in you Items Bag to have an amount 649 and 100. Toss the number of items needed to get the national Pokedex number for the Pokemon wanted for the first item and the level number for the second item. Hold Select and press A at the Wii in your room. To encounter a Pokemon with it's Dream World Ability.</note>
+        <codes>94000130 FCFF0000 12233FAE 00000289 12233FB2 00000064 D2000000 00000000 94000130 FFFB0000 0225D330 00AB0000 0225D334 00000206 0225D338 0400003C 0225D33C 00000000 0225D340 00000000 0225D344 004B00AC 0225D348 002B003E 0225D34C 00008021 0225D350 80210028 0225D354 00130080 0225D358 00088021 0225D35C 02060178 0225D360 80210032 0225D364 8010017B 0225D368 80100009 0225D36C 00010008 0225D370 00010011 0225D374 00FF001F 0225D378 8E000000 0225D37C 32000000 DA000000 02233FAE D3000000 00000000 D7000000 0225D334 D3000000 00000000 D7000000 0225D35E D3000000 00000000 DA000000 02233FB2 D3000000 00000000 D7000000 0225D360 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>No Wild Pokemon Encounters</name>
+        <note>Allows you to avoid wild Pokemon. Press R to get an instant wild Pokemon encounter.</note>
+        <codes>521A9424 D1032800 121AA420 0000E001 D2000000 00000000 521A9424 D1032800 94000130 FEFF0000 121AA420 000046C0 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Shiny Encounters</name>
+        <note>This makes all wild Pokemon encounters shiny.</note>
+        <codes>521A96D0 1C221C39 E2002200 00000028 4C08B57E 88248865 08ED4065 F1A7B40F 1C06FD8F 40410401 428D0CC9 D1F5BC0F BD7E1C30 0224F93C 021A96D4 FD94F658 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Level Modifier Codes</name>
+      <cheat>
+        <name>Level 1</name>
+        <note>(Press Select)</note>
+        <codes>94000130 FFFB0000 C0000000 0000002F 12250012 00000101 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 10</name>
+        <note>(Press Select)</note>
+        <codes>94000130 FFFB0000 C0000000 0000002F 12250012 00000A0A DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 35</name>
+        <note>(Press Select)</note>
+        <codes>94000130 FFFB0000 C0000000 0000002F 12250012 00002323 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 70</name>
+        <note>(Press Select)</note>
+        <codes>94000130 FFFB0000 C0000000 0000002F 12250012 00004646 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 100</name>
+        <note>(Press Select)</note>
+        <codes>94000130 FFFB0000 C0000000 0000002F 12250012 00006464 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Modifier - Generation 1</name>
+      <cheat>
+        <name>Bulbasaur</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000001 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Ivysaur</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000002 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Venusaur</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000003 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmander</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000004 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmeleon</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000005 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charizard</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000006 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Squirtle</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000007 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wartortle</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000008 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Blastoise</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000009 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Caterpie</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 0000000A DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Modifier - Generation 2</name>
+      <cheat>
+        <name>Chikorita</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000098 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Bayleef</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 00000099 DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Meganium</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 0000009A DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Cyndaquil</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 0000009B DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Quilava</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 0000009C DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Typhlosion</name>
+        <note>(Press and hold Select before encountering)</note>
+        <codes>94000130 FFFB0000 6214617C 00000000 B214617C 00000000 C0000000 0000002F 00005DD4 0000009D DC000000 00000004 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Starter Modifier - Generation 1</name>
+      <cheat>
+        <name>Bulbasaur</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Ivysaur</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000002 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Venusaur</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000003 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmander</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmeleon</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charizard</name>
+        <note>(Press and hold Select+L until you receive your starter)</note>
+        <codes>94000130 FDFB0000 6214617C 00000000 B214617C 00000000 1000F696 00000006 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+  </game>
+  <game>
+    <name>Pokemon - HeartGold Version (USA)</name>
+    <gameid>IPKE 4DFFBF91</gameid>
+    <folder>
+      <name>Miscellaneous Codes</name>
+      <cheat>
+        <name>Recollect 1st Generation Starters</name>
+        <note>(Press Start+Select): This allows you to get the 1st generation starters Bulbasaur, Charmander, and/or Squirtle from Professor Oak's lab.</note>
+        <codes>94000130 FFF30000 6211186C 00000000 B211186C 00000000 2000E036 00000002 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Recollect 2nd Generation Starters</name>
+        <note>(Press Start+Select): This allows you to get the 2nd generation starters Chikorita, Cyndaquil, and/or Totodile from Professor Elm's lab.</note>
+        <codes>94000130 FFF30000 B211186C 00000000 DA000000 0000E0C0 D3000000 00000000 D7000000 02000010 A2000010 FBFF0000 D4000000 0000FC00 B211187E 00000000 D7000000 000010E0 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Recollect 3rd Generation Starters</name>
+        <note>(Press Start+Select): This allows you to get the 3rd generation starters Treecko, Torchic, and/or Mudkip from Steven Stone at Sylphe Co.</note>
+        <codes>94000130 FFF30000 B211186C 00000000 2000E034 00000003 DA000000 0000E0E2 D3000000 00000000 D7000000 02000010 A2000010 FF7F0000 D4000000 0000FF80 B211187E 00000000 D7000000 00001102 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Modifier Codes</name>
+      <cheat>
+        <name>Wild Pokemon and Level Modifier</name>
+        <note>(Press L+R): You will get 493 Master Balls amd 100 Ultra Balls. The Master Balls are used to determine the Pokedex number of a specified Pokemon and Ultra Balls are the Pokemon's specified level. Press and hold L to encounter the Pokemon.</note>
+        <codes>94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 0000DCF8 00640002 D2000000 00000000 94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000 94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Modifier v1</name>
+        <note>(Press L+R): You will get 493 Master Balls. The Master Balls are used to determine the Pokedex number of a specified Pokemon. The level will be random, hold L to encounter the Pokemon.</note>
+        <codes>94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 D2000000 00000000 94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Modifier v2</name>
+        <note>(Press L+R): You will get 493 Master Balls. The Master Balls are used to determine the Pokedex number of a specified Pokemon. The level will be random, hold R to encounter the Pokemon.</note>
+        <codes>94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 D2000000 00000000 94000130 FEFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Have Max IVs</name>
+        <note>This will maximize all the wild Pokemon's IVs. WARNING: Using this will make the Pokemon illegal to trade and use online in Pokemon generations 6-7.</note>
+        <codes>1206E012 0000201F 1206E028 0000201F 1206E03E 0000201F 1206E054 0000201F 1206E06A 0000201F 1206E080 0000201F</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Level Modifier Codes</name>
+      <cheat>
+        <name>Level Modifier Code</name>
+        <note>(Press L+R): You will get 100 Ultra Balls. Discard the amount of ultra balls desired to encounter a Pokemon at a specific level. Press L to encounter the Pokemon.</note>
+        <codes>94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF8 00640002 D2000000 00000000 94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 1</name>
+        <codes>52246C94 28038800 12247BEC 00002001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 5</name>
+        <codes>52246C94 28038800 12247BEC 00002005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 10</name>
+        <codes>52246C94 28038800 12247BEC 0000200A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 20</name>
+        <codes>52246C94 28038800 12247BEC 00002014 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 30</name>
+        <codes>52246C94 28038800 12247BEC 0000201E D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 40</name>
+        <codes>52246C94 28038800 12247BEC 00002028 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 50</name>
+        <codes>52246C94 28038800 12247BEC 00002032 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 60</name>
+        <codes>52246C94 28038800 12247BEC 0000203C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 70</name>
+        <codes>52246C94 28038800 12247BEC 00002046 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 80</name>
+        <codes>52246C94 28038800 12247BEC 00002050 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 90</name>
+        <codes>52246C94 28038800 12247BEC 0000205A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 100</name>
+        <codes>52246C94 28038800 12247BEC 00002064 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Wild Pokemon Nature Modifier Codes</name>
+      <cheat>
+        <name>Hardy (=)</name>
+        <codes>1206E120 00002400</codes>
+      </cheat>
+      <cheat>
+        <name>Lonely (+A -D)</name>
+        <codes>1206E120 00002401</codes>
+      </cheat>
+      <cheat>
+        <name>Brave (+A -S)</name>
+        <codes>1206E120 00002402</codes>
+      </cheat>
+      <cheat>
+        <name>Adamant (+A -SA)</name>
+        <codes>1206E120 00002403</codes>
+      </cheat>
+      <cheat>
+        <name>Naughty (+A -SD)</name>
+        <codes>1206E120 00002404</codes>
+      </cheat>
+      <cheat>
+        <name>Bold (+D -A)</name>
+        <codes>1206E120 00002405</codes>
+      </cheat>
+      <cheat>
+        <name>Docile (=)</name>
+        <codes>1206E120 00002406</codes>
+      </cheat>
+      <cheat>
+        <name>Relaxed (+D -S)</name>
+        <codes>1206E120 00002407</codes>
+      </cheat>
+      <cheat>
+        <name>Impish (+D -SA)</name>
+        <codes>1206E120 00002408</codes>
+      </cheat>
+      <cheat>
+        <name>Lax (+D -SD)</name>
+        <codes>1206E120 00002409</codes>
+      </cheat>
+      <cheat>
+        <name>Timid (+S -A)</name>
+        <codes>1206E120 0000240A</codes>
+      </cheat>
+      <cheat>
+        <name>Hasty (+S -D)</name>
+        <codes>1206E120 0000240B</codes>
+      </cheat>
+      <cheat>
+        <name>Serious (=)</name>
+        <codes>1206E120 0000240C</codes>
+      </cheat>
+      <cheat>
+        <name>Jolly (+S -SA)</name>
+        <codes>1206E120 0000240D</codes>
+      </cheat>
+      <cheat>
+        <name>Naive (+S -SD)</name>
+        <codes>1206E120 0000240E</codes>
+      </cheat>
+      <cheat>
+        <name>Modest (+SA -A)</name>
+        <codes>1206E120 0000240F</codes>
+      </cheat>
+      <cheat>
+        <name>Mild (+SA -D)</name>
+        <codes>1206E120 00002410</codes>
+      </cheat>
+      <cheat>
+        <name>Quiet (+SA -S)</name>
+        <codes>1206E120 00002411</codes>
+      </cheat>
+      <cheat>
+        <name>Bashful (=)</name>
+        <codes>1206E120 00002412</codes>
+      </cheat>
+      <cheat>
+        <name>Rash (+SA -SD)</name>
+        <codes>1206E120 00002413</codes>
+      </cheat>
+      <cheat>
+        <name>Calm (+SD -A)</name>
+        <codes>1206E120 00002414</codes>
+      </cheat>
+      <cheat>
+        <name>Gentle (+SD -D)</name>
+        <codes>1206E120 00002415</codes>
+      </cheat>
+      <cheat>
+        <name>Sassy (+SD -S)</name>
+        <codes>1206E120 00002416</codes>
+      </cheat>
+      <cheat>
+        <name>Careful (+SD -SA)</name>
+        <codes>1206E120 00002417</codes>
+      </cheat>
+      <cheat>
+        <name>Quirky (=)</name>
+        <codes>1206E120 00002418</codes>
+      </cheat>
+    </folder>
+  </game>
+  <game>
+    <name>Pokemon - Platinum Version (USA)</name>
+    <gameid>CPUE D074D1B3</gameid>
+    <folder>
+      <name>Encounter Codes</name>
+      <cheat>
+        <name>No Wild Battles if Running</name>
+        <note>Trainer battles still happen but wild Pokemon don't appear.</note>
+        <codes>92241802 0000D301 12241800 00002C05 1224185C 000042A6 94000130 FFFD0000 12241800 000042A4 1224185C 000042A4 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Modifier Code (Calculator)</name>
+        <note>Pokemon: Set the National Dex number of the pokemon you want into the calculator then press L. Level: Set the level (1-100), that you want into the calculator then press R. Nature: Set the Nature Number you want then press Select.</note>
+        <codes>94000130 FDFF0000 62101D2C 00000000 B2101D2C 00000000 DA000000 0011ECF0 C0000000 0000000B D7000000 000303CC DC000000 00000006 D2000000 00000000 94000130 FEFF0000 62101D2C 00000000 B2101D2C 00000000 DA000000 0011ECF0 C0000000 0000000B D7000000 000303C8 DC000000 00000006 D2000000 00000000 94000130 FFFB0000 2207404D 00000024 62101D2C 00000000 B2101D2C 00000000 DB000000 0011ECF0 D3000000 00000000 D8000000 0207404C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Mining Museum Pokemon Modifier Code (Calculator)</name>
+        <note>Set the National Pokedex number of the Pokemon you want into the calculator then press X+Y.</note>
+        <codes>94000136 FC7C0000 62101D2C 00000000 B2101D2C 00000000 DA000000 0011ECF0 D7000000 0000DF08 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Shiny Encounters</name>
+        <note>(Go to the Trainer Card, Press and hold R+A to Activate, Hold L+A do Deactivate): Makes all wild Pokemon shiny.</note>
+        <codes>02071D78 47104A00 02071D7C 02000031 94000130 FCFE0200 0207406C 47084900 02074070 02000001 02073E3C 47084900 02073E40 02000051 12073E30 000046C0 D2000000 00000000 94000130 FCFE0100 0207406C 95019000 02074070 90022000 02073E3C 43200400 02073E40 1C28900D 12073E30 0000D107 D2000000 00000000 62000000 95019000 E2000000 00000080 95019000 90022000 1C28B40D F0754907 1C01FF13 2901BC0D 4902D101 49024708 00004708 02074075 02074053 00000000 95019000 69384A04 98046010 4B019A09 00004718 02071D81 0200002C 00000000 43200400 4907B401 F0756809 1C01FEED 2901BC01 4904D001 900D4708 49031C28 00004708 0200002C 02073E33 02073E45 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Wild Pokemon Have Max IVs</name>
+        <note>This will maximize all the wild Pokemon's IVs. WARNING: Using this will make the Pokemon illegal to trade and use online in Pokemon generations 6-7.</note>
+        <codes>12073F50 0000201F 12073F66 0000201F 12073F7C 0000201F 12073F92 0000201F 12073FA8 0000201F 12073FBE 0000201F</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Starter #1 Modifier - Generation 1</name>
+      <cheat>
+        <name>Bulbasaur</name>
+        <codes>521D2940 00000183 021D2940 00000001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Ivysaur</name>
+        <codes>521D2940 00000183 021D2940 00000002 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Venusaur</name>
+        <codes>521D2940 00000183 021D2940 00000003 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmander</name>
+        <codes>521D2940 00000183 021D2940 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmeleon</name>
+        <codes>521D2940 00000183 021D2940 00000005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charizard</name>
+        <codes>521D2940 00000183 021D2940 00000006 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>Starter #2 Modifier - Generation 1</name>
+      <cheat>
+        <name>Bulbasaur</name>
+        <codes>521D2944 00000186 021D2944 00000001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Ivysaur</name>
+        <codes>521D2944 00000186 021D2944 00000002 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Venusaur</name>
+        <codes>521D2944 00000186 021D2944 00000003 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmander</name>
+        <codes>521D2944 00000186 021D2944 00000004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charmeleon</name>
+        <codes>521D2944 00000186 021D2944 00000005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Charizard</name>
+        <codes>521D2944 00000186 021D2944 00000006 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+  </game>
+  <game>
+    <name>Sacred Gold Plus 1.2.1 EN</name>
+    <gameid>IPKE 19D1EEBB</gameid>
+    <folder>
+      <name>40 - Wild encounters · choose Pokémon and level</name>
+      <cheat>
+        <name>Choose Pokémon and level</name>
+        <note>Requires melonDS with the Sacred Gold Plus selector. Tap this entry to search 493 Pokémon by name or Pokédex number and choose a level from 1 to 100. The initial choice is Pikachu, level 5. In melonDS 2.1.1 the selector starts off: L+R toggles it on/off; release both buttons between presses. Does not use Bag Balls. Tall grass only; turn Wild levels off in the game options. Unown requires a completed Ruins of Alph puzzle. On melonDS without the selector this code directly sets Pikachu at level 5; folders 49–59 remain available for manual selection.</note>
+        <codes>52246C94 28038800 6211186C 00000000 B211186C 00000000 D5000000 00000019 C0000000 00000027 D7000000 00032A48 D2000000 00000000 52246C94 28038800 6211186C 00000000 B211186C 00000000 D5000000 00000005 C0000000 0000000B D8000000 00032A3C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Pokémon selvatici con IV massimi</name>
+        <note>This will maximize all the wild Pokemon's IVs. WARNING: Using this will make the Pokemon illegal to trade and use online in Pokemon generations 6-7.</note>
+        <codes>1206E012 0000201F 1206E028 0000201F 1206E03E 0000201F 1206E054 0000201F 1206E06A 0000201F 1206E080 0000201F</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>41 - Wild · level (classic method)</name>
+      <cheat>
+        <name>Scegli il livello dei Pokémon selvatici (classic method)</name>
+        <note>Classic method for the level only. Hold L + R to receive 100 Ultra Balls, discard them until the count equals the level you want, then hold L in tall grass. Tall grass only. Easier: one entry from folder 49.</note>
+        <codes>94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF8 00640002 D2000000 00000000 94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 1</name>
+        <note>Always on: wild Pokemon will be level 1. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 5</name>
+        <note>Always on: wild Pokemon will be level 5. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 10</name>
+        <note>Always on: wild Pokemon will be level 10. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 0000200A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 20</name>
+        <note>Always on: wild Pokemon will be level 20. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002014 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 30</name>
+        <note>Always on: wild Pokemon will be level 30. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 0000201E D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 40</name>
+        <note>Always on: wild Pokemon will be level 40. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002028 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 50</name>
+        <note>Always on: wild Pokemon will be level 50. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002032 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 60</name>
+        <note>Always on: wild Pokemon will be level 60. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 0000203C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 70</name>
+        <note>Always on: wild Pokemon will be level 70. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002046 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 80</name>
+        <note>Always on: wild Pokemon will be level 80. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002050 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 90</name>
+        <note>Always on: wild Pokemon will be level 90. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 0000205A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Livello 100</name>
+        <note>Always on: wild Pokemon will be level 100. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002064 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>44 - Wild · nature</name>
+      <cheat>
+        <name>Hardy (=)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002400 1206E15E 00002700 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Lonely (+A -D)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002401 1206E15E 00002701 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Brave (+A -S)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002402 1206E15E 00002702 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Adamant (+A -SA)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002403 1206E15E 00002703 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Naughty (+A -SD)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002404 1206E15E 00002704 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Bold (+D -A)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002405 1206E15E 00002705 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Docile (=)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002406 1206E15E 00002706 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Relaxed (+D -S)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002407 1206E15E 00002707 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Impish (+D -SA)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002408 1206E15E 00002708 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Lax (+D -SD)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002409 1206E15E 00002709 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Timid (+S -A)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240A 1206E15E 0000270A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Hasty (+S -D)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240B 1206E15E 0000270B D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Serious (=)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240C 1206E15E 0000270C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Jolly (+S -SA)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240D 1206E15E 0000270D D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Naive (+S -SD)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240E 1206E15E 0000270E D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Modest (+SA -A)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 0000240F 1206E15E 0000270F D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Mild (+SA -D)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002410 1206E15E 00002710 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Quiet (+SA -S)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002411 1206E15E 00002711 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Bashful (=)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002412 1206E15E 00002712 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Rash (+SA -SD)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002413 1206E15E 00002713 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Calm (+SD -A)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002414 1206E15E 00002714 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Gentle (+SD -D)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002415 1206E15E 00002715 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Sassy (+SD -S)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002416 1206E15E 00002716 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Careful (+SD -SA)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002417 1206E15E 00002717 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Quirky (=)</name>
+        <note>Wild nature, always active; also covers Cute Charm. Use only one entry from folders 44–46. Keeps native PID generation and gender. After disabling the code or using the previous version, restart the game.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 1206E110 00002418 1206E15E 00002718 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>45 - Wild · male + nature</name>
+      <cheat>
+        <name>Hardy (=)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002400 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002700 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Lonely (+A -D)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002401 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002701 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Brave (+A -S)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002402 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002702 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Adamant (+A -SA)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002403 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002703 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Naughty (+A -SD)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002404 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002704 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Bold (+D -A)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002405 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002705 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Docile (=)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002406 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002706 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Relaxed (+D -S)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002407 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002707 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Impish (+D -SA)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002408 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002708 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Lax (+D -SD)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002409 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002709 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Timid (+S -A)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240A 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270A D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Hasty (+S -D)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240B 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270B D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Serious (=)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240C 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270C D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Jolly (+S -SA)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240D 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270D D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Naive (+S -SD)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240E 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270E D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Modest (+SA -A)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 0000240F 1206E11A 000025FF 1206E15C 00002600 1206E15E 0000270F D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Mild (+SA -D)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002410 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002710 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Quiet (+SA -S)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002411 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002711 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Bashful (=)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002412 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002712 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Rash (+SA -SD)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002413 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002713 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Calm (+SD -A)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002414 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002714 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Gentle (+SD -D)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002415 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002715 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Sassy (+SD -S)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002416 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002716 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Careful (+SD -SA)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002417 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002717 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Quirky (=)</name>
+        <note>Hold L before entering the encounter. Release L before disabling the code; restart the game if you used the previous code. Use only one entry from folders 44–46 and do not combine with shiny/PID codes. Single-gender and genderless species keep their own gender. Also covers Cute Charm. PID distribution, and therefore shiny outcomes, changes.</note>
+        <codes>5206E108 B086B5F8 5206E14C B089B5F0 1206E110 00009C0C 1206E11A 00001C05 1206E15C 00009E0E 1206E15E 00009F0F 94000130 FDFF0000 1206E110 00002418 1206E11A 000025FF 1206E15C 00002600 1206E15E 00002718 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>49 - Wild · level 1-100 (direct choice)</name>
+      <cheat>
+        <name>Level 1</name>
+        <note>Always on: wild Pokemon will be level 1. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002001 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 2</name>
+        <note>Always on: wild Pokemon will be level 2. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002002 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 3</name>
+        <note>Always on: wild Pokemon will be level 3. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002003 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 4</name>
+        <note>Always on: wild Pokemon will be level 4. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002004 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 5</name>
+        <note>Always on: wild Pokemon will be level 5. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002005 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 6</name>
+        <note>Always on: wild Pokemon will be level 6. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002006 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 7</name>
+        <note>Always on: wild Pokemon will be level 7. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002007 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 8</name>
+        <note>Always on: wild Pokemon will be level 8. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002008 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 9</name>
+        <note>Always on: wild Pokemon will be level 9. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 00002009 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>Level 10</name>
+        <note>Always on: wild Pokemon will be level 10. It patches the encounter code, so it covers grass, Surf, fishing and special encounters. Its guard (0x02246C94) was re-read from the 1.2.1 image and matches, so the code writes: an encounter was measured headless on 1.2.1 English. Do not combine it with the "wild levels" setting on the Options page.</note>
+        <codes>52246C94 28038800 12247BEC 0000200A D2000000 00000000</codes>
+      </cheat>
+    </folder>
+    <folder>
+      <name>50 - Wild · species #001-050</name>
+      <cheat>
+        <name>READ ME - how to use this folder</name>
+        <note>Switch ONE species on in these folders and ONE level in folder 49, then hold L while walking in tall grass. This entry carries no code: switching it on does nothing. Species apply to tall grass and radio calls only, not to Surf, fishing, Rock Smash or Headbutt; alternate forms come out in their base form and Unown may not appear. No Master Balls to discard: the classic method stays in folder 40.</note>
+        <codes>D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#001 Bulbasaur</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000001 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#002 Ivysaur</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000002 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#003 Venusaur</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000003 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#004 Charmander</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000004 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#005 Charmeleon</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000005 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#006 Charizard</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000006 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#007 Squirtle</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000007 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#008 Wartortle</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000008 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#009 Blastoise</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 00000009 C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+      <cheat>
+        <name>#010 Caterpie</name>
+        <note>Switch this on plus one entry from folder 49 (level), then hold L while walking in tall grass. Tall grass and radio calls only. One species and one level of this family were measured headless on 1.2.1 English; the others follow by construction and were not measured one by one.</note>
+        <codes>94000130 FDFF0000 6211186C 00000000 B211186C 00000000 D5000000 0000000A C0000000 00000027 D7000000 00032A48 D2000000 00000000</codes>
+      </cheat>
+    </folder>
+  </game>
+</codelist>

@@ -8,13 +8,18 @@ data class PokemonSpecies(val number: Int, val name: String) {
     val label: String get() = "#%03d %s".format(Locale.ROOT, number, name)
 
     companion object {
-        private fun normalize(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD)
+        private fun key(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD)
             .lowercase(Locale.ROOT).filter { it.isLetterOrDigit() }
 
+        /** Case-, accent- and punctuation-insensitive name key; "(Male)" suffixes and "#001" prefixes are ignored. */
+        fun normalize(value: String): String = key(value.replace(Regex("\\(.*?\\)|#\\d+"), ""))
+
+        val normalizedNames: Set<String> by lazy { all.map { normalize(it.name) }.toSet() }
+
         fun search(query: String): List<PokemonSpecies> {
-            val key = normalize(query)
-            val number = key.toIntOrNull()
-            return all.filter { key.isEmpty() || it.number == number || normalize(it.name).contains(key) }
+            val text = key(query)
+            val number = text.toIntOrNull()
+            return all.filter { text.isEmpty() || it.number == number || normalize(it.name).contains(text) }
         }
 
         val all: List<PokemonSpecies> = listOf(

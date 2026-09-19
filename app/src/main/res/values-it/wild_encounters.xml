@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="wild_encounter_title">Pokémon selvatici</string>
-    <string name="wild_encounter_selection">Pokémon selvatici · %1$s · Lv. %2$d</string>
     <string name="wild_encounter_help">Scegli Pokémon e livello e lascia il trucco abilitato. In gioco parte spento: premi L+R per attivarlo, rilascia i tasti e premili di nuovo per disattivarlo. Cammina nell’erba alta. Non usa le Ball. Spegni Livelli selvatici nelle opzioni del gioco. Gli altri modificatori noti di specie e livello verranno disattivati. Se prima usavi un vecchio codice di specie o livello, riavvia il gioco una volta prima di usare questo selettore. Dopo un riavvio o caricamento di stato il selettore riparte spento.</string>
     <string name="wild_encounter_choose">Scegli un Pokémon</string>
     <string name="wild_encounter_level">Livello 1–100</string>
@@ -9,8 +7,13 @@
     <string name="wild_encounter_unown">Unown richiede un puzzle completato nelle Rovine d’Alfa.</string>
     <string name="wild_encounter_no_results">Nessun Pokémon trovato</string>
     <string name="wild_encounter_enable">Attiva</string>
-    <string name="wild_encounter_summary">L+R: attiva/disattiva · Erba alta · Livelli selvatici OFF</string>
     <string name="wild_encounter_details">Come funziona</string>
     <string name="wild_encounter_on">Pokémon selvatici: selettore attivo</string>
     <string name="wild_encounter_off">Pokémon selvatici: selettore spento</string>
+    <string name="modifier_family_show_all">Mostra tutte (%1$d)</string>
+    <string name="modifier_family_hide">Nascondi</string>
+    <string name="modifier_family_inactive">Non attivo</string>
+    <string name="modifier_family_disable">Disattiva</string>
+    <string name="modifier_family_show_code">Mostra codice</string>
+    <string name="modifier_family_active">Attivo</string>
 </resources>
