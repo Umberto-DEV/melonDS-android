@@ -65,9 +65,15 @@ class DpadInputHandlerTest {
 
     @Test
     fun `an axis conflict does not cancel the other axis`() {
-        // UP + DOWN + LEFT: only the vertical pair is dropped.
-        handler.onTouch(view, touchEvent(MotionEvent.ACTION_DOWN, listOf(TOP_POINT, BOTTOM_POINT, LEFT_POINT)))
+        // UP, then DOWN, then LEFT, one finger at a time as the framework delivers them: the
+        // vertical pair cancels itself out and only LEFT ends up pressed.
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_DOWN, listOf(TOP_POINT)))
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_POINTER_DOWN, listOf(TOP_POINT, BOTTOM_POINT), actionIndex = 1))
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_POINTER_DOWN, listOf(TOP_POINT, BOTTOM_POINT, LEFT_POINT), actionIndex = 2))
 
-        assertEquals(listOf(RecordedInput.Press(Input.LEFT)), listener.events)
+        assertEquals(
+            listOf(RecordedInput.Press(Input.UP), RecordedInput.Release(Input.UP), RecordedInput.Press(Input.LEFT)),
+            listener.events,
+        )
     }
 }

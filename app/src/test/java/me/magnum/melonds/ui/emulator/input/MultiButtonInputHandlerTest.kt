@@ -113,4 +113,24 @@ class MultiButtonInputHandlerTest {
 
         assertEquals(listOf(RecordedInput.Press(Input.A)), listener.events)
     }
+
+    @Test
+    fun `a finger landing outside the view presses nothing, even within reach of an edge circle`() {
+        // Android hands every later pointer of a gesture to the view that got the first one, so the
+        // pad sees fingers that landed next to it: 530,256 is outside the 512-wide view but inside
+        // the right circle (centre 548,256, radius 256).
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_DOWN, listOf(CENTRE_POINT)))
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_POINTER_DOWN, listOf(CENTRE_POINT, 530f to 256f), actionIndex = 1))
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_MOVE, listOf(CENTRE_POINT, 520f to 256f)))
+
+        assertEquals(emptyList<RecordedInput>(), listener.keyEvents)
+    }
+
+    @Test
+    fun `a finger that landed inside the view keeps pressing when it drifts past the edge`() {
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_DOWN, listOf(RIGHT_POINT)))
+        handler.onTouch(view, touchEvent(MotionEvent.ACTION_MOVE, listOf(530f to 256f)))
+
+        assertEquals(listOf<RecordedInput>(RecordedInput.Press(Input.A)), listener.keyEvents)
+    }
 }
