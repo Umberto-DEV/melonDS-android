@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import me.magnum.melonds.common.romprocessors.RomFileProcessor
 import me.magnum.melonds.common.romprocessors.RomFileProcessorFactory
+import java.io.File
 
 abstract class BaseRomFileProcessorFactory(private val context: Context) : RomFileProcessorFactory {
     /**
@@ -16,7 +17,15 @@ abstract class BaseRomFileProcessorFactory(private val context: Context) : RomFi
     abstract fun getRomFileProcessorForFileExtension(extension: String): RomFileProcessor?
 
     override fun getFileRomProcessorForDocument(romDocument: DocumentFile): RomFileProcessor? {
-        val fileName = romDocument.name ?: return null
+        return getRomFileProcessorForFileName(romDocument.name)
+    }
+
+    override fun getFileRomProcessorForDocument(romUri: Uri): RomFileProcessor? {
+        return getRomFileProcessorForFileName(getFileNameForUri(romUri))
+    }
+
+    private fun getRomFileProcessorForFileName(fileName: String?): RomFileProcessor? {
+        if (fileName == null) return null
         val lastDotIndex = fileName.lastIndexOf('.')
         if (lastDotIndex < 0) return null
 
@@ -24,8 +33,13 @@ abstract class BaseRomFileProcessorFactory(private val context: Context) : RomFi
         return getRomFileProcessorForFileExtension(extension)
     }
 
-    override fun getFileRomProcessorForDocument(romUri: Uri): RomFileProcessor? {
-        val romDocument = DocumentFile.fromSingleUri(context, romUri) ?: return null
-        return getFileRomProcessorForDocument(romDocument)
+    // "file://" URIs (e.g. from external file managers) and providers that don't implement
+    // DocumentsContract queries resolve to a null DocumentFile name, so fall back accordingly.
+    private fun getFileNameForUri(uri: Uri): String? {
+        if (uri.scheme == "file") {
+            return uri.path?.let { File(it).name }
+        }
+        return DocumentFile.fromSingleUri(context, uri)?.name
+            ?: uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':')
     }
 }
