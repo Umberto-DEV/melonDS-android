@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wild_encounter_title">Wild Pokémon</string>
+    <string name="wild_encounter_selection">Wild Pokémon · %1$s · Lv. %2$d</string>
+    <string name="wild_encounter_help">Choose a Pokémon and a level and leave this cheat enabled. It starts off in game: press L+R to turn it on, release both buttons and press them again to turn it off. Walk in tall grass. No Balls are used. Turn off Wild levels in the game options. Other known species and level modifiers will be disabled. If you previously used an old species or level code, restart the game once before using this selector. Restarting or loading a state turns the selector off again.</string>
+    <string name="wild_encounter_choose">Choose a Pokémon</string>
+    <string name="wild_encounter_level">Level 1–100</string>
+    <string name="wild_encounter_search">Search name or Pokédex number</string>
+    <string name="wild_encounter_unown">Unown requires a completed Ruins of Alph puzzle.</string>
+    <string name="wild_encounter_no_results">No Pokémon found</string>
+    <string name="wild_encounter_enable">Enable</string>
+    <string name="wild_encounter_summary">L+R: toggle on/off · Tall grass · Wild levels OFF</string>
+    <string name="wild_encounter_details">How it works</string>
+    <string name="wild_encounter_on">Wild Pokémon: selector on</string>
+    <string name="wild_encounter_off">Wild Pokémon: selector off</string>
+</resources>

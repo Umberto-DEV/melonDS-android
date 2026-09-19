@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import me.magnum.melonds.common.cheats.WildEncounterCheat
 import me.magnum.melonds.R
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.ui.cheats.model.CheatFormDialogState
@@ -40,6 +41,8 @@ fun CheatListScreen(
     modifier: Modifier,
     contentPadding: PaddingValues,
     cheats: CheatsScreenUiState<List<Cheat>>,
+    wildEncounterSupported: Boolean = false,
+    onConfigureWildEncounter: (Cheat, CheatSubmissionForm) -> Unit = { _, _ -> },
     onCheatClick: (Cheat) -> Unit,
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
@@ -51,6 +54,8 @@ fun CheatListScreen(
             modifier = modifier,
             contentPadding = contentPadding,
             cheats = cheats.data,
+            wildEncounterSupported = wildEncounterSupported,
+            onConfigureWildEncounter = onConfigureWildEncounter,
             onCheatClick = onCheatClick,
             onAddNewCheat = onAddNewCheat,
             onUpdateCheat = onUpdateCheat,
@@ -64,12 +69,23 @@ private fun List(
     modifier: Modifier,
     contentPadding: PaddingValues,
     cheats: List<Cheat>,
+    wildEncounterSupported: Boolean = false,
+    onConfigureWildEncounter: (Cheat, CheatSubmissionForm) -> Unit = { _, _ -> },
     onCheatClick: (Cheat) -> Unit,
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
     onDeleteCheatClick: (Cheat) -> Unit,
 ) {
     var cheatFormDialogState by rememberSaveable(stateSaver = CheatFormDialogState.Saver) { mutableStateOf(CheatFormDialogState.Hidden) }
+
+    var wildCheatId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val wildCheat = cheats.firstOrNull { it.id == wildCheatId }
+    if (wildCheat != null) {
+        WildEncounterDialog(wildCheat, onDismiss = { wildCheatId = null }, onConfirm = {
+            onConfigureWildEncounter(wildCheat, it)
+            wildCheatId = null
+        })
+    }
 
     Box(modifier) {
         if (cheats.isEmpty()) {
@@ -99,8 +115,14 @@ private fun List(
                     CheatItem(
                         modifier = Modifier.fillMaxWidth(),
                         cheat = item,
-                        onClick = { onCheatClick(item) },
-                        onEditClick = { cheatFormDialogState = CheatFormDialogState.EditCheat(item) },
+                        onClick = {
+                            if (wildEncounterSupported && !item.enabled && WildEncounterCheat.isConfigurable(item.code)) wildCheatId = item.id
+                            else onCheatClick(item)
+                        },
+                        onEditClick = {
+                            if (wildEncounterSupported && WildEncounterCheat.isConfigurable(item.code)) wildCheatId = item.id
+                            else cheatFormDialogState = CheatFormDialogState.EditCheat(item)
+                        },
                         onDeleteClick = { onDeleteCheatClick(item) },
                     )
                 }
