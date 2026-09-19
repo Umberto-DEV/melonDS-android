@@ -15,4 +15,5 @@
     <string name="modifier_family_inactive">Not active</string>
     <string name="modifier_family_disable">Disable</string>
     <string name="modifier_family_show_code">Show code</string>
+    <string name="modifier_family_active">Active</string>
 </resources>

@@ -28,6 +28,7 @@ import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.common.cheats.ModifierFamilies
 import me.magnum.melonds.common.cheats.ModifierFamily
 import me.magnum.melonds.common.cheats.WildEncounterCheat
+import me.magnum.melonds.common.cheats.familyIdentity
 import me.magnum.melonds.domain.model.CheatFolder
 import me.magnum.melonds.domain.model.CheatInFolder
 import me.magnum.melonds.domain.model.Game
@@ -119,26 +120,40 @@ class CheatsViewModel @Inject constructor(
 
     /** The folder list with every modifier family collapsed into one row, placed where its first member was. */
     val folderItems: SharedFlow<CheatsScreenUiState<List<CheatListItem>>> by lazy {
-        combine(folderCheats, selectedCheatFolder.filterNotNull()) { state: CheatsScreenUiState<List<Cheat>>, folder: CheatFolder ->
+        combine(folderCheats, selectedCheatFolder.filterNotNull(), selectedGame) { state: CheatsScreenUiState<List<Cheat>>, folder: CheatFolder, game: Game? ->
             when (state) {
                 is CheatsScreenUiState.Loading -> CheatsScreenUiState.Loading<List<CheatListItem>>()
-                is CheatsScreenUiState.Ready -> CheatsScreenUiState.Ready<List<CheatListItem>>(listItems(folder.name, state.data))
+                is CheatsScreenUiState.Ready -> CheatsScreenUiState.Ready<List<CheatListItem>>(listItems(folder.name, state.data, game != null && canonicalFor(game) != null))
             }
         }.shareIn(viewModelScope, started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000L), replay = 1)
     }
 
-    private fun listItems(folderName: String, cheats: List<Cheat>): List<CheatListItem> {
-        val families = ModifierFamilies.recognize(folderName, cheats)
-        val placed = mutableSetOf<Long?>()
+    /**
+     * Family of every cheat in the folder on screen (null = plain cheat), from the last list build; null until then.
+     * Lets toggleCheat stay synchronous for plain cheats instead of re-reading the whole game on every tap.
+     */
+    private var currentFolderFamilies: Map<Any, ModifierFamily?>? = null
+
+    private fun listItems(folderName: String, cheats: List<Cheat>, nativeSelector: Boolean): List<CheatListItem> {
+        val families = ModifierFamilies.recognize(folderName, cheats, nativeSelector)
+        val familyOf = HashMap<Any, ModifierFamily?>(cheats.size * 2)
+        families.forEach { family -> family.members.forEach { familyOf[it.familyIdentity] = family } }
+        cheats.forEach { familyOf.putIfAbsent(it.familyIdentity, null) }
+        currentFolderFamilies = familyOf
+        val placed = mutableSetOf<Any>()
         return cheats.mapNotNull { cheat ->
-            val family = families.firstOrNull { it.contains(cheat) } ?: return@mapNotNull CheatListItem.Single(cheat)
-            val first = family.members.first().id
-            if (first in placed) null else CheatListItem.Family(family).also { placed += first }
+            val family = familyOf[cheat.familyIdentity] ?: return@mapNotNull CheatListItem.Single(cheat)
+            if (placed.add(family.identity)) CheatListItem.Family(family) else null
         }
     }
 
     private fun canonicalFor(game: Game): ((Int, Int) -> String)? =
         if (WildEncounterCheat.supports(game.gameCode, game.gameChecksum)) WildEncounterCheat::code else null
+
+    private suspend fun currentGameFamilies(game: Game): List<ModifierFamily> {
+        val nativeSelector = canonicalFor(game) != null
+        return currentGameFolders(game).flatMap { ModifierFamilies.recognize(it, nativeSelector) }
+    }
 
     /** Folders as the repository has them, with pending (uncommitted) changes applied on top. */
     private suspend fun currentGameFolders(game: Game): List<CheatFolder> {
@@ -149,7 +164,7 @@ class CheatsViewModel @Inject constructor(
     fun selectFamilyOption(family: ModifierFamily, value: Int, level: Int?) {
         val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame() ?: return
         modifyCheats {
-            val families = currentGameFolders(game).flatMap { ModifierFamilies.recognize(it) }
+            val families = currentGameFamilies(game)
             val live = families.firstOrNull { it.sameAs(family) } ?: return@modifyCheats
             stageCheats(ModifierFamilies.select(live, value, level, families, canonicalFor(game)))
         }
@@ -158,7 +173,7 @@ class CheatsViewModel @Inject constructor(
     fun disableFamily(family: ModifierFamily) {
         val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame() ?: return
         modifyCheats {
-            val live = currentGameFolders(game).flatMap { ModifierFamilies.recognize(it) }.firstOrNull { it.sameAs(family) } ?: return@modifyCheats
+            val live = currentGameFamilies(game).firstOrNull { it.sameAs(family) } ?: return@modifyCheats
             stageCheats(ModifierFamilies.disable(live))
         }
     }
@@ -296,10 +311,12 @@ class CheatsViewModel @Inject constructor(
         if (committingCheatsChangesState.value) return
         val effective = modifiedCheatSet.value.firstOrNull { it.id == cheat.id } ?: cheat
         val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame()
-        if (!effective.enabled && game != null) {
-            // Enabling a member of a family replaces whatever else is active in its exclusion group.
+        val known = currentFolderFamilies?.takeIf { effective.familyIdentity in it }
+        if (!effective.enabled && game != null && (known == null || known[effective.familyIdentity]?.exclusionGroups?.isNotEmpty() == true)) {
+            // Enabling a member of a family replaces whatever else is active in its exclusion group; that needs the
+            // whole game. A cheat the folder list already classified as plain is toggled right here, synchronously.
             modifyCheats {
-                val families = currentGameFolders(game).flatMap { ModifierFamilies.recognize(it) }
+                val families = currentGameFamilies(game)
                 val family = families.firstOrNull { it.contains(effective) && it.exclusionGroups.isNotEmpty() }
                 stageCheats(if (family != null) ModifierFamilies.activate(family, effective, families) else listOf(effective.copy(enabled = true)))
             }
@@ -358,9 +375,10 @@ class CheatsViewModel @Inject constructor(
             val conflicts = if (restored.enabled && game != null) {
                 // The restored cheat is not in the repository yet: recognise families with it put back in its folder.
                 val folders = currentGameFolders(game).map { if (it.id == deletedCheat.folder.id) it.copy(cheats = it.cheats + restored) else it }
-                val families = folders.flatMap { ModifierFamilies.recognize(it) }
+                val nativeSelector = canonicalFor(game) != null
+                val families = folders.flatMap { ModifierFamilies.recognize(it, nativeSelector) }
                 families.firstOrNull { it.contains(restored) && it.exclusionGroups.isNotEmpty() }
-                    ?.let { ModifierFamilies.exclusions(it, restored.id, families) }.orEmpty()
+                    ?.let { ModifierFamilies.exclusions(it, restored, families) }.orEmpty()
             } else emptyList()
             // addCheat allocates a new ID; the deleted ID must not be staged again.
             cheatsRepository.addCheat(deletedCheat.folder, restored)

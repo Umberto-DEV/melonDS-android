@@ -187,4 +187,50 @@ class ModifierFamilyTest {
         assertFalse(activated.single { it.id == selector.id }.enabled)
         assertEquals(listOf(selector.copy(enabled = false)), ModifierFamilies.disable(families[0]))
     }
+
+    @Test fun twoEnumeratedFamiliesInOneFolderKeepDistinctIdentities() {
+        val levels = listOf(1, 5, 10, 20, 30).map(::hgLevel)
+        val species = (1..5).map { blackWild(it, "s$it") }
+        val families = ModifierFamilies.recognize("49 - Wild · mixed", levels + species)
+        assertEquals(2, families.size)
+        assertNotEquals(families[0].identity, families[1].identity)
+        assertFalse(families[0].sameAs(families[1]))
+    }
+
+    @Test fun duplicateFirstVaryingWordIsRejected() {
+        val pairs = listOf(1 to 1, 1 to 2, 2 to 3, 3 to 4, 4 to 5)
+        val cheats = pairs.map { (a, b) -> cheat("p$a-$b", "0200000A %08X 0200000B %08X D2000000 00000000".format(a, b)) }
+        assertTrue(ModifierFamilies.recognize("Wild", cheats).isEmpty())
+    }
+
+    @Test fun legacySpeciesOnlyCodeGetsTheCanonicalProfileOnSgp() {
+        val legacy = cheat("Wild Pokemon Modifier v1", hgV1)
+        val plain = ModifierFamilies.recognize("Wild", listOf(legacy)).single()
+        assertFalse(plain.requiresLevel)
+        val sgp = ModifierFamilies.recognize("Wild", listOf(legacy), nativeSelector = true).single()
+        assertTrue(sgp.requiresLevel)
+        val changed = ModifierFamilies.select(sgp, 25, 25, listOf(sgp), WildEncounterCheat::code).single()
+        assertEquals(WildEncounterCheat.code(25, 25), changed.code)
+        assertThrows(IllegalArgumentException::class.java) { ModifierFamilies.select(sgp, 25, null, listOf(sgp), WildEncounterCheat::code) }
+    }
+
+    @Test fun loadFormMemberIsActiveWithoutAReadableValue() {
+        val enabled = cheat("Wild Pokemon Modifier v1", hgV1, enabled = true)
+        val family = ModifierFamilies.recognize("Wild", listOf(enabled)).single()
+        assertTrue(family.active)
+        assertNull(family.current)
+        assertEquals(listOf(enabled.copy(enabled = false)), ModifierFamilies.disable(family))
+    }
+
+    @Test fun wildItemFolderIsNotASpeciesFamily() {
+        val cheats = listOf("Potion", "Super Potion", "Antidote", "Ether", "Elixir").mapIndexed { i, n -> blackWild(i + 1, n) }
+        val family = ModifierFamilies.recognize("Wild Pokemon Hold Item Modifier Codes", cheats).single()
+        assertEquals(ModifierKind.GENERIC, family.kind)
+        assertTrue(family.exclusionGroups.isEmpty())
+    }
+
+    @Test fun rewriteRejectsAMismatchedValueCount() {
+        val family = ModifierFamilies.recognize("Wild", listOf(cheat("Wild Pokemon and Level Modifier", hgSpeciesAndLevel))).single()
+        assertThrows(IllegalArgumentException::class.java) { ModifierFamilies.rewrite(family.members.single().code, family.parameters, listOf(25)) }
+    }
 }

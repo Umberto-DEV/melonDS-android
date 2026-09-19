@@ -12,6 +12,6 @@ sealed class CheatListItem {
     }
 
     data class Family(val family: ModifierFamily) : CheatListItem() {
-        override val key: Any get() = "family:${family.folderName}:${family.title}:${family.source}"
+        override val key: Any get() = "family:${family.identity}:${family.source}"
     }
 }

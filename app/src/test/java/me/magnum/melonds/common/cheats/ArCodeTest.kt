@@ -28,4 +28,9 @@ class ArCodeTest {
         assertNull(ArCode.parse("D200000 00000000"))
         assertNull(ArCode.parse("D2000000 0000000G"))
     }
+
+    @Test fun rejectsSignedWords() {
+        assertNull(ArCode.parse("-0000001 00000000"))
+        assertNull(ArCode.parse("+0000001 00000000"))
+    }
 }

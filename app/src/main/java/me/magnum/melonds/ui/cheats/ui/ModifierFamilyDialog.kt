@@ -32,7 +32,7 @@ import me.magnum.melonds.ui.common.melonTextButtonColors
 fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisable: () -> Unit, onConfirm: (value: Int, level: Int?) -> Unit) {
     val key = "${family.folderName}/${family.title}"
     val levelOnly = family.source == ModifierSource.ITEM_LOAD && family.kind == ModifierKind.LEVEL
-    val showsLevelField = family.hasLevelParameter || levelOnly
+    val showsLevelField = family.requiresLevel || levelOnly
     var value by rememberSaveable(key) { mutableStateOf(family.current?.value) }
     var level by rememberSaveable(key) { mutableStateOf((if (levelOnly) family.current?.value else family.currentLevel)?.toString() ?: "5") }
     var showHelp by rememberSaveable { mutableStateOf(false) }
@@ -57,12 +57,12 @@ fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisabl
                     TextButton(onClick = onDismiss, colors = melonTextButtonColors()) { Text(stringResource(android.R.string.cancel)) }
                     Button(enabled = canConfirm, onClick = {
                         if (levelOnly) onConfirm(levelValue ?: return@Button, null)
-                        else onConfirm(selected?.value ?: return@Button, if (family.hasLevelParameter) levelValue else null)
+                        else onConfirm(selected?.value ?: return@Button, if (family.requiresLevel) levelValue else null)
                     }) { Text(stringResource(R.string.wild_encounter_enable)) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(family.folderName, Modifier.weight(1f), style = MaterialTheme.typography.caption)
-                    if (family.current != null) {
+                    if (family.active) {
                         TextButton(onClick = onDisable, colors = melonTextButtonColors()) { Text(stringResource(R.string.modifier_family_disable)) }
                     }
                     TextButton(onClick = { showHelp = true }, colors = melonTextButtonColors()) { Text(stringResource(R.string.wild_encounter_details)) }
@@ -107,12 +107,15 @@ fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisabl
     }
 }
 
-/** A number (with or without '#') matches an option value; text matches the normalised label. */
+/**
+ * A number matches an option value ("#025" → Pikachu); when no value matches — level and nature families
+ * carry raw code words as values — it falls back to a text match on the label, so "7" still finds "Level 7".
+ */
 private fun search(options: List<ModifierOption>, query: String): List<ModifierOption> {
     val text = query.trim()
     if (text.isEmpty()) return options
-    val number = text.removePrefix("#").toIntOrNull()
-    if (number != null) return options.filter { it.value == number }
+    val byValue = text.removePrefix("#").toIntOrNull()?.let { number -> options.filter { it.value == number } }
+    if (!byValue.isNullOrEmpty()) return byValue
     val needle = PokemonSpecies.normalize(text)
     return options.filter { PokemonSpecies.normalize(it.label).contains(needle) }
 }

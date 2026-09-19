@@ -26,6 +26,10 @@ class ModifierFamilyDialogTest {
         "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000"
     private val itemLoad: ModifierFamily = ModifierFamilies.recognize("Wild Pokemon Modifier Codes",
         listOf(Cheat(1, 1, "Wild Pokemon and Level Modifier", "(Press L+R): hold L before the encounter.", hgSpeciesAndLevel, false))).single()
+    private val hgV1 = "94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 D2000000 00000000 " +
+        "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000"
+    private fun levelFamily(): ModifierFamily = ModifierFamilies.recognize("49 - Wild · level 1-100",
+        (1..10).map { Cheat(100L + it, 1, "Level $it", null, "52246C94 28038800 12247BEC %08X D2000000 00000000".format(0x2000 + it), false) }).single()
     private val names = listOf("Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon")
     private fun enumerated(activeIndex: Int? = null): ModifierFamily = ModifierFamilies.recognize("Wild Pokemon Modifier - Generation 1",
         names.mapIndexed { i, n -> Cheat(10L + i, 1, n, null,
@@ -81,5 +85,23 @@ class ModifierFamilyDialogTest {
         compose.onNodeWithText("Cerca nome o numero Pokédex").performTextInput("pikachu")
         compose.onNodeWithText("#025 Pikachu").assertIsDisplayed().performClick()
         compose.onNodeWithText("Attiva").assertIsDisplayed().assertIsEnabled()
+    }
+
+    @Test fun numericSearchFallsBackToTheLabelForLevelFamilies() {
+        var result: Pair<Int, Int?>? = null
+        compose.setContent { MelonTheme { ModifierFamilyDialog(levelFamily(), {}, {}, { v, l -> result = v to l }) } }
+        compose.onNodeWithText("Level 1–100").assertDoesNotExist()
+        compose.onNodeWithText("Search name or Pokédex number").performTextInput("7")
+        compose.onNodeWithText("Level 7").performClick()
+        compose.onNodeWithText("Enable").performClick()
+        assertEquals(0x2007 to null, result)
+    }
+
+    @Test fun loadFormActiveFamilyOffersDisable() {
+        var disabled = false
+        val active = ModifierFamilies.recognize("Wild Pokemon Modifier Codes", listOf(Cheat(1, 1, "Wild Pokemon Modifier v1", null, hgV1, true))).single()
+        compose.setContent { MelonTheme { ModifierFamilyDialog(active, {}, { disabled = true }, { _, _ -> }) } }
+        compose.onNodeWithText("Disable").performClick()
+        assertTrue(disabled)
     }
 }

@@ -271,4 +271,15 @@ class ModifierFamilyViewModelTest {
         override fun isCheatImportOngoing(): Boolean = false
         override fun getCheatImportProgress(): Flow<CheatImportProgress> = emptyFlow()
     }
+
+    @Test fun plainCheatToggleIsSynchronousOnceTheFolderIsClassified() = withMain {
+        val plain = Cheat(7, 1, "Max IVs", null, "1206E012 0000201F 1206E028 0000201F", false)
+        val repo = FakeRepository(folder.copy(cheats = folder.cheats + plain))
+        val state = handle()
+        val vm = CheatsViewModel(repo, state)
+        vm.folderItems.first { it is CheatsScreenUiState.Ready }
+        vm.toggleCheat(plain)
+        assertEquals(listOf(7L), pending(state).map { it.id }) // staged without runCurrent(): no round trip through the repository
+        assertFalse(vm.committingCheatsChangesState.value)
+    }
 }

@@ -30,8 +30,8 @@ object ArCode {
         val values = LongArray(words.size)
         for (i in words.indices) {
             val word = words[i]
-            if (word.length != 8) return null
-            values[i] = word.toLongOrNull(16) ?: return null
+            if (word.length != 8 || !word.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
+            values[i] = word.toLong(16)
         }
         val blocks = mutableListOf<ArBlock>()
         var current = mutableListOf<ArInstruction>()

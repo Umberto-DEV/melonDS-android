@@ -38,7 +38,7 @@ fun FamilyItem(
     ) {
         Checkbox(
             modifier = Modifier.padding(top = 4.dp),
-            checked = current != null,
+            checked = family.active,
             onCheckedChange = null,
         )
         Column(
@@ -49,9 +49,10 @@ fun FamilyItem(
             CaptionText(
                 style = MaterialTheme.typography.body2,
                 text = when {
-                    current == null -> stringResource(R.string.modifier_family_inactive)
-                    family.currentLevel != null -> "${current.label} · Lv ${family.currentLevel}"
-                    else -> current.label
+                    current != null && family.currentLevel != null -> "${current.label} · Lv ${family.currentLevel}"
+                    current != null -> current.label
+                    family.active -> stringResource(R.string.modifier_family_active)
+                    else -> stringResource(R.string.modifier_family_inactive)
                 },
             )
         }

@@ -62,7 +62,9 @@ class ModifierFamilyFixtureTest {
         val fams = families("19D1EEBB")
         val selector = fams.single { it.title == "Choose Pokémon and level" }
         assertEquals(ModifierSource.ITEM_LOAD, selector.source)
+        assertEquals(ModifierKind.SPECIES, selector.kind)
         assertTrue(selector.hasLevelParameter)
+        assertEquals(WildEncounterCheat.code(25, 100), ModifierFamilies.select(selector, 25, 100, fams, WildEncounterCheat::code).single().code)
         val species50 = fams.single { it.folderName.startsWith("50 ") }
         assertEquals(10, species50.members.size)
         assertEquals(ModifierKind.SPECIES, species50.kind)
