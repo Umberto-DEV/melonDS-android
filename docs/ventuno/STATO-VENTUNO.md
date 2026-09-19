@@ -1,7 +1,10 @@
-# melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, ore 11:40)
-Base: PR #1672 (21 commit) + motore lib#16 (3ad4e940). Tutto su origin/ventuno. **Sulla Thor dal 19/09 11:32 c'è la 2.1.1 con la correzione delle icone della lista ROM = app a9b8ded2 + motore bc060f4c** (aggiornata in place con `install -r`, firma invariata, dati conservati; dettagli in `ICONE-LISTA-ROM-2026-09-19.md`).
+# melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, ore 12:45)
+**Sulla Thor dal 19/09 12:39 c'è la 2.1.2 (versionCode 43) = app bb9bc841 (tag `v2.1.2`) + motore bc060f4c**: correzione delle icone della lista ROM (a9b8ded2), aggiornata in place con `install -r`, firma invariata, dati conservati; dettagli in `ICONE-LISTA-ROM-2026-09-19.md`.
 
-## Commit oltre la PR (dal più recente)
+**GitHub dal 19/09 12:38: un solo ramo per fork.** `Umberto-DEV/melonDS-android` e `Umberto-DEV/melonDS` hanno solo `ventuno` (ramo predefinito). Le PR #1672 (app), lib#16 (motore), #2751 e #2749 (core desktop) sono state chiuse e i loro rami cancellati insieme ai due `master`; #1672 e lib#16 erano interamente in `ventuno`, di #2751/#2749 restano fuori 6 commit (MAC su boot diretto DSi, bit depth SPU, invalidazione JIT) salvati in `local/git-bundles/*-20260919.bundle`. Nessuna nuova PR: quando servirà, si ripartirà da `ventuno`.
+
+## Commit oltre la PR #1672 (dal più recente)
+bb9bc841 chore(release): version 2.1.2 (versionCode 43)
 a9b8ded2 fix(roms): load ROM list icons on their own thread, not behind the directory scan (19/09; prima: icone vuote finché la scansione non finiva)
 … (commit dal 12/09 al 18/09: WFC, backup impostazioni, selettore SGP, CI; vedi `git log`)
 138baa2b feat(community): integrate five open upstream pull requests with corrections

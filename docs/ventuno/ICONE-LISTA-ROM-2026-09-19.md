@@ -51,5 +51,8 @@ Screenshot e tabelle in `~/Developer/android-test/thor/aggiornamento-20260919/ic
   icone (14 file) conservata, salvataggi e stati sulla microSD non toccati. Backup preventivo di
   `.sav`, `.ml0`, cheats xml e APK installata in
   `~/Developer/android-test/thor/aggiornamento-20260919/backup-pre-fix/` (SHA256SUMS-nds.txt).
+- Alle 12:39 la stessa correzione è stata reinstallata in place come **2.1.2** (versionCode 43, commit
+  bb9bc841, tag `v2.1.2`): `~/Developer/android-test/apk/ventuno-2.1.2/melonDS-2.1.2-arm64.apk`
+  (SHA-256 ffcbc8f4…). Avvio a cache calda: icone a 0,55 s.
 - Per le prove la Thor è stata riavviata tre volte (blocco schermo disattivato, nessuna partita in
   corso); dopo il riavvio Android mostra il dialogo di sistema «Use USB for» sopra l'app.
