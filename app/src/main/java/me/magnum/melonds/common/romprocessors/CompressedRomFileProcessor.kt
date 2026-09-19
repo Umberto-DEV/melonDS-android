@@ -18,6 +18,8 @@ import java.io.FileOutputStream
 import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -25,33 +27,38 @@ import kotlin.coroutines.suspendCoroutine
 abstract class CompressedRomFileProcessor(private val context: Context, private val uriHandler: UriHandler, private val ndsRomCache: NdsRomCache) : RomFileProcessor {
 
     private sealed class RomExtractionException(message: String) : Exception(message)
-    private class CouldNotOpenCompressedFileException : RomExtractionException("Failed to open compressed file for extraction")
-    private class CouldNotFindNdsRomException : RomExtractionException("Failed to find an NDS ROM to extract")
+    private class CouldNotFindNdsRomException : RomExtractionException("Failed to open the compressed file or to find an NDS ROM in it")
     private class CouldNotFindExtractedFileException : RomExtractionException("Failed to find extracted NDS ROM file")
 
     private companion object {
         val SUPPORTED_ROM_EXTENSIONS = listOf("nds", "dsi", "ids")
+
+        /**
+         * Held while an archive is open. Compressed ROMs allocate large decoder buffers on the Java heap (the LZMA2
+         * dictionary of a 7z archive alone can take a good part of it), so at most one archive is decoded at a time
+         * in the whole process, whichever component needs it (ROM scan, icon extraction, ROM info, extraction to the
+         * cache). Reads of already extracted ROMs never take it, and plain ROM files are not affected at all.
+         */
+        val archiveLock = ReentrantLock()
     }
 
     override fun getRomFromUri(romUri: Uri, parentUri: Uri?): Rom? {
         return try {
-            context.contentResolver.openInputStream(romUri)?.use { stream ->
-                getNdsEntryStreamInFileStream(stream)?.use { romFileStream ->
-                    val romDocument = uriHandler.getUriDocument(romUri)
-                    getRomMetadataInZipEntry(romFileStream)?.let { romMetadata ->
-                        val romName = romMetadata.romTitle.takeUnless { it.isBlank() } ?: romDocument?.nameWithoutExtension ?: ""
-                        Rom(
-                            name = romName,
-                            developerName = romMetadata.developerName,
-                            fileName = romDocument?.name ?: "",
-                            uri = romUri,
-                            parentTreeUri = parentUri,
-                            config = if (romMetadata.isDSiWareTitle) RomConfig.forDsiWareTitle() else RomConfig.default(),
-                            lastPlayed = null,
-                            isDsiWareTitle = romMetadata.isDSiWareTitle,
-                            retroAchievementsHash = romMetadata.retroAchievementsHash
-                        )
-                    }
+            readArchivedRom(romUri) { romFileStream ->
+                val romDocument = uriHandler.getUriDocument(romUri)
+                getRomMetadataInZipEntry(romFileStream)?.let { romMetadata ->
+                    val romName = romMetadata.romTitle.takeUnless { it.isBlank() } ?: romDocument?.nameWithoutExtension ?: ""
+                    Rom(
+                        name = romName,
+                        developerName = romMetadata.developerName,
+                        fileName = romDocument?.name ?: "",
+                        uri = romUri,
+                        parentTreeUri = parentUri,
+                        config = if (romMetadata.isDSiWareTitle) RomConfig.forDsiWareTitle() else RomConfig.default(),
+                        lastPlayed = null,
+                        isDsiWareTitle = romMetadata.isDSiWareTitle,
+                        retroAchievementsHash = romMetadata.retroAchievementsHash
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -62,7 +69,7 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
 
     override fun getRomIcon(rom: Rom): Bitmap? {
         return try {
-            getBestRomInputStream(rom)?.use {
+            readRom(rom) {
                 RomProcessor.getRomIcon(it)
             }
         } catch (e: Exception) {
@@ -73,7 +80,7 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
 
     override fun getRomInfo(rom: Rom): RomInfo? {
         return try {
-            getBestRomInputStream(rom)?.use {
+            readRom(rom) {
                 RomProcessor.getRomInfo(rom, it)
             }
         } catch (e: Exception) {
@@ -100,13 +107,28 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
         return SUPPORTED_ROM_EXTENSIONS.contains(extension)
     }
 
-    private fun getBestRomInputStream(rom: Rom): InputStream? {
+    /**
+     * Runs [block] on the best available stream for [rom]: the extracted copy when the cache has one, otherwise the
+     * ROM entry decoded from the archive. Returns null if neither could be opened.
+     */
+    private inline fun <T> readRom(rom: Rom, block: (InputStream) -> T): T? {
         val cachedRomUri = ndsRomCache.getCachedRomFile(rom)
         return if (cachedRomUri != null) {
-            context.contentResolver.openInputStream(cachedRomUri)
+            context.contentResolver.openInputStream(cachedRomUri)?.use(block)
         } else {
-            context.contentResolver.openInputStream(rom.uri)?.let {
-                getNdsEntryStreamInFileStream(it)
+            readArchivedRom(rom.uri, block)
+        }
+    }
+
+    /**
+     * Opens the archive at [romUri], decodes its ROM entry and runs [block] on it while holding [archiveLock], so
+     * that the decoder buffers of only one archive exist at a time. Returns null if the archive could not be opened
+     * or contains no ROM.
+     */
+    private inline fun <T> readArchivedRom(romUri: Uri, block: (RomFileStream) -> T): T? {
+        return archiveLock.withLock {
+            context.contentResolver.openInputStream(romUri)?.use { fileStream ->
+                getNdsEntryStreamInFileStream(fileStream)?.use(block)
             }
         }
     }
@@ -116,43 +138,43 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
     }
 
     private suspend fun extractRomFile(rom: Rom): Uri? = suspendCoroutine { continuation ->
-        context.contentResolver.openInputStream(rom.uri)?.use {
-            getNdsEntryStreamInFileStream(it)?.use { romFileStream ->
-                ndsRomCache.cacheRom(rom, object : NdsRomCache.RomExtractor {
-                    override fun getExtractedRomFileSize(): SizeUnit {
-                        return romFileStream.romFileSize
-                    }
-
-                    override fun saveRomFile(fileStream: FileOutputStream): Boolean {
-                        val buffer = ByteArray(8192)
-
-                        try {
-                            do {
-                                val read = romFileStream.read(buffer)
-                                if (read <= 0) {
-                                    break
-                                }
-
-                                fileStream.write(buffer, 0, read)
-                            } while (continuation.context.isActive)
-                        } catch (_: IOException) {
-                            return false
-                        }
-
-                        return continuation.context.isActive
-                    }
-                })
-
-                if (continuation.context.isActive) {
-                    val cachedRomUri = ndsRomCache.getCachedRomFile(rom)
-                    if (cachedRomUri == null) {
-                        continuation.resumeWithException(CouldNotFindExtractedFileException())
-                    } else {
-                        continuation.resume(cachedRomUri)
-                    }
+        // The whole extraction runs synchronously inside this block, so the archive lock taken by readArchivedRom is
+        // never held across a suspension point
+        readArchivedRom(rom.uri) { romFileStream ->
+            ndsRomCache.cacheRom(rom, object : NdsRomCache.RomExtractor {
+                override fun getExtractedRomFileSize(): SizeUnit {
+                    return romFileStream.romFileSize
                 }
-            } ?: continuation.resumeWithException(CouldNotFindNdsRomException())
-        } ?: continuation.resumeWithException(CouldNotOpenCompressedFileException())
+
+                override fun saveRomFile(fileStream: FileOutputStream): Boolean {
+                    val buffer = ByteArray(8192)
+
+                    try {
+                        do {
+                            val read = romFileStream.read(buffer)
+                            if (read <= 0) {
+                                break
+                            }
+
+                            fileStream.write(buffer, 0, read)
+                        } while (continuation.context.isActive)
+                    } catch (_: IOException) {
+                        return false
+                    }
+
+                    return continuation.context.isActive
+                }
+            })
+
+            if (continuation.context.isActive) {
+                val cachedRomUri = ndsRomCache.getCachedRomFile(rom)
+                if (cachedRomUri == null) {
+                    continuation.resumeWithException(CouldNotFindExtractedFileException())
+                } else {
+                    continuation.resume(cachedRomUri)
+                }
+            }
+        } ?: continuation.resumeWithException(CouldNotFindNdsRomException())
     }
 
     /**

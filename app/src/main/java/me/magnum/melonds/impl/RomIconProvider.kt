@@ -19,11 +19,16 @@ import java.util.Collections
  * request an icon is not found, it is generated and, if generated successfully, it's stored on both
  * caches.
  * The name of the file for the disk cache is the hash of the ROM's URI.
+ *
+ * [iconAccessDispatcher] serialises the disk cache reads and the icon extraction. It must be the provider's own and
+ * never the dispatcher of the ROM directory scan: the ROM list asks for one icon per row as soon as the cached list
+ * is shown, while the scan may keep its thread busy for seconds (it reads every ROM up to the banner, from a slow SD
+ * card at worst), and every icon queued behind it would leave the rows blank until the scan is over.
  */
 class RomIconProvider(
     private val context: Context,
     private val romFileProcessorFactory: RomFileProcessorFactory,
-    private val iconAccessScope: CoroutineDispatcher,
+    private val iconAccessDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
 ) {
     companion object {
         private const val ICON_CACHE_DIR = "rom_icons"
@@ -67,7 +72,7 @@ class RomIconProvider(
         return bitmap
     }
 
-    private suspend fun loadIconFromDisk(hash: String, rom: Rom): Bitmap? = withContext(iconAccessScope) {
+    private suspend fun loadIconFromDisk(hash: String, rom: Rom): Bitmap? = withContext(iconAccessDispatcher) {
         val iconCacheDir = getIconCacheDir()
         if (iconCacheDir?.isDirectory == true) {
             val iconFile = File(iconCacheDir, hash)

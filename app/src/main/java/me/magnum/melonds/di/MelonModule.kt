@@ -144,12 +144,8 @@ object MelonModule {
 
     @Provides
     @Singleton
-    fun provideRomIconProvider(
-        @ApplicationContext context: Context,
-        romFileProcessorFactory: RomFileProcessorFactory,
-        @RomFileAccessDispatcher romFileAccessDispatcher: CoroutineDispatcher,
-    ): RomIconProvider {
-        return RomIconProvider(context, romFileProcessorFactory, romFileAccessDispatcher)
+    fun provideRomIconProvider(@ApplicationContext context: Context, romFileProcessorFactory: RomFileProcessorFactory): RomIconProvider {
+        return RomIconProvider(context, romFileProcessorFactory)
     }
 
     @Provides
