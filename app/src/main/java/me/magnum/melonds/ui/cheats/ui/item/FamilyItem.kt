@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import me.magnum.melonds.R
 import me.magnum.melonds.common.cheats.ModifierFamily
 import me.magnum.melonds.ui.common.component.text.CaptionText
+import me.magnum.melonds.ui.common.melonTextButtonColors
 
 /** One row for a whole modifier family: title, the active choice, and a button that expands its members. */
 @Composable
@@ -54,8 +55,14 @@ fun FamilyItem(
                 },
             )
         }
-        TextButton(onClick = onToggleExpanded) {
-            Text(if (expanded) stringResource(R.string.modifier_family_hide) else stringResource(R.string.modifier_family_show_all, family.members.size))
+        TextButton(onClick = onToggleExpanded, colors = melonTextButtonColors()) {
+            Text(
+                when {
+                    expanded -> stringResource(R.string.modifier_family_hide)
+                    family.members.size == 1 -> stringResource(R.string.modifier_family_show_code)
+                    else -> stringResource(R.string.modifier_family_show_all, family.members.size)
+                },
+            )
         }
     }
 }

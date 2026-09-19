@@ -21,6 +21,7 @@ import me.magnum.melonds.common.cheats.ModifierKind
 import me.magnum.melonds.common.cheats.ModifierOption
 import me.magnum.melonds.common.cheats.ModifierSource
 import me.magnum.melonds.common.cheats.PokemonSpecies
+import me.magnum.melonds.ui.common.melonTextButtonColors
 
 /**
  * Picker for a modifier family: a searchable list of options (species, natures, levels, anything enumerated)
@@ -45,7 +46,7 @@ fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisabl
     if (showHelp) {
         AlertDialog(onDismissRequest = { showHelp = false }, title = { Text(family.title) },
             text = { Text(help) }, confirmButton = {
-                TextButton(onClick = { showHelp = false }) { Text(stringResource(android.R.string.ok)) }
+                TextButton(onClick = { showHelp = false }, colors = melonTextButtonColors()) { Text(stringResource(android.R.string.ok)) }
             })
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -53,7 +54,7 @@ fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisabl
             Column(Modifier.safeDrawingPadding().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(family.title, Modifier.weight(1f), style = MaterialTheme.typography.h6)
-                    TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) }
+                    TextButton(onClick = onDismiss, colors = melonTextButtonColors()) { Text(stringResource(android.R.string.cancel)) }
                     Button(enabled = canConfirm, onClick = {
                         if (levelOnly) onConfirm(levelValue ?: return@Button, null)
                         else onConfirm(selected?.value ?: return@Button, if (family.hasLevelParameter) levelValue else null)
@@ -62,9 +63,9 @@ fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisabl
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(family.folderName, Modifier.weight(1f), style = MaterialTheme.typography.caption)
                     if (family.current != null) {
-                        TextButton(onClick = onDisable) { Text(stringResource(R.string.modifier_family_disable)) }
+                        TextButton(onClick = onDisable, colors = melonTextButtonColors()) { Text(stringResource(R.string.modifier_family_disable)) }
                     }
-                    TextButton(onClick = { showHelp = true }) { Text(stringResource(R.string.wild_encounter_details)) }
+                    TextButton(onClick = { showHelp = true }, colors = melonTextButtonColors()) { Text(stringResource(R.string.wild_encounter_details)) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     if (!levelOnly) {

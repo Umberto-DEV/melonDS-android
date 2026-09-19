@@ -14,4 +14,5 @@
     <string name="modifier_family_hide">Hide</string>
     <string name="modifier_family_inactive">Not active</string>
     <string name="modifier_family_disable">Disable</string>
+    <string name="modifier_family_show_code">Show code</string>
 </resources>
