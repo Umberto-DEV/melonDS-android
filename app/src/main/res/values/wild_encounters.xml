@@ -13,4 +13,8 @@
     <string name="wild_encounter_details">How it works</string>
     <string name="wild_encounter_on">Wild Pokémon: selector on</string>
     <string name="wild_encounter_off">Wild Pokémon: selector off</string>
+    <string name="modifier_family_show_all">Show all (%1$d)</string>
+    <string name="modifier_family_hide">Hide</string>
+    <string name="modifier_family_inactive">Not active</string>
+    <string name="modifier_family_disable">Disable</string>
 </resources>

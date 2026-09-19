@@ -13,4 +13,8 @@
     <string name="wild_encounter_details">Come funziona</string>
     <string name="wild_encounter_on">Pokémon selvatici: selettore attivo</string>
     <string name="wild_encounter_off">Pokémon selvatici: selettore spento</string>
+    <string name="modifier_family_show_all">Mostra tutte (%1$d)</string>
+    <string name="modifier_family_hide">Nascondi</string>
+    <string name="modifier_family_inactive">Non attivo</string>
+    <string name="modifier_family_disable">Disattiva</string>
 </resources>

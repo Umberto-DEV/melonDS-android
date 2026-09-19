@@ -27,35 +27,37 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import me.magnum.melonds.common.cheats.WildEncounterCheat
 import me.magnum.melonds.R
+import me.magnum.melonds.common.cheats.ModifierFamily
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.ui.cheats.model.CheatFormDialogState
+import me.magnum.melonds.ui.cheats.model.CheatListItem
 import me.magnum.melonds.ui.cheats.model.CheatSubmissionForm
 import me.magnum.melonds.ui.cheats.model.CheatsScreenUiState
 import me.magnum.melonds.ui.cheats.ui.cheatform.CheatFormDialog
 import me.magnum.melonds.ui.cheats.ui.item.CheatItem
+import me.magnum.melonds.ui.cheats.ui.item.FamilyItem
 
 @Composable
 fun CheatListScreen(
     modifier: Modifier,
     contentPadding: PaddingValues,
-    cheats: CheatsScreenUiState<List<Cheat>>,
-    wildEncounterSupported: Boolean = false,
-    onConfigureWildEncounter: (Cheat, CheatSubmissionForm) -> Unit = { _, _ -> },
+    items: CheatsScreenUiState<List<CheatListItem>>,
+    onSelectFamilyOption: (ModifierFamily, Int, Int?) -> Unit,
+    onDisableFamily: (ModifierFamily) -> Unit,
     onCheatClick: (Cheat) -> Unit,
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
     onDeleteCheatClick: (Cheat) -> Unit,
 ) {
-    when (cheats) {
+    when (items) {
         is CheatsScreenUiState.Loading -> LoadingScreen(modifier.padding(contentPadding))
         is CheatsScreenUiState.Ready -> List(
             modifier = modifier,
             contentPadding = contentPadding,
-            cheats = cheats.data,
-            wildEncounterSupported = wildEncounterSupported,
-            onConfigureWildEncounter = onConfigureWildEncounter,
+            items = items.data,
+            onSelectFamilyOption = onSelectFamilyOption,
+            onDisableFamily = onDisableFamily,
             onCheatClick = onCheatClick,
             onAddNewCheat = onAddNewCheat,
             onUpdateCheat = onUpdateCheat,
@@ -64,31 +66,60 @@ fun CheatListScreen(
     }
 }
 
+/** What the lazy list actually renders: a family row, or a cheat row (plain, or an expanded family member). */
+private sealed class ListRow(val key: String) {
+    class CheatRow(val cheat: Cheat, key: String) : ListRow(key)
+    class FamilyRow(val item: CheatListItem.Family) : ListRow(item.key.toString())
+}
+
 @Composable
 private fun List(
     modifier: Modifier,
     contentPadding: PaddingValues,
-    cheats: List<Cheat>,
-    wildEncounterSupported: Boolean = false,
-    onConfigureWildEncounter: (Cheat, CheatSubmissionForm) -> Unit = { _, _ -> },
+    items: List<CheatListItem>,
+    onSelectFamilyOption: (ModifierFamily, Int, Int?) -> Unit,
+    onDisableFamily: (ModifierFamily) -> Unit,
     onCheatClick: (Cheat) -> Unit,
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
     onDeleteCheatClick: (Cheat) -> Unit,
 ) {
     var cheatFormDialogState by rememberSaveable(stateSaver = CheatFormDialogState.Saver) { mutableStateOf(CheatFormDialogState.Hidden) }
+    var expandedFamilies by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    var dialogFamilyKey by rememberSaveable { mutableStateOf<String?>(null) }
 
-    var wildCheatId by rememberSaveable { mutableStateOf<Long?>(null) }
-    val wildCheat = cheats.firstOrNull { it.id == wildCheatId }
-    if (wildCheat != null) {
-        WildEncounterDialog(wildCheat, onDismiss = { wildCheatId = null }, onConfirm = {
-            onConfigureWildEncounter(wildCheat, it)
-            wildCheatId = null
-        })
+    val dialogFamily = items.filterIsInstance<CheatListItem.Family>().firstOrNull { it.key == dialogFamilyKey }?.family
+    if (dialogFamily != null) {
+        ModifierFamilyDialog(
+            family = dialogFamily,
+            onDismiss = { dialogFamilyKey = null },
+            onDisable = {
+                onDisableFamily(dialogFamily)
+                dialogFamilyKey = null
+            },
+            onConfirm = { value, level ->
+                onSelectFamilyOption(dialogFamily, value, level)
+                dialogFamilyKey = null
+            },
+        )
+    }
+
+    val rows = buildList {
+        items.forEach { item ->
+            when (item) {
+                is CheatListItem.Single -> add(ListRow.CheatRow(item.cheat, item.key.toString()))
+                is CheatListItem.Family -> {
+                    add(ListRow.FamilyRow(item))
+                    if (item.key in expandedFamilies) {
+                        item.family.members.forEach { add(ListRow.CheatRow(it, "${item.key}/${it.id ?: it.code}")) }
+                    }
+                }
+            }
+        }
     }
 
     Box(modifier) {
-        if (cheats.isEmpty()) {
+        if (items.isEmpty()) {
             Text(
                 modifier = Modifier.padding(contentPadding).padding(24.dp).align(Alignment.Center),
                 text = stringResource(R.string.folder_is_empty),
@@ -105,26 +136,32 @@ private fun List(
                 ),
             ) {
                 itemsIndexed(
-                    items = cheats,
-                    key = { _, item -> item.id ?: item.code },
-                ) { index, item ->
+                    items = rows,
+                    key = { _, row -> row.key },
+                ) { index, row ->
                     if (index > 0) {
                         Divider()
                     }
 
-                    CheatItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        cheat = item,
-                        onClick = {
-                            if (wildEncounterSupported && !item.enabled && WildEncounterCheat.isConfigurable(item.code)) wildCheatId = item.id
-                            else onCheatClick(item)
-                        },
-                        onEditClick = {
-                            if (wildEncounterSupported && WildEncounterCheat.isConfigurable(item.code)) wildCheatId = item.id
-                            else cheatFormDialogState = CheatFormDialogState.EditCheat(item)
-                        },
-                        onDeleteClick = { onDeleteCheatClick(item) },
-                    )
+                    when (row) {
+                        is ListRow.FamilyRow -> FamilyItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            family = row.item.family,
+                            expanded = row.item.key in expandedFamilies,
+                            onClick = { dialogFamilyKey = row.item.key.toString() },
+                            onToggleExpanded = {
+                                val key = row.item.key.toString()
+                                expandedFamilies = ArrayList(if (key in expandedFamilies) expandedFamilies - key else expandedFamilies + key)
+                            },
+                        )
+                        is ListRow.CheatRow -> CheatItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            cheat = row.cheat,
+                            onClick = { onCheatClick(row.cheat) },
+                            onEditClick = { cheatFormDialogState = CheatFormDialogState.EditCheat(row.cheat) },
+                            onDeleteClick = { onDeleteCheatClick(row.cheat) },
+                        )
+                    }
                 }
             }
         }

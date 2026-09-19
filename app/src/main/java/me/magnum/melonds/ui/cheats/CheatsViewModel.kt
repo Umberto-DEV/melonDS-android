@@ -61,7 +61,6 @@ class CheatsViewModel @Inject constructor(
     private val deletedCheats = mutableListOf<DeletedCheat>()
 
     private val selectedGame = savedStateHandle.getStateFlow<GameParcelable?>(KEY_SELECTED_GAME, null).map { it?.toGame() }
-    val wildEncounterSupported = selectedGame.map { it != null && WildEncounterCheat.supports(it.gameCode, it.gameChecksum) }
     private val selectedCheatFolder = savedStateHandle.getStateFlow<CheatFolderParcelable?>(KEY_SELECTED_FOLDER, null).map { it?.toCheatFolder() }
 
     val games by lazy {
@@ -250,12 +249,6 @@ class CheatsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun currentGameCheats(game: Game): List<Cheat> {
-        val all = cheatsRepository.getAllGameCheats(game).first().flatMap { it.cheats }
-        val pending = modifiedCheatSet.value.associateBy { it.id }
-        return all.map { pending[it.id] ?: it }
-    }
-
     fun setSelectedGame(game: Game) {
         savedStateHandle[KEY_SELECTED_GAME] = GameParcelable.fromGame(game)
         _openFoldersEvent.trySend(OpenScreenEvent(game.name))
@@ -321,18 +314,6 @@ class CheatsViewModel @Inject constructor(
 
         viewModelScope.launch {
             cheatsRepository.addCustomCheat(selectedFolder.toCheatFolder(), cheatSubmissionForm)
-        }
-    }
-
-    fun configureWildEncounter(original: Cheat, form: CheatSubmissionForm) {
-        if (committingCheatsChangesState.value || !form.isValid()) return
-        val game = savedStateHandle.get<GameParcelable>(KEY_SELECTED_GAME)?.toGame() ?: return
-        if (!WildEncounterCheat.supports(game.gameCode, game.gameChecksum) || !WildEncounterCheat.isConfigurable(original.code) || WildEncounterCheat.selection(form.code) == null) return
-        modifyCheats {
-            val current = currentGameCheats(game)
-            val selected = requireNotNull(current.firstOrNull { it.id == original.id })
-            val configured = selected.copy(name = form.name, description = form.description, code = form.code, enabled = true)
-            stageCheats(WildEncounterCheat.configure(configured, current))
         }
     }
 
