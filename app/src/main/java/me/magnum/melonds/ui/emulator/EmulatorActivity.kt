@@ -8,6 +8,7 @@ import android.hardware.input.InputManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.PowerManager
 import android.view.Display
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -39,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -51,13 +53,16 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import me.magnum.melonds.MelonEmulator
 import me.magnum.melonds.R
+import me.magnum.melonds.common.Permission
 import me.magnum.melonds.common.PermissionHandler
+import me.magnum.melonds.common.UriPermissionManager
 import me.magnum.melonds.databinding.ActivityEmulatorBinding
 import me.magnum.melonds.domain.model.ConsoleType
 import me.magnum.melonds.domain.model.ControllerConfiguration
 import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.Rect
 import me.magnum.melonds.domain.model.SaveStateSlot
+import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.layout.Insets
 import me.magnum.melonds.domain.model.layout.LayoutComponent
 import me.magnum.melonds.domain.model.layout.ScreenFold
@@ -80,7 +85,6 @@ import me.magnum.melonds.ui.emulator.input.ConnectedControllerManager
 import me.magnum.melonds.ui.emulator.input.EmulatorMotionManager
 import me.magnum.melonds.ui.emulator.input.EmulatorRumbleManager
 import me.magnum.melonds.ui.emulator.input.FrontendInputHandler
-import me.magnum.melonds.ui.emulator.input.INativeInputListener
 import me.magnum.melonds.ui.emulator.input.InputProcessor
 import me.magnum.melonds.ui.emulator.input.MelonTouchHandler
 import me.magnum.melonds.ui.emulator.model.EmulatorOverlay
@@ -117,6 +121,7 @@ class EmulatorActivity : AppCompatActivity() {
         const val KEY_URI = "uri"
         const val KEY_BOOT_FIRMWARE_CONSOLE = "boot_firmware_console"
         const val KEY_BOOT_FIRMWARE_ONLY = "boot_firmware_only"
+        private const val KEY_LID_CLOSED_BY_SCREEN_OFF = "lid_closed_by_screen_off"
 
         fun getRomEmulatorActivityIntent(context: Context, rom: Rom): Intent {
             return Intent(context, EmulatorActivity::class.java).apply {
@@ -164,6 +169,9 @@ class EmulatorActivity : AppCompatActivity() {
     @Inject
     lateinit var appForegroundStateObserver: AppForegroundStateObserver
 
+    @Inject
+    lateinit var uriPermissionManager: UriPermissionManager
+
     private var presentation: ExternalPresentation? = null
 
     private lateinit var handler: Handler
@@ -194,10 +202,13 @@ class EmulatorActivity : AppCompatActivity() {
     private lateinit var choreographerFrameRenderer: ChoreographerFrameRenderer
     private lateinit var mainScreenRenderer: DSRenderer
     private lateinit var melonTouchHandler: MelonTouchHandler
-    private lateinit var nativeInputListener: INativeInputListener
+    private var lidClosedByScreenOff = false
+    // Declared as the concrete type (always an InputProcessor, see setupInputHandling) so clearPressedKeys() is reachable.
+    private lateinit var nativeInputListener: InputProcessor
     private val frontendInputHandler = object : FrontendInputHandler() {
         var fastForwardEnabled = false
             private set
+        private var fastForwardHoldEnabled = false
         var microphoneEnabled = true
             private set
 
@@ -214,7 +225,17 @@ class EmulatorActivity : AppCompatActivity() {
             fastForwardEnabled = !fastForwardEnabled
             binding.viewLayoutControls.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
             presentation?.layoutView?.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
-            MelonEmulator.setFastForwardEnabled(fastForwardEnabled)
+            updateFastForwardState()
+        }
+
+        override fun onFastForwardHoldPressed() {
+            fastForwardHoldEnabled = true
+            updateFastForwardState()
+        }
+
+        override fun onFastForwardHoldReleased() {
+            fastForwardHoldEnabled = false
+            updateFastForwardState()
         }
 
         override fun onMicrophonePressed() {
@@ -243,12 +264,35 @@ class EmulatorActivity : AppCompatActivity() {
         override fun onRewind() {
             viewModel.onOpenRewind()
         }
+
+        fun resetFastForwardHold() {
+            if (fastForwardHoldEnabled) {
+                fastForwardHoldEnabled = false
+                updateFastForwardState()
+            }
+        }
+
+        private fun updateFastForwardState() {
+            val fastForwardRequested = fastForwardEnabled || fastForwardHoldEnabled
+            if (fastForwardRequested && !viewModel.isFastForwardAllowed()) {
+                // Same restriction as rewind/load state in RA hardcore mode: deny and keep the toggle off
+                fastForwardEnabled = false
+                fastForwardHoldEnabled = false
+                binding.viewLayoutControls.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, false)
+                presentation?.layoutView?.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, false)
+                viewModel.notifyCannotFastForwardWhenRAHardcoreIsEnabled()
+                MelonEmulator.setFastForwardEnabled(false)
+                return
+            }
+            MelonEmulator.setFastForwardEnabled(fastForwardRequested)
+        }
     }
     private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        // Resume is triggered from inside onSettingsChanged, once the new configuration is actually applied:
+        // launching it separately here raced the two coroutines and could resume before settings took effect.
         viewModel.onSettingsChanged()
         setupSustainedPerformanceMode()
         setupFpsCounter()
-        viewModel.resumeEmulator()
     }
     private val cheatsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onCheatsChanged()
@@ -284,6 +328,10 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Restore the lid state across an Activity recreation, otherwise the lid stays closed until the
+        // user manually reopens it (the pending pause runnable is cancelled/rescheduled, not persisted).
+        lidClosedByScreenOff = savedInstanceState?.getBoolean(KEY_LID_CLOSED_BY_SCREEN_OFF) ?: false
+        intent.data?.let { uriPermissionManager.tryPersistFilePermissions(it, Permission.READ) }
         handler = Handler(mainLooper)
         lifecycleOwnerProvider.setCurrentLifecycleOwner(this)
         binding = ActivityEmulatorBinding.inflate(layoutInflater)
@@ -475,16 +523,32 @@ class EmulatorActivity : AppCompatActivity() {
                         ToastEvent.RewindNotAvailableWhileRAHardcoreModeEnabled -> R.string.rewind_unavailable_ra_hardcore_enabled to Toast.LENGTH_LONG
                         ToastEvent.StateLoadFailed -> R.string.failed_load_state to Toast.LENGTH_SHORT
                         ToastEvent.StateSaveFailed -> R.string.failed_save_state to Toast.LENGTH_SHORT
+                        ToastEvent.SaveDataWriteFailed -> R.string.failed_write_save_data to Toast.LENGTH_LONG
                         ToastEvent.StateStateDoesNotExist -> R.string.cant_load_empty_slot to Toast.LENGTH_SHORT
                         ToastEvent.CannotUseSaveStatesWhenRAHardcoreIsEnabled -> R.string.save_states_unavailable_ra_hardcore_enabled to Toast.LENGTH_LONG
+                        ToastEvent.CannotFastForwardWhenRAHardcoreIsEnabled -> R.string.fast_forward_unavailable_ra_hardcore_enabled to Toast.LENGTH_LONG
                         ToastEvent.CannotLoadStateWhenRunningFirmware,
                         ToastEvent.CannotSaveStateWhenRunningFirmware -> R.string.save_states_not_supported to Toast.LENGTH_LONG
                         ToastEvent.CannotSwitchRetroAchievementsMode -> R.string.retro_achievements_relaunch_to_apply_settings to Toast.LENGTH_LONG
                         ToastEvent.GbaModeNotSupported -> R.string.emulator_stop_gba_mode_unsupported to Toast.LENGTH_SHORT
                         ToastEvent.InternalError -> R.string.emulator_stop_internal_error to Toast.LENGTH_LONG
+                        ToastEvent.WildEncounterOn -> R.string.wild_encounter_on to Toast.LENGTH_SHORT
+                        ToastEvent.WildEncounterOff -> R.string.wild_encounter_off to Toast.LENGTH_SHORT
                     }
 
                     Toast.makeText(this@EmulatorActivity, message, duration).show()
+                }
+            }
+        }
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // StateFlow replays its last value, so this still fires here if the failure happened
+                // while the Activity was stopped and the one-shot toastEvent above was missed.
+                viewModel.pendingSaveWriteFailure.collectLatest { pending ->
+                    if (pending) {
+                        Toast.makeText(this@EmulatorActivity, R.string.failed_write_save_data, Toast.LENGTH_LONG).show()
+                        viewModel.consumePendingSaveWriteFailure()
+                    }
                 }
             }
         }
@@ -504,6 +568,7 @@ class EmulatorActivity : AppCompatActivity() {
                         }
                         EmulatorUiEvent.OpenScreen.SettingsScreen -> {
                             val settingsIntent = Intent(this@EmulatorActivity, SettingsActivity::class.java)
+                                .putExtra(SettingsActivity.EXTRA_LAUNCHED_FROM_EMULATOR, true)
                             settingsLauncher.launch(settingsIntent)
                         }
                         is EmulatorUiEvent.ShowPauseMenu -> showPauseMenu(it.pauseMenu)
@@ -516,6 +581,10 @@ class EmulatorActivity : AppCompatActivity() {
                                     viewModel.loadStateFromSlot(slot)
                                 }
                             }
+                        }
+                        is EmulatorUiEvent.ShowWfcConnections -> showInternetConnectionsDialog(it.slots)
+                        EmulatorUiEvent.WfcConnectionWriteFailed -> {
+                            Toast.makeText(this@EmulatorActivity, R.string.wfc_slot_write_error, Toast.LENGTH_SHORT).show()
                         }
                         EmulatorUiEvent.ShowAchievementList -> {
                             activeOverlays.addActiveOverlay(EmulatorOverlay.ACHIEVEMENTS_DIALOG)
@@ -683,6 +752,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        intent.data?.let { uriPermissionManager.tryPersistFilePermissions(it, Permission.READ) }
 
         val launchArgs = LaunchArgs.fromIntent(intent)
         // Invalid arguments. Ignore completely
@@ -721,8 +791,17 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        cancelPendingLidPause()
         choreographerFrameRenderer.startRendering()
         emulatorMotionManager.resume()
+
+        // Open the virtual lid only if the device actually went to sleep (not on app switch, etc). This must
+        // not depend on activeOverlays: the lid can be closed while a dialog/overlay is showing, and it must
+        // still reopen when the screen comes back on.
+        if (lidClosedByScreenOff) {
+            lidClosedByScreenOff = false
+            melonTouchHandler.setLidClosed(false)
+        }
 
         if (!activeOverlays.hasActiveOverlays()) {
             disableScreenTimeOut()
@@ -732,6 +811,14 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) {
+            frontendInputHandler.resetFastForwardHold()
+            // Keys held down at the moment focus is lost never get their ACTION_UP; drop them so they
+            // don't stay stuck pressed in the emulator.
+            if (::nativeInputListener.isInitialized) {
+                nativeInputListener.clearPressedKeys()
+            }
+        }
         setupFullscreen()
     }
 
@@ -947,6 +1034,56 @@ class EmulatorActivity : AppCompatActivity() {
             .show()
     }
 
+    /**
+     * The pause menu's quick way to turn the console's three WFC connections on and off without
+     * leaving the game. Each row shows the connection's app-side name (the label the WFC settings
+     * screen stores, since the slot's own SSID stays "melonAP") and, read-only, the primary DNS
+     * the slot points at. Changes are applied to the live firmware when the dialog is confirmed.
+     */
+    private fun showInternetConnectionsDialog(slots: List<WfcAccessPointSlot>) {
+        if (slots.isEmpty()) {
+            Toast.makeText(this, R.string.wfc_live_read_error, Toast.LENGTH_SHORT).show()
+            viewModel.resumeEmulator()
+            return
+        }
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val labels = slots.mapIndexed { index, slot ->
+            // "Connection N" was the placeholder an earlier build stored as a name; treat it as unnamed.
+            val name = preferences.getString("wfc_slot_name_${index + 1}", null)
+                ?.takeIf { it.isNotBlank() && it != "Connection ${index + 1}" }
+                ?: getString(R.string.wfc_slot_default_name, index + 1)
+            "$name\n${slot.primaryDns}"
+        }.toTypedArray()
+        val checked = BooleanArray(slots.size) { slots[it].enabled }
+
+        activeOverlays.addActiveOverlay(EmulatorOverlay.PAUSE_MENU)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.internet_connections)
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton(R.string.ok) { dialog, _ ->
+                slots.forEachIndexed { index, slot ->
+                    if (checked[index] != slot.enabled) {
+                        viewModel.setInternetConnectionEnabled(index, slot, checked[index])
+                    }
+                }
+                dialog.dismiss()
+                viewModel.resumeEmulator()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.cancel()
+            }
+            .setOnDismissListener {
+                activeOverlays.removeActiveOverlay(EmulatorOverlay.PAUSE_MENU)
+            }
+            .setOnCancelListener {
+                viewModel.resumeEmulator()
+            }
+            .show()
+    }
+
     private fun showRomLoadErrorDialog() {
         activeOverlays.addActiveOverlay(EmulatorOverlay.ROM_LOAD_ERROR_DIALOG)
         AlertDialog.Builder(this)
@@ -1013,12 +1150,44 @@ class EmulatorActivity : AppCompatActivity() {
         viewModel.setSystemOrientation(orientation)
     }
 
+    // Most games play sound for <2secs after closing the lid
+    private val lidClosePauseDelayMs = 3000L
+
+    private val pauseAfterLidCloseRunnable = Runnable {
+        choreographerFrameRenderer.stopRendering()
+        viewModel.pauseEmulator(false)
+        stopService(Intent(this, LidCloseService::class.java))
+    }
+
+    private fun isScreenOff(): Boolean {
+        return getSystemService<PowerManager>()?.isInteractive == false
+    }
+
+    private fun cancelPendingLidPause() {
+        handler.removeCallbacks(pauseAfterLidCloseRunnable)
+        stopService(Intent(this, LidCloseService::class.java))
+    }
+
     override fun onPause() {
         super.onPause()
         enableScreenTimeOut()
-        choreographerFrameRenderer.stopRendering()
         emulatorMotionManager.pause()
-        viewModel.pauseEmulator(false)
+        frontendInputHandler.resetFastForwardHold()
+        if (::nativeInputListener.isInitialized) {
+            nativeInputListener.clearPressedKeys()
+        }
+
+        if (isScreenOff()) {
+            lidClosedByScreenOff = true
+            melonTouchHandler.setLidClosed(true)
+            ContextCompat.startForegroundService(this, Intent(this, LidCloseService::class.java))
+
+            // Delay pausing the emulator just enough to let games play sounds after closing the lid
+            handler.postDelayed(pauseAfterLidCloseRunnable, lidClosePauseDelayMs)
+        } else { // App switch, etc.
+            choreographerFrameRenderer.stopRendering()
+            viewModel.pauseEmulator(false)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -1031,8 +1200,16 @@ class EmulatorActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_LID_CLOSED_BY_SCREEN_OFF, lidClosedByScreenOff)
+    }
+
     override fun onStop() {
         super.onStop()
+        // The delayed pause runnable was only ever cancelled in onResume; cancel it here too so it
+        // doesn't fire (and pause a session that already went through a different lifecycle path).
+        cancelPendingLidPause()
         getSystemService<DisplayManager>()?.unregisterDisplayListener(displayListener)
         getSystemService<InputManager>()?.unregisterInputDeviceListener(connectedControllerManager)
         connectedControllerManager.stopTrackingControllers()
@@ -1041,6 +1218,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        cancelPendingLidPause()
         emulatorMotionManager.stop()
         frameRenderCoordinator.stop()
         presentation?.dismiss()

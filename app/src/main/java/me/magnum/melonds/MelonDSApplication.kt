@@ -1,6 +1,8 @@
 package me.magnum.melonds
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
+import android.os.StrictMode
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
@@ -34,10 +36,35 @@ class MelonDSApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        enableStrictModeOnDebuggableBuilds()
         createNotificationChannels()
         applyTheme()
         performMigrations()
         MelonDSAndroidInterface.setup(UriFileHandler(this, uriHandler))
+    }
+
+    /**
+     * Development builds only: log (never crash on) disk/network work on the main thread and leaked closeables,
+     * so that ANR-prone code paths show up in logcat as "StrictMode policy violation".
+     */
+    private fun enableStrictModeOnDebuggableBuilds() {
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) == 0) return
+        StrictMode.setThreadPolicy(
+            StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .detectCustomSlowCalls()
+                .penaltyLog()
+                .build()
+        )
+        StrictMode.setVmPolicy(
+            StrictMode.VmPolicy.Builder()
+                .detectLeakedClosableObjects()
+                .detectLeakedSqlLiteObjects()
+                .penaltyLog()
+                .build()
+        )
     }
 
     private fun createNotificationChannels() {

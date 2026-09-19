@@ -12,6 +12,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
@@ -58,14 +59,27 @@ object MelonModule {
 
     @Provides
     @Singleton
-    fun provideSettingsBackupManager(@ApplicationContext context: Context, sharedPreferences: SharedPreferences): SettingsBackupManager {
-        return SettingsBackupManager(context, sharedPreferences)
+    fun provideSettingsBackupManager(@ApplicationContext context: Context, sharedPreferences: SharedPreferences, settingsRepository: SettingsRepository): SettingsBackupManager {
+        return SettingsBackupManager(context, sharedPreferences, settingsRepository)
     }
 
     @Provides
     @Singleton
-    fun provideRomsRepository(@ApplicationContext context: Context, gson: Gson, settingsRepository: SettingsRepository, romFileProcessorFactory: RomFileProcessorFactory): RomsRepository {
-        return FileSystemRomsRepository(context, gson, settingsRepository, romFileProcessorFactory)
+    @RomFileAccessDispatcher
+    fun provideRomFileAccessDispatcher(): CoroutineDispatcher {
+        return Dispatchers.IO.limitedParallelism(1)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRomsRepository(
+        @ApplicationContext context: Context,
+        gson: Gson,
+        settingsRepository: SettingsRepository,
+        romFileProcessorFactory: RomFileProcessorFactory,
+        @RomFileAccessDispatcher romFileAccessDispatcher: CoroutineDispatcher,
+    ): RomsRepository {
+        return FileSystemRomsRepository(context, gson, settingsRepository, romFileProcessorFactory, romFileAccessDispatcher)
     }
 
     @Provides

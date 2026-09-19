@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -38,6 +39,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.magnum.melonds.MelonEmulator
+import me.magnum.melonds.common.WfcSettings
 import me.magnum.melonds.common.romprocessors.RomFileProcessorFactory
 import me.magnum.melonds.common.runtime.ScreenshotFrameBufferProvider
 import me.magnum.melonds.domain.model.Cheat
@@ -46,6 +48,7 @@ import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.RomInfo
 import me.magnum.melonds.domain.model.RuntimeBackground
 import me.magnum.melonds.domain.model.SaveStateSlot
+import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.emulator.EmulatorEvent
 import me.magnum.melonds.domain.model.emulator.EmulatorSessionUpdateAction
 import me.magnum.melonds.domain.model.emulator.FirmwareLaunchResult
@@ -69,6 +72,7 @@ import me.magnum.melonds.domain.repositories.RomsRepository
 import me.magnum.melonds.domain.repositories.SaveStatesRepository
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.EmulatorManager
+import me.magnum.melonds.di.RomFileAccessDispatcher
 import me.magnum.melonds.impl.emulator.EmulatorSession
 import me.magnum.melonds.impl.layout.UILayoutProvider
 import me.magnum.melonds.ui.emulator.component.RetroAchievementsSubmissionHandler
@@ -113,6 +117,7 @@ class EmulatorViewModel @Inject constructor(
     private val emulatorManager: EmulatorManager,
     private val emulatorSession: EmulatorSession,
     private val retroAchievementsSubmissionHandler: RetroAchievementsSubmissionHandler,
+    @RomFileAccessDispatcher private val romFileAccessDispatcher: CoroutineDispatcher,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -151,6 +156,15 @@ class EmulatorViewModel @Inject constructor(
 
     private val _toastEvent = EventSharedFlow<ToastEvent>()
     val toastEvent = _toastEvent.asSharedFlow()
+
+    // Survives being missed while the Activity is stopped (unlike the no-replay toastEvent above), so the
+    // failure is still surfaced the next time the UI comes back to STARTED.
+    private val _pendingSaveWriteFailure = MutableStateFlow(false)
+    val pendingSaveWriteFailure = _pendingSaveWriteFailure.asStateFlow()
+
+    fun consumePendingSaveWriteFailure() {
+        _pendingSaveWriteFailure.value = false
+    }
 
     private val _raIntegrationEvent = Channel<RAIntegrationEvent>(Channel.UNLIMITED)
     val integrationEvent = _raIntegrationEvent.receiveAsFlow()
@@ -334,6 +348,8 @@ class EmulatorViewModel @Inject constructor(
             }
 
             dispatchSessionUpdateActions(sessionUpdateActions)
+            // Resume only after the configuration above has actually been applied to the running session.
+            emulatorManager.resumeEmulator()
         }
     }
 
@@ -453,6 +469,7 @@ class EmulatorViewModel @Inject constructor(
                         }
                     }
                     RomPauseMenuOption.VIEW_ACHIEVEMENTS -> _uiEvent.tryEmit(EmulatorUiEvent.ShowAchievementList)
+                    RomPauseMenuOption.INTERNET_CONNECTIONS -> showInternetConnections()
                     RomPauseMenuOption.RESET -> resetEmulator()
                     RomPauseMenuOption.EXIT -> exitEmulator(force = false)
                 }
@@ -468,6 +485,51 @@ class EmulatorViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Reads the console's three WFC connections out of the live firmware and asks the UI to show
+     * them. The emulator is already paused by the pause menu; the native call stops the emulator
+     * thread for the duration anyway, since the console can write the same bytes over the
+     * firmware SPI.
+     */
+    private fun showInternetConnections() {
+        sessionCoroutineScope.launch {
+            val slots = withContext(Dispatchers.IO) {
+                WfcSettings.readLiveSlots()?.mapNotNull { WfcAccessPointSlot.parse(it) }
+            }
+
+            _uiEvent.emit(EmulatorUiEvent.ShowWfcConnections(slots ?: emptyList()))
+        }
+    }
+
+    /**
+     * Turns one of the console's three WFC connections on or off without leaving the game. The
+     * DS re-reads the slots from the firmware SPI whenever it opens a connection, so this applies
+     * to the next connection attempt; an already established one is unaffected.
+     *
+     * Only the enabled flag changes: the DNS servers are written back as they were read, and the
+     * slot's SSID is left alone (the free name the user gives a connection is an app-side label,
+     * see WfcSettings).
+     */
+    fun setInternetConnectionEnabled(index: Int, slot: WfcAccessPointSlot, enabled: Boolean) {
+        sessionCoroutineScope.launch {
+            val written = withContext(Dispatchers.IO) {
+                WfcSettings.writeLiveSlot(index, enabled, "", slot.primaryDns, slot.secondaryDns)
+            }
+
+            if (!written) {
+                _uiEvent.emit(EmulatorUiEvent.WfcConnectionWriteFailed)
+            }
+        }
+    }
+
+    fun isFastForwardAllowed(): Boolean {
+        return emulatorSession.isFastForwardAllowed()
+    }
+
+    fun notifyCannotFastForwardWhenRAHardcoreIsEnabled() {
+        _toastEvent.tryEmit(ToastEvent.CannotFastForwardWhenRAHardcoreIsEnabled)
     }
 
     fun onOpenRewind() {
@@ -658,6 +720,8 @@ class EmulatorViewModel @Inject constructor(
                 when (it) {
                     is EmulatorEvent.RumbleStart -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStart(it.duration))
                     EmulatorEvent.RumbleStop -> _rumbleEvent.tryEmit(RumbleEvent.RumbleStop)
+                    EmulatorEvent.SaveFlushFailed -> _pendingSaveWriteFailure.value = true
+                    is EmulatorEvent.WildEncounterToggled -> _toastEvent.tryEmit(if (it.active) ToastEvent.WildEncounterOn else ToastEvent.WildEncounterOff)
                     is EmulatorEvent.Stop -> {
                         when (it.reason) {
                             EmulatorEvent.Stop.Reason.GBAModeNotSupported -> _toastEvent.tryEmit(ToastEvent.GbaModeNotSupported)
@@ -770,7 +834,7 @@ class EmulatorViewModel @Inject constructor(
             }
     }
 
-    private suspend fun getRomInfo(rom: Rom): RomInfo? = withContext(Dispatchers.IO) {
+    private suspend fun getRomInfo(rom: Rom): RomInfo? = withContext(romFileAccessDispatcher) {
         val fileRomProcessor = romFileProcessorFactory.getFileRomProcessorForDocument(rom.uri)
         fileRomProcessor?.getRomInfo(rom)
     }
