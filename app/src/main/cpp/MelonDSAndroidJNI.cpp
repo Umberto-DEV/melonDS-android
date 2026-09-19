@@ -247,6 +247,7 @@ Java_me_magnum_melonds_MelonEmulator_startEmulation(JNIEnv* env, jobject thiz)
     limitFps = true;
     targetFps = 60;
     isFastForwardEnabled = false;
+    MelonDSAndroid::setAudioFastForwardActive(false);
 
     pthread_mutex_init(&emuThreadMutex, NULL);
     pthread_cond_init(&emuThreadCond, NULL);
@@ -326,6 +327,10 @@ Java_me_magnum_melonds_MelonEmulator_resumeEmulation(JNIEnv* env, jobject thiz)
         pthread_mutex_lock(&emuThreadMutex);
     }
 
+    // Resume before the emulation thread is released: onResumed() writes the RTC, which must not
+    // run in parallel with a frame.
+    MelonDSAndroid::resume();
+
     if (!stop) {
         paused = false;
         if (started) {
@@ -336,8 +341,44 @@ Java_me_magnum_melonds_MelonEmulator_resumeEmulation(JNIEnv* env, jobject thiz)
     if (started) {
         pthread_mutex_unlock(&emuThreadMutex);
     }
+}
 
-    MelonDSAndroid::resume();
+// Stops the emulation thread for an operation that touches the whole machine state, the way
+// resetEmulation and loadRewindState already do it. Returns whether it was already paused, which
+// is what resumeEmuThreadAfterSyncOperation() needs to restore the previous state.
+static bool pauseEmuThreadForSyncOperation(JNIEnv* env, jobject thiz)
+{
+    // Nothing to synchronise against before startEmulation(): emuThreadMutex isn't even
+    // initialised yet and isThreadReallyPaused would never become true.
+    if (!started)
+        return true;
+
+    pthread_mutex_lock(&emuThreadMutex);
+    if (stop) {
+        // The emulation is stopping; leave it alone, as the other entry points do.
+        pthread_mutex_unlock(&emuThreadMutex);
+        return true;
+    }
+
+    bool wasPaused = paused;
+    pthread_mutex_unlock(&emuThreadMutex);
+
+    if (!wasPaused) {
+        Java_me_magnum_melonds_MelonEmulator_pauseEmulation(env, thiz);
+    }
+
+    // Make sure that the thread is really paused to avoid data corruption
+    while (!isThreadReallyPaused);
+
+    return wasPaused;
+}
+
+static void resumeEmuThreadAfterSyncOperation(JNIEnv* env, jobject thiz, bool wasPaused)
+{
+    // Resume emulation only if it was running
+    if (!wasPaused) {
+        Java_me_magnum_melonds_MelonEmulator_resumeEmulation(env, thiz);
+    }
 }
 
 JNIEXPORT void JNICALL
@@ -365,14 +406,23 @@ JNIEXPORT jboolean JNICALL
 Java_me_magnum_melonds_MelonEmulator_saveStateInternal(JNIEnv* env, jobject thiz, jstring path)
 {
     const char* saveStatePath = path == nullptr ? nullptr : env->GetStringUTFChars(path, JNI_FALSE);
-    return MelonDSAndroid::saveState(saveStatePath);
+    // Serialising the whole machine while the emulation thread keeps running yields a torn state.
+    bool wasPaused = pauseEmuThreadForSyncOperation(env, thiz);
+    jboolean result = MelonDSAndroid::saveState(saveStatePath);
+    resumeEmuThreadAfterSyncOperation(env, thiz, wasPaused);
+    return result;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_me_magnum_melonds_MelonEmulator_loadStateInternal(JNIEnv* env, jobject thiz, jstring path)
 {
     const char* saveStatePath = path == nullptr ? nullptr : env->GetStringUTFChars(path, JNI_FALSE);
-    return MelonDSAndroid::loadState(saveStatePath);
+    // Loading rewrites the machine state and makes the core request a save flush, which would
+    // race the CheckFlush() the emulation thread runs at the end of every frame.
+    bool wasPaused = pauseEmuThreadForSyncOperation(env, thiz);
+    jboolean result = MelonDSAndroid::loadState(saveStatePath);
+    resumeEmuThreadAfterSyncOperation(env, thiz, wasPaused);
+    return result;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -468,13 +518,22 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
         pthread_cond_destroy(&emuThreadCond);
     }
 
+    // After the join and before the SaveManagers are destroyed: the emulator is stopped, so
+    // copying the primary buffer is safe here and nowhere else. Without this, a write that was
+    // requested but never staged is invisible to the final flush, which then reports success
+    // with nothing pending.
+    MelonDSAndroid::stageSaves();
+
     MelonDSAndroid::cleanup();
 
-    env->DeleteGlobalRef(globalCameraManager);
-
-    globalCameraManager = nullptr;
+    if (globalCameraManager != nullptr)
+    {
+        env->DeleteGlobalRef(globalCameraManager);
+        globalCameraManager = nullptr;
+    }
 
     delete androidCameraHandler;
+    androidCameraHandler = nullptr;
 }
 
 JNIEXPORT void JNICALL
@@ -517,6 +576,7 @@ JNIEXPORT void JNICALL
 Java_me_magnum_melonds_MelonEmulator_setFastForwardEnabled(JNIEnv* env, jobject thiz, jboolean enabled)
 {
     isFastForwardEnabled = enabled;
+    MelonDSAndroid::setAudioFastForwardActive(enabled);
     if (enabled) {
         limitFps = fastForwardSpeedMultiplier > 0;
         targetFps = 60 * fastForwardSpeedMultiplier;
@@ -555,7 +615,11 @@ Java_me_magnum_melonds_MelonEmulator_updateEmulatorConfiguration(JNIEnv* env, jo
 
     fastForwardSpeedMultiplier = newConfiguration.fastForwardSpeedMultiplier;
 
+    // Applying the configuration swaps the shared_ptr the emulation thread reads on every frame
+    // and pokes the SPU, so stop the thread first, like resetEmulation does.
+    bool wasPaused = pauseEmuThreadForSyncOperation(env, thiz);
     MelonDSAndroid::updateEmulatorConfiguration(std::make_unique<MelonDSAndroid::EmulatorConfiguration>(std::move(newConfiguration)));
+    resumeEmuThreadAfterSyncOperation(env, thiz, wasPaused);
 
     if (isFastForwardEnabled) {
         limitFps = fastForwardSpeedMultiplier > 0;
@@ -571,6 +635,21 @@ Java_me_magnum_melonds_MelonEmulator_updateEmulatorConfiguration(JNIEnv* env, jo
         }
     }
 }
+}
+
+// The two sync helpers above, exposed to the other JNI translation units (WfcSettingsJNI.cpp)
+// that need to touch the machine state from a non-emulator thread. Neither pauseEmulation() nor
+// resumeEmulation() reads its JNI arguments, so there is nothing to forward.
+namespace MelonDSAndroid {
+    bool pauseEmulationThreadForSyncOperation()
+    {
+        return pauseEmuThreadForSyncOperation(nullptr, nullptr);
+    }
+
+    void resumeEmulationThreadAfterSyncOperation(bool wasPaused)
+    {
+        resumeEmuThreadAfterSyncOperation(nullptr, nullptr, wasPaused);
+    }
 }
 
 MelonDSAndroid::RomGbaSlotConfig* buildGbaSlotConfig(GbaSlotType slotType, const char* romPath, const char* savePath)

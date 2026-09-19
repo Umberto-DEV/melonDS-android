@@ -1,3 +1,4 @@
+#include <cstring>
 #include <ctime>
 #include <chrono>
 #include <EGL/egl.h>
@@ -17,7 +18,9 @@
 #include "NDSCart.h"
 #include "net/Net_Slirp.h"
 #include "Platform.h"
+#include "RtcSync.h"
 #include "SDCardArgsBuilder.h"
+#include "EmulatorMessageQueueJNI.h"
 
 using namespace std;
 using namespace melonDS;
@@ -25,6 +28,16 @@ using namespace melonDS::Platform;
 
 namespace MelonDSAndroid
 {
+
+namespace {
+struct WildEncounterMemory {
+    NDS& nds;
+    uint8_t read8(uint32_t address) { return nds.ARM9Read8(address); }
+    uint32_t read32(uint32_t address) { return nds.ARM9Read32(address); }
+    void write8(uint32_t address, uint8_t value) { nds.ARM9Write8(address, value); }
+    void write16(uint32_t address, uint16_t value) { nds.ARM9Write16(address, value); }
+};
+}
 
 const int kRewindBufferSize = 1024 * 1024 * 20; // Use 20MB per savestate
 const int kRewindScreenshotSize = 256 * 384 * 4;
@@ -55,7 +68,10 @@ MelonInstance::MelonInstance(int instanceId, std::shared_ptr<EmulatorConfigurati
         nds = new NDS(std::move(*args), this);
     }
 
-    if (configuration->userInternalFirmwareAndBios)
+    // Only generated firmware keeps its Wi-fi settings in wfcsettings.bin. DSi always boots from
+    // the user's firmware file (see loadFirmware() in EmulatorArgsBuilder.cpp), and a save manager
+    // pointed at wfcsettings.bin would dump the whole 128 KB firmware into it.
+    if (configuration->userInternalFirmwareAndBios && consoleType != 1)
     {
         std::filesystem::path firmwarePath = MelonDSAndroid::internalFilesDir;
         firmwarePath /= "wfcsettings.bin";
@@ -143,6 +159,7 @@ bool MelonInstance::loadRom(std::string romPath, std::string sramPath)
         .SRAMLength = sramFileLength,
     };
 
+    const bool supportsWildSelector = WildEncounterToggle::supportsHeader(romData.get(), romFileLength);
     auto cart = NDSCart::ParseROM(std::move(romData), romFileLength, this, std::move(cartargs));
     if (!cart)
     {
@@ -150,6 +167,11 @@ bool MelonInstance::loadRom(std::string romPath, std::string sramPath)
     }
 
     nds->SetNDSCart(std::move(cart));
+    wildEncounterSupported = supportsWildSelector;
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.configure(std::nullopt, inputMask);
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     ndsSave = std::make_unique<SaveManager>(sramPath);
 
     return true;
@@ -269,6 +291,9 @@ void MelonInstance::start()
 
 void MelonInstance::reset()
 {
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     nds->Reset();
     setBatteryLevels();
     setDateTime();
@@ -356,7 +381,12 @@ u32 MelonInstance::runFrame()
         nds->GPU.GetRenderer3D().SetOutputTexture(backBuffer, renderFrame->frameTexture);
     }
 
+    WildEncounterMemory wildMemory{*nds};
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.beforeFrame(wildMemory, inputMask);
+    notifyWildEncounterChange(wasWildActive);
     u32 nLines = nds->RunFrame();
+    wildEncounterToggle.afterFrame(wildMemory);
     retroAchievementsManager->FrameUpdate();
 
     if (!isRendererAccelerated)
@@ -387,14 +417,7 @@ u32 MelonInstance::runFrame()
         frameQueue.discardRenderedFrame(renderFrame);
     }
 
-    if (ndsSave)
-        ndsSave->CheckFlush();
-
-    if (gbaSave)
-        gbaSave->CheckFlush();
-
-    if (firmwareSave)
-        firmwareSave->CheckFlush();
+    stageSaves();
 
     frame++;
     bool needsRewindCapture = rewindManager.ShouldCaptureState(frame);
@@ -410,6 +433,18 @@ u32 MelonInstance::runFrame()
     }
 
     return nLines;
+}
+
+void MelonInstance::stageSaves()
+{
+    if (ndsSave)
+        ndsSave->CheckFlush();
+
+    if (gbaSave)
+        gbaSave->CheckFlush();
+
+    if (firmwareSave)
+        firmwareSave->CheckFlush();
 }
 
 void MelonInstance::stop()
@@ -489,12 +524,28 @@ bool MelonInstance::takeScreenshot()
     return screenshotRenderer->takeScreenshot();
 }
 
+void MelonInstance::notifyWildEncounterChange(bool previous)
+{
+    if (previous == wildEncounterToggle.active()) return;
+    int32_t active = wildEncounterToggle.active() ? 1 : 0;
+    fireEmulatorEvent(EVENT_WILD_ENCOUNTER_TOGGLE, sizeof(active), &active);
+}
+
 void MelonInstance::loadCheats(std::list<Cheat> cheats)
 {
     std::vector<ARCode> codeList;
+    std::optional<WildEncounterToggle::Selection> wildSelection;
 
     for (auto cheat : cheats)
     {
+        if (wildEncounterSupported)
+        {
+            if (auto selection = WildEncounterToggle::parse(cheat.code))
+            {
+                wildSelection = selection;
+                continue; // The wrapper owns its transient writes and L+R state.
+            }
+        }
         ARCode arCode {
             .Enabled = true,
             .Code = cheat.code,
@@ -503,6 +554,9 @@ void MelonInstance::loadCheats(std::list<Cheat> cheats)
     }
 
     nds->AREngine.Cheats = codeList;
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.configure(wildSelection, inputMask);
+    notifyWildEncounterChange(wasWildActive);
 }
 
 int MelonInstance::sendNetPacket(u8* data, int length)
@@ -552,6 +606,107 @@ void MelonInstance::requestFirmwareSaveWrite(const u8* saveData, u32 saveLength,
         firmwareSave->RequestFlush(saveData, saveLength, writeOffset, writeLength);
 }
 
+void applyWfcSlotData(Firmware::WifiAccessPoint& accessPoint, const WfcSlotData& slotData)
+{
+    accessPoint.Status = slotData.enabled ? Firmware::AccessPointStatus::Normal : Firmware::AccessPointStatus::NotConfigured;
+
+    size_t nameLength = strnlen(slotData.name, sizeof(accessPoint.SSID));
+    if (nameLength > 0)
+    {
+        memset(accessPoint.SSID, 0, sizeof(accessPoint.SSID));
+        memcpy(accessPoint.SSID, slotData.name, nameLength);
+        accessPoint.SSIDLength = (u8) nameLength;
+    }
+
+    memcpy(accessPoint.PrimaryDns.data(), slotData.primaryDns, sizeof(slotData.primaryDns));
+    memcpy(accessPoint.SecondaryDns.data(), slotData.secondaryDns, sizeof(slotData.secondaryDns));
+    accessPoint.UpdateChecksum();
+}
+
+void extractWfcSlotData(const Firmware::WifiAccessPoint& accessPoint, WfcSlotData& slotData)
+{
+    slotData.enabled = accessPoint.Status != Firmware::AccessPointStatus::NotConfigured;
+
+    // The SSID is a fixed 32-byte field and isn't guaranteed to be NUL-terminated when full.
+    size_t nameLength = strnlen(accessPoint.SSID, sizeof(accessPoint.SSID));
+    memset(slotData.name, 0, sizeof(slotData.name));
+    memcpy(slotData.name, accessPoint.SSID, nameLength);
+
+    memcpy(slotData.primaryDns, accessPoint.PrimaryDns.data(), sizeof(slotData.primaryDns));
+    memcpy(slotData.secondaryDns, accessPoint.SecondaryDns.data(), sizeof(slotData.secondaryDns));
+}
+
+bool wfcAccessPointsInBounds(const Firmware& firmware)
+{
+    if (!firmware.Buffer() || firmware.Length() == 0)
+        return false;
+
+    u32 userDataOffset = firmware.GetUserDataOffset();
+    // The access points sit 0x400 bytes before the user settings and the DSi's extended ones
+    // 0xA00 bytes before them, so anything closer to the start of the image is out of bounds.
+    if (userDataOffset < 0xA00 || userDataOffset > firmware.Length())
+        return false;
+
+    u32 accessPointsEnd = firmware.GetWifiAccessPointOffset() + sizeof(firmware.GetAccessPoints());
+    return accessPointsEnd <= firmware.Length();
+}
+
+// The extended (DSi) blocks are only meaningful in DSi firmware; in a real DS image that area
+// holds unrelated firmware data and must not be touched. The generated firmware is the other
+// case that owns it: its Wi-fi region is saved to wfcsettings.bin, extended blocks first
+// (see generateFirmware() in EmulatorArgsBuilder.cpp).
+static bool firmwareOwnsExtendedAccessPoints(const Firmware& firmware)
+{
+    return firmware.GetHeader().ConsoleType == Firmware::FirmwareConsoleType::DSi
+        || firmware.GetHeader().Identifier == GENERATED_FIRMWARE_IDENTIFIER;
+}
+
+bool MelonInstance::readWfcSlots(WfcSlotData slots[3])
+{
+    const Firmware& firmware = nds->SPI.GetFirmware();
+    if (!wfcAccessPointsInBounds(firmware))
+        return false;
+
+    const auto& accessPoints = firmware.GetAccessPoints();
+    for (int i = 0; i < 3; i++)
+        extractWfcSlotData(accessPoints[i], slots[i]);
+
+    return true;
+}
+
+bool MelonInstance::writeWfcSlot(int slot, const WfcSlotData& slotData)
+{
+    if (slot < 0 || slot > 2)
+        return false;
+
+    Firmware& firmware = nds->SPI.GetFirmware();
+    if (!wfcAccessPointsInBounds(firmware))
+        return false;
+
+    Firmware::WifiAccessPoint& accessPoint = firmware.GetAccessPoints()[slot];
+    applyWfcSlotData(accessPoint, slotData);
+
+    if (firmwareOwnsExtendedAccessPoints(firmware))
+    {
+        // The extended block embeds its own copy of the base access point; keep them in sync so
+        // the slot behaves the same in DS and DSi mode.
+        u32 extendedOffset = firmware.GetExtendedAccessPointOffset();
+        if (extendedOffset + sizeof(firmware.GetExtendedAccessPoints()) <= firmware.Length())
+        {
+            Firmware::ExtendedWifiAccessPoint& extendedAccessPoint = firmware.GetExtendedAccessPoints()[slot];
+            extendedAccessPoint.Data.Base = accessPoint;
+            extendedAccessPoint.UpdateChecksum();
+        }
+    }
+
+    // Same request the console's own firmware writes end up making (SPI.cpp,
+    // FirmwareMem::Release()): the platform layer decides whether that means the whole firmware
+    // file or just the Wi-fi region of wfcsettings.bin.
+    u32 wifiOffset = firmware.GetWifiAccessPointOffset();
+    Platform::WriteFirmware(firmware, wifiOffset, firmware.Length() - wifiOffset, this);
+    return true;
+}
+
 bool MelonInstance::saveState(Savestate* state)
 {
     if (!retroAchievementsManager->DoSavestate(state))
@@ -562,13 +717,18 @@ bool MelonInstance::saveState(Savestate* state)
 
 bool MelonInstance::loadState(Savestate* state)
 {
+    const bool wasWildActive = wildEncounterToggle.active();
+    wildEncounterToggle.reset(inputMask);
+    notifyWildEncounterChange(wasWildActive);
     if (!retroAchievementsManager->DoSavestate(state))
         return false;
 
     if (nds->DoSavestate(state))
     {
         setBatteryLevels();
-        setDateTime();
+        // The savestate carries its own RTC, so don't stamp the host time over it. Only the
+        // opt-in sync may touch it, and only forward (see syncRTC).
+        syncRTC();
         return true;
     }
     else
@@ -708,6 +868,54 @@ void MelonInstance::setDateTime()
     std::tm* now = std::localtime(&t);
 
     nds->RTC.SetDateTime(now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+}
+
+// Opt-in "Synchronize clock to device time" option. The DS RTC is driven by the emulator's
+// own scheduler (RTC::ScheduleTimer), not by the host clock, so a DS console clock never
+// resyncs on its own after the app spends real time paused or backgrounded. Left disabled,
+// this is invisible: existing saves/behavior are unaffected. Enabled, it is called once when
+// the emulator resumes (see onResumed(), called from MelonDSAndroid::resume() in MelonDS.cpp)
+// -- construction already covers the first frame after load via its own unconditional
+// setDateTime() call -- and forwards the decision to the pure function in RtcSync.h, which
+// never asks to step the clock backward -- see there for why.
+void MelonInstance::syncRTC()
+{
+    if (!currentConfiguration->rtcSyncToHost)
+        return;
+
+    int year, month, day, hour, minute, second;
+    nds->RTC.GetDateTime(year, month, day, hour, minute, second);
+
+    std::tm dsTm{};
+    dsTm.tm_year = year - 1900;
+    dsTm.tm_mon = month - 1;
+    dsTm.tm_mday = day;
+    dsTm.tm_hour = hour;
+    dsTm.tm_min = minute;
+    dsTm.tm_sec = second;
+    dsTm.tm_isdst = -1;
+    std::time_t dsEpochSeconds = std::mktime(&dsTm);
+
+    std::time_t hostEpochSeconds = std::time(nullptr);
+
+    if (dsEpochSeconds == (std::time_t) -1)
+    {
+        // Couldn't normalize the DS clock (e.g. it holds an out-of-range value). Log and
+        // leave it alone rather than acting on garbage -- there is no safe direction to
+        // stamp it in, and we never step the clock backward.
+        Platform::Log(Platform::LogLevel::Warn, "syncRTC: mktime failed to normalize DS RTC value, skipping sync\n");
+        return;
+    }
+
+    if (rtcSyncAction(dsEpochSeconds, hostEpochSeconds, kRtcSyncMinDriftSeconds) == RtcSyncAction::ADVANCE)
+    {
+        setDateTime();
+    }
+}
+
+void MelonInstance::onResumed()
+{
+    syncRTC();
 }
 
 void MelonInstance::saveRewindState(RewindSaveState* rewindSaveState)
