@@ -11,6 +11,6 @@ data class ConfigurationDirResult(
     }
 
     enum class FileStatus {
-        PRESENT, MISSING, INVALID
+        PRESENT, MISSING, INVALID, WRONG_CONSOLE
     }
 }
