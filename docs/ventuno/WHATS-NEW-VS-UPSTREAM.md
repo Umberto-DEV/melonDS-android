@@ -34,9 +34,14 @@ together. Audio can optionally mute while fast forwarding.
 behaves like closing a real DS, so games play their sleep jingle instead of being
 cut off.
 
-**Pokémon encounter picker (Sacred Gold Plus only).** For that one ROM hack, a
-screen to pick which Pokémon and level appears in the grass, toggled in-game
-with L+R.
+**Pick your wild Pokémon from a list.** When the cheat database you imported
+has "wild Pokémon" codes for a game — HeartGold, SoulSilver, Diamond, Pearl,
+Platinum, Black, White, Black 2, White 2, Sacred Gold Plus — the cheat list
+shows one entry with a search box instead of hundreds of near-identical
+codes: pick the Pokémon (and the level, where the game allows it), done.
+Starters, natures and level lists collapse the same way, and turning one on
+turns the conflicting ones off for you. On Sacred Gold Plus the in-game L+R
+toggle keeps working exactly as before.
 
 ## Important fixes
 
@@ -58,6 +63,10 @@ out of memory.
 
 **Games launched from other apps open correctly** instead of reporting the ROM as
 missing.
+
+**Cheat database import reads every entry correctly.** The XML importer could
+read the wrong slice of the parser's buffer; it never showed on Android but
+was wrong all the same.
 
 **The LCD and scanline filters look right** — they now line up with the console's
 real pixel grid instead of drifting with the window size.

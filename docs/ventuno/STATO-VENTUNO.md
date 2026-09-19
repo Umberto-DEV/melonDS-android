@@ -1,4 +1,31 @@
-# melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, ore 13:20)
+# melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, sera)
+
+## 2.1.4 (versionCode 45) — selettore cheat a famiglie
+Spec `SELETTORE-CHEAT-2026-09-19.md`, piano `SELETTORE-CHEAT-PIANO-2026-09-19.md`, ramo `feat/modifier-families`
+(11 commit) merge in `ventuno`. Il selettore Pokémon non è più SGP-only: `common/cheats/ArCode.kt` (parser AR) e
+`ModifierFamily.kt` riconoscono le famiglie nei cheat importati — enumerate (B/W, B2/W2, starter, nature, livelli)
+e a lettura da oggetto/calcolatrice (HG/SS, D/P/Pt) — e applicano la scelta (abilita una voce / riscrive la load in
+`D5`); `CheatsViewModel.folderItems` collassa ogni famiglia in una riga, `ModifierFamilyDialog` (ex
+`WildEncounterDialog`) è il selettore, `FamilyItem` la riga. SGP: stesse regole, profilo canonico per il toggle L+R
+nativo (C++ invariato), `NatureEncounterCheat` eliminato. Regole validate sul DB DeadSkullzJr (4265 giochi) e sul
+catalogo SGP EN/IT (numeri nella spec §3.4). Bug trovato e corretto per strada: `XmlCheatDatabaseSAXHandler`
+copiava i caratteri dall'offset 0 invece che da `start` (mascherato su Android da Expat, visibile sulla JVM).
+Test: 141 (erano 114), 0 fallimenti; fixture reale `test/resources/cheats/modifier-families.xml` attraverso il
+parser dell'app. Lint: nessun errore nuovo oltre a 4 `MissingTranslation` della stessa classe delle 13 stringhe SGP
+preesistenti (279 errori totali, tutti preesistenti). `pr-prep/app` è superato e va rigenerato.
+Build/installazione: vedi riga sotto (aggiornata a fine giornata).
+**Sulla Thor dal 19/09 17:52:53: 2.1.4 (versionCode 45)** = app `ventuno` con il merge di `feat/modifier-families`
+(13 commit) + motore bc060f4c invariato; `adb install -r -t --no-incremental`, firma invariata, `firstInstallTime`
+12/09 → dati, permessi SAF e cache conservati. APK 81 MB in `~/Developer/android-test/apk/ventuno-2.1.4/`
+(sha256 `198505e4…`). Verificato sul dispositivo (screenshot `thor/aggiornamento-20260919-sera/214-*.png`): SGP
+cartella 40 → una riga famiglia con la selezione corrente letta dal codice (`#092 Gastly · Lv 5`), dialog con
+ricerca/livello/Disattiva/Come funziona leggibili; cartella 44 → una riga «Non attivo · Mostra tutte (25)», espansa
+mostra i 25 membri. Revisione indipendente del diff (10 punti) applicata prima del push: identità di famiglia,
+valori distinti, profilo canonico anche sui legacy solo-specie, stato attivo in forma load, ricerca numerica con
+ripiego, guardia «Wild … Item», toggle sincrono sui cheat semplici. Suite: 151 test, 0 fallimenti.
+Il nome della voce 40 sulla Thor («… Gastly · Lv. 5») è quello scritto dalla 2.1.3: la selezione vera è nel
+sottotitolo; si allinea reimportando il catalogo. Da provare in gioco: L+R dopo una nuova scelta dal dialog.
+
 **Sulla Thor dal 19/09 13:19 c'è la 2.1.3 (versionCode 44) = app d2da9e51 (tag `v2.1.3`) + motore bc060f4c**: correzione delle icone della lista ROM (a9b8ded2, `ICONE-LISTA-ROM-2026-09-19.md`) più i 3 commit upstream del 12/09; aggiornata in place con `install -r`, firma invariata, dati conservati (prima installazione 12/09 18:02). Da provare in gioco: pulsanti combinati con due dita (modifica upstream integrata).
 
 **Allineamento upstream (19/09 13:10): `ventuno` è 0 commit indietro rispetto a `rafaelvcaetano:master`** (merge c5e491ec dei 3 commit upstream del 12/09: multi-tocco sui pulsanti combinati, nessun riavvio della ROM già in esecuzione da intent esterno, `pref_rewind` nelle release). Regola: tenere `ventuno` sempre a 0 indietro, così una PR futura si apre senza conflitti. Versione 2.1.3 (versionCode 44, tag `v2.1.3`, APK in `~/Developer/android-test/apk/ventuno-2.1.3/`), installata sulla Thor alle 13:19.

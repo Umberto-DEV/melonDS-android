@@ -1,6 +1,7 @@
 # Selettore per i cheat "modificatore" — specifica (19/09/2026)
 
-Stato: **specifica approvata in discussione, non ancora implementata.** Sostituisce il selettore
+Stato: **implementata nella 2.1.4** (ramo `feat/modifier-families`, 19/09/2026); le regole qui sotto
+sono quelle in codice, aggiornate dopo la revisione indipendente del diff. Sostituisce il selettore
 SGP-only (`WildEncounterCheat`, `NatureEncounterCheat`, `WildEncounterDialog`) con un meccanismo
 unico che vale per ogni gioco il cui database cheat lo permette. Ramo di lavoro:
 `feat/modifier-families` da `ventuno`; merge in `ventuno` solo dopo la prova sulla Thor.
@@ -94,11 +95,15 @@ Case-insensitive, sottostringa. I cataloghi possono essere localizzati (SGP IT u
    sono la norma: SGP 50–59 hanno un `LEGGIMI` di 2 word, HG/SS `Level Modifier Codes` ha 1
    codice generico + 12 `Level N`.
 2. Per ogni gruppo con **≥ 5** cheat: calcola le posizioni di word che variano fra i membri.
-   Il gruppo è famiglia se le posizioni variabili sono **1 o 2** e le tuple dei valori sono
-   tutte distinte. (Due posizioni servono alle nature SGP/HG: `0x2400+n` e `0x2700+n`.)
+   Il gruppo è famiglia se le posizioni variabili sono **1 o 2**, le tuple dei valori sono tutte
+   distinte **e anche i valori della prima posizione sono distinti** (è quello che il selettore usa
+   per scegliere un membro). Due posizioni servono alle nature SGP/HG: `0x2400+n` e `0x2700+n`.
 3. `kind`:
    - `SPECIES` se le posizioni variabili sono **esattamente 1** e (≥ 80 % dei nomi normalizzati è in
-     `PokemonSpecies` **oppure** tutti i valori sono in 1..649 e il nome cartella matcha `WILD|STARTER`);
+     `PokemonSpecies` **oppure** tutti i valori sono in 1..649, il nome cartella matcha `WILD|STARTER` e
+     **non** matcha `item|ball|abilit|hold|gender|sess|shiny|cromat|oggett|music|rate|frequenz|natur|level|livell|weather|meteo`
+     — una cartella «Wild Pokemon Hold Item Modifier» con valori piccoli non deve entrare nel gruppo di
+     esclusione delle specie);
    - altrimenti `NATURE` se il nome cartella matcha `NATURE`; `LEVEL` se matcha `LEVEL`; altrimenti `GENERIC`.
 4. `options`: una per membro, `value` = la prima word variabile (intero), `label` = nome del cheat.
    Per `SPECIES` la ricerca per numero usa `value` (è il numero Pokédex: verificato Gen 1–5).
@@ -118,6 +123,7 @@ Per ogni cheat **non** membro di una famiglia A, il cui nome o la cui cartella m
 3. Ogni blocco che soddisfa 1–2 è un `Parameter`, al massimo due per codice; blocchi successivi
    (Platinum ne ha un terzo) restano intatti e non sono parametri. `kind` del parametro:
    `LEVEL` se la load è a 8 bit (`DB`/`D8`) **o** se è il secondo parametro; altrimenti `SPECIES`.
+   Se il **primo** parametro è `LEVEL` il codice è di solo livello: non si cerca un secondo parametro.
    Copre: HG `Wild Pokemon and Level Modifier` (DA poi DB), HG `Level Modifier Code` e SGP 41
    `metodo classico` (solo DB → LEVEL), Platinum `(Calculator)` (DA, DA → SPECIES, LEVEL).
 4. `options`: `SPECIES` → `PokemonSpecies.all` (493 basta: HG/SS/D/P/Pt sono Gen 4; B/W hanno la
@@ -152,11 +158,21 @@ Conseguenza dichiarata: su HeartGold vanilla il Pokémon scelto appare *tenendo 
 nota del database. Il toggle L+R nativo resta SGP (§7).
 
 ### 4.3 Profilo canonico SGP
-Se `WildEncounterCheat.supports(gameCode, checksum)` è vero e la famiglia è `ITEM_LOAD` con
-parametri `SPECIES` + `LEVEL`, il codice prodotto è il **canonico** a 28 word (firma overlay
+Se `WildEncounterCheat.supports(gameCode, checksum)` è vero e la famiglia è `ITEM_LOAD` di `kind`
+`SPECIES` — con parametri `SPECIES` + `LEVEL` **o anche solo `SPECIES`** (due dei quattro codici
+legacy del catalogo SGP sono solo specie): la famiglia riceve `nativeSelector = true`, il selettore
+chiede comunque il livello (`requiresLevel`) e il codice prodotto è il **canonico** a 28 word (firma overlay
 `52246C94 28038800` al posto del trigger, `D5` specie, `D5` livello) — quello che
 `WildEncounterToggle::parse()` riconosce. È l'unico punto in cui SGP è trattato diversamente, e
 serve a non perdere il toggle nativo.
+
+### 4.3 bis Identità di una famiglia
+L'identità di una famiglia è il suo **primo membro** (`id`, o il codice se l'id non è ancora
+assegnato): stabile alla riscrittura e distinta fra due famiglie enumerate nella stessa cartella
+(gruppi di lunghezza diversa). `sameAs()` e la chiave della riga in lista usano questa identità,
+non il titolo. Una famiglia è **attiva** se ha un membro abilitato, anche quando il valore non è
+leggibile dal codice (ITEM_LOAD ancora in forma load): la riga mostra «Attivo» e il selettore
+offre «Disattiva».
 
 ### 4.4 Mutua esclusione
 Ogni famiglia ha un **gruppo di esclusione** `(kind, role)`:
@@ -181,6 +197,12 @@ Starter Gen 1–5; Platinum Starter #1 Gen 1–4 fra loro ma non contro Starter 
   `Mostra tutte (151)` / `Nascondi` espande i membri come righe normali (toggle, modifica,
   cancella come oggi). Stato `expanded` in `rememberSaveable`, non persistito.
 - **Tocco sulla riga** → `ModifierFamilyDialog(family)`; **tocco sul membro espanso** → come oggi.
+  La ricerca numerica filtra per valore («#025» → Pikachu) e, se nessun valore combacia, ripiega sul
+  testo dell'etichetta: nelle famiglie di livelli e nature i valori sono word del codice, «7» deve
+  trovare «Level 7».
+- Il ViewModel conserva la classificazione della cartella a schermo: abilitare un cheat che non
+  appartiene a una famiglia con gruppo di esclusione resta **sincrono** come prima; solo un membro
+  di famiglia passa dal giro completo sul gioco (lettura + riconoscimento).
 - **`ModifierFamilyDialog`** (ex `WildEncounterDialog`, stesso aspetto e stessa disposizione):
   ricerca per nome o numero sulle `options`; campo livello **solo** se la famiglia ha un parametro
   `LEVEL` (B) — per A il livello è un'altra famiglia; pulsante **Attiva**; pulsante **Disattiva**

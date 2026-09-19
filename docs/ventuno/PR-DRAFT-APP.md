@@ -130,6 +130,14 @@ Conseguenze da tenere a mente:
 - da `app/build.gradle.kts`: il build type `profiling` e l'opzione
   `-PnativeSanitize`. Del file resta solo `testOptions` + le dipendenze di test.
 
+### Aggiornamento 19/09 sera — `pr-prep/app` è superato
+`ventuno` è andato avanti (selettore a famiglie 2.1.4 + correzione dell'importatore XML):
+`pr-prep/app` va **rigenerato** da `ventuno` con lo stesso criterio (§ Come è stato costruito).
+Con la 2.1.4 il commit `feat(cheats)` non è più SGP-only: è il selettore generico su
+`common/cheats/` + `ui/cheats/`, con `WildEncounterCheat` ridotto al profilo canonico SGP.
+La decisione 2 qui sotto va riletta in questa luce: il generico è proponibile, il toggle
+nativo (`WildEncounterToggle.h`) resta la parte SGP-specifica da valutare.
+
 ### Decisioni aperte prima di aprire la PR
 1. **Spezzare la PR.** 147 file in un colpo solo è tanto da rivedere. Ordine
    suggerito, dal meno controverso: save → audio → input → roms → video →
