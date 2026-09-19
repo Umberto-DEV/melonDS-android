@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = android.app.Application::class)
-class WildEncounterPersistenceTest {
+class ModifierFamilyPersistenceTest {
     @Test fun selectionAndConflictsAreSavedTogetherAndRollbackOnFailure() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val database = Room.inMemoryDatabaseBuilder(context, MelonDatabase::class.java).allowMainThreadQueries().build()
