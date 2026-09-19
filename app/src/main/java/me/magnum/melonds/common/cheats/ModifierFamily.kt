@@ -159,6 +159,51 @@ object ModifierFamilies {
         return null
     }
 
+    /** Cheats to stage so that [value] (and [level]) become the active choice of [family]. */
+    fun select(family: ModifierFamily, value: Int, level: Int?, families: List<ModifierFamily>, canonical: ((Int, Int) -> String)?): List<Cheat> {
+        require(family.options.any { it.value == value }) { "value $value is not an option of ${family.title}" }
+        val chosen = when (family.source) {
+            ModifierSource.ENUMERATED -> requireNotNull(family.options.first { it.value == value }.cheat)
+            ModifierSource.ITEM_LOAD -> {
+                val cheat = family.members.single()
+                val code = if (family.hasLevelParameter) {
+                    val chosenLevel = requireNotNull(level) { "${family.title} needs a level" }
+                    require(chosenLevel in 1..MAX_LEVEL) { "level $chosenLevel out of range" }
+                    canonical?.takeIf { family.kind == ModifierKind.SPECIES }?.invoke(value, chosenLevel)
+                        ?: rewrite(cheat.code, family.parameters, listOf(value, chosenLevel))
+                } else {
+                    rewrite(cheat.code, family.parameters, listOf(value))
+                }
+                cheat.copy(code = code)
+            }
+        }
+        return activate(family, chosen, families)
+    }
+
+    /** [cheat], a member of [family], becomes enabled; every conflicting active cheat is disabled. */
+    fun activate(family: ModifierFamily, cheat: Cheat, families: List<ModifierFamily>): List<Cheat> =
+        exclusions(family, cheat.id, families) + cheat.copy(enabled = true)
+
+    fun disable(family: ModifierFamily): List<Cheat> = family.members.filter { it.enabled }.map { it.copy(enabled = false) }
+
+    /** Active members of [family] and of every family it conflicts with, except [exceptId], as disabled copies. */
+    fun exclusions(family: ModifierFamily, exceptId: Long?, families: List<ModifierFamily>): List<Cheat> =
+        (listOf(family) + families.filter { !it.sameAs(family) && it.conflictsWith(family) })
+            .flatMap { it.members }
+            .filter { it.enabled && it.id != exceptId }
+            .distinctBy { it.id }
+            .map { it.copy(enabled = false) }
+
+    /** Replace each parameter's load with `D5000000 value`; every other word stays exactly as it is. */
+    fun rewrite(code: String, parameters: List<ModifierParameter>, values: List<Int>): String {
+        val blocks = requireNotNull(ArCode.parse(code)) { "unparsable code" }.map { it.instructions.toMutableList() }
+        parameters.zip(values).forEach { (parameter, value) ->
+            require(value >= 0) { "negative value" }
+            blocks[parameter.blockIndex][parameter.instructionIndex] = ArInstruction(ArCode.SET_DATA, value.toLong())
+        }
+        return ArCode.render(blocks.map { ArBlock(it) })
+    }
+
     internal fun roleOf(title: String): String = when {
         STARTER.containsMatchIn(title) -> "STARTER" + (SLOT.find(title)?.groupValues?.get(1)?.let { "#$it" } ?: "")
         WILD.containsMatchIn(title) -> "WILD"

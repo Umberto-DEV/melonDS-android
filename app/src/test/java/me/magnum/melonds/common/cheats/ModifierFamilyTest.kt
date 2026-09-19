@@ -137,4 +137,54 @@ class ModifierFamilyTest {
         assertTrue(ModifierFamilies.recognize("Miscellaneous Codes", listOf(cheat("Recollect 2nd Generation Starters", hgV1))).isEmpty())
         assertTrue(ModifierFamilies.recognize("Miscellaneous Codes", listOf(cheat("Money", hgV1))).isEmpty())
     }
+
+    @Test fun enumeratedSelectionEnablesOneAndDisablesSiblingsAndSameGroupFamilies() {
+        val gen1 = (1..5).map { blackWild(it, "g1-$it") }.mapIndexed { i, c -> if (i == 0) c.copy(enabled = true) else c }
+        val gen2 = (152..156).map { blackWild(it, "g2-$it") }.mapIndexed { i, c -> if (i == 1) c.copy(enabled = true) else c }
+        val starter = (1..5).map { blackWild(it, "s$it") }.map { it.copy(enabled = true) }
+        val families = ModifierFamilies.recognize("Wild Pokemon Modifier - Generation 1", gen1) +
+            ModifierFamilies.recognize("Wild Pokemon Modifier - Generation 2", gen2) +
+            ModifierFamilies.recognize("Starter Modifier - Generation 1", starter)
+        val changes = ModifierFamilies.select(families[1], 154, null, families, null)
+        assertEquals(setOf(gen1[0].id, gen2[1].id, gen2[2].id), changes.map { it.id }.toSet())
+        assertEquals(listOf(gen2[2].id), changes.filter { it.enabled }.map { it.id })
+    }
+
+    @Test fun itemLoadSelectionRewritesOnlyTheLoad() {
+        val cheat = cheat("Wild Pokemon Modifier v1", hgV1)
+        val families = ModifierFamilies.recognize("Wild Pokemon Modifier Codes", listOf(cheat))
+        val changed = ModifierFamilies.select(families.single(), 25, null, families, null).single()
+        assertTrue(changed.enabled)
+        assertEquals(hgV1.replace("DA000000 0000DCF6", "D5000000 00000019"), changed.code)
+        val again = ModifierFamilies.recognize("Wild Pokemon Modifier Codes", listOf(changed)).single()
+        assertEquals(25, again.current?.value)
+        val reconfigured = ModifierFamilies.select(again, 1, null, listOf(again), null).single()
+        assertEquals(hgV1.replace("DA000000 0000DCF6", "D5000000 00000001"), reconfigured.code)
+    }
+
+    @Test fun canonicalProfileReproducesTheSgpCodeByteForByte() {
+        val expected = "52246C94 28038800 6211186C 00000000 B211186C 00000000 D5000000 00000019 C0000000 00000027 D7000000 00032A48 D2000000 00000000 " +
+            "52246C94 28038800 6211186C 00000000 B211186C 00000000 D5000000 00000019 C0000000 0000000B D8000000 00032A3C D2000000 00000000"
+        assertEquals(expected, WildEncounterCheat.code(25, 25))
+        val legacy = cheat("Wild Pokemon and Level Modifier", hgSpeciesAndLevel)
+        val families = ModifierFamilies.recognize("40 - Wild encounters", listOf(legacy))
+        val changed = ModifierFamilies.select(families.single(), 25, 25, families, WildEncounterCheat::code).single()
+        assertEquals(expected, changed.code)
+    }
+
+    @Test fun levelIsRequiredWhenTheFamilyHasALevelParameter() {
+        val families = ModifierFamilies.recognize("Wild", listOf(cheat("Wild Pokemon and Level Modifier", hgSpeciesAndLevel)))
+        assertThrows(IllegalArgumentException::class.java) { ModifierFamilies.select(families.single(), 25, null, families, null) }
+        assertThrows(IllegalArgumentException::class.java) { ModifierFamilies.select(families.single(), 0, 5, families, null) }
+    }
+
+    @Test fun disableAndActivateFollowExclusionGroups() {
+        val selector = cheat("Choose", WildEncounterCheat.code(25, 5), enabled = true)
+        val levels = listOf(1, 5, 10, 20, 30).map(::hgLevel)
+        val families = ModifierFamilies.recognize("40 - Wild encounters", listOf(selector)) + ModifierFamilies.recognize("49 - Wild · level 1-100", levels)
+        val activated = ModifierFamilies.activate(families[1], levels[2], families)
+        assertEquals(setOf(selector.id, levels[2].id), activated.map { it.id }.toSet())
+        assertFalse(activated.single { it.id == selector.id }.enabled)
+        assertEquals(listOf(selector.copy(enabled = false)), ModifierFamilies.disable(families[0]))
+    }
 }
