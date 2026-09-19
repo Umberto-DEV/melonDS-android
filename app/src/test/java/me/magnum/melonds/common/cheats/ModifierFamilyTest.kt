@@ -81,4 +81,60 @@ class ModifierFamilyTest {
         assertEquals("mrmime", PokemonSpecies.normalize("Mr. Mime"))
         assertTrue("nidoran" in PokemonSpecies.normalize("Nidoran♀"))
     }
+
+    private val hgV1 = "94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 D2000000 00000000 " +
+        "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000"
+    private val hgSpeciesAndLevel = "94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF4 01ED0001 0000DCF8 00640002 D2000000 00000000 " +
+        "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DA000000 0000DCF6 C0000000 00000027 D7000000 00032A48 D2000000 00000000 " +
+        "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000"
+    private val hgLevelOnly = "94000130 FCFF0000 6211186C 00000000 B211186C 00000000 0000DCF8 00640002 D2000000 00000000 " +
+        "94000130 FDFF0000 6211186C 00000000 B211186C 00000000 DB000000 0000DCFA C0000000 0000000B D8000000 00032A3C D2000000 00000000"
+    private val platinumCalculator = "94000130 FDFF0000 62101D2C 00000000 B2101D2C 00000000 DA000000 0011ECF0 C0000000 0000000B D7000000 000303CC DC000000 00000006 D2000000 00000000 " +
+        "94000130 FEFF0000 62101D2C 00000000 B2101D2C 00000000 DA000000 0011ECF0 C0000000 0000000B D7000000 000303C8 DC000000 00000006 D2000000 00000000 " +
+        "94000130 FFFB0000 2207404D 00000024 62101D2C 00000000 B2101D2C 00000000 DB000000 0011ECF0 D3000000 00000000 D8000000 0207404C D2000000 00000000"
+    private val randomEncounterAbsolute = "923FFFFE 00000001 62250010 00000000 DA000000 02250010 D4000000 00000029 D7000000 02250010 D3000000 00000000 D2000000 00000000"
+    private val maxIvs = "1206E012 0000201F 1206E028 0000201F 1206E03E 0000201F 1206E054 0000201F 1206E06A 0000201F 1206E080 0000201F"
+
+    @Test fun itemLoadSpeciesFromHeartGoldMasterBallCode() {
+        val cheat = cheat("Wild Pokemon Modifier v1", hgV1, description = "(Press L+R): You will get 493 Master Balls.")
+        val family = ModifierFamilies.recognize("Wild Pokemon Modifier Codes", listOf(cheat)).single()
+        assertEquals(ModifierSource.ITEM_LOAD, family.source)
+        assertEquals(ModifierKind.SPECIES, family.kind)
+        assertEquals(listOf(ModifierParameter(1, 3, 16, ModifierKind.SPECIES, null)), family.parameters)
+        assertEquals(493, family.options.size)
+        assertEquals("#025 Pikachu", family.options[24].label)
+        assertFalse(family.hasLevelParameter)
+        assertNull(family.current)
+        assertEquals("(Press L+R): You will get 493 Master Balls.", family.instructions)
+    }
+
+    @Test fun secondBlockIsLevelAndEightBitLoadIsLevel() {
+        val both = ModifierFamilies.recognize("Wild Pokemon Modifier Codes", listOf(cheat("Wild Pokemon and Level Modifier", hgSpeciesAndLevel))).single()
+        assertEquals(listOf(ModifierKind.SPECIES, ModifierKind.LEVEL), both.parameters.map { it.kind })
+        assertTrue(both.hasLevelParameter)
+        val level = ModifierFamilies.recognize("Wild Pokemon Level Modifier Codes", listOf(cheat("Level Modifier Code", hgLevelOnly))).single()
+        assertEquals(ModifierKind.LEVEL, level.kind)
+        assertEquals(8, level.parameters.single().width)
+        assertEquals((1..100).toList(), level.options.map { it.value })
+        val platinum = ModifierFamilies.recognize("Encounter Codes", listOf(cheat("Wild Pokemon Modifier Code (Calculator)", platinumCalculator))).single()
+        assertEquals(listOf(ModifierKind.SPECIES, ModifierKind.LEVEL), platinum.parameters.map { it.kind })
+        assertEquals(listOf(0, 1), platinum.parameters.map { it.blockIndex })
+    }
+
+    @Test fun fixedFormIsRecognisedWithItsValue() {
+        val canonical = cheat("Choose Pokémon and level", WildEncounterCheat.code(25, 5), enabled = true)
+        val family = ModifierFamilies.recognize("40 - Wild encounters · choose Pokémon and level", listOf(canonical)).single()
+        assertEquals(25, family.parameters[0].current)
+        assertEquals(5, family.parameters[1].current)
+        assertEquals(25, family.current?.value)
+        assertEquals(5, family.currentLevel)
+    }
+
+    @Test fun absoluteLoadsAndPlainCodesAreNotFamilies() {
+        val folder = "Encounter Codes"
+        assertTrue(ModifierFamilies.recognize(folder, listOf(cheat("Encounter Random Wild Pokemon", randomEncounterAbsolute))).isEmpty())
+        assertTrue(ModifierFamilies.recognize(folder, listOf(cheat("Wild Pokemon Have Max IVs", maxIvs))).isEmpty())
+        assertTrue(ModifierFamilies.recognize("Miscellaneous Codes", listOf(cheat("Recollect 2nd Generation Starters", hgV1))).isEmpty())
+        assertTrue(ModifierFamilies.recognize("Miscellaneous Codes", listOf(cheat("Money", hgV1))).isEmpty())
+    }
 }

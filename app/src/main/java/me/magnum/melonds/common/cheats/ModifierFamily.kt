@@ -105,8 +105,59 @@ object ModifierFamilies {
         )
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun itemLoadFamily(folderName: String, cheat: Cheat, blocks: List<ArBlock>): ModifierFamily? = null
+    private val SKIPPABLE = setOf(ArCode.LOOP, ArCode.DATA_OP, ArCode.OFFSET_SET, ArCode.OFFSET_ADD)
+    private const val MAX_PARAMETERS = 2
+    private const val MAX_LEVEL = 100
+
+    /** The first block with a rewritable load is the species (or the level when it is 8-bit); the second is the level. */
+    private fun itemLoadFamily(folderName: String, cheat: Cheat, blocks: List<ArBlock>): ModifierFamily? {
+        val parameters = mutableListOf<ModifierParameter>()
+        for ((blockIndex, block) in blocks.withIndex()) {
+            if (parameters.size == MAX_PARAMETERS) break
+            val found = parameterIn(block) ?: continue
+            val kind = if (found.width == 8 || parameters.isNotEmpty()) ModifierKind.LEVEL else ModifierKind.SPECIES
+            parameters += found.copy(blockIndex = blockIndex, kind = kind)
+        }
+        if (parameters.isEmpty()) return null
+        val kind = parameters.first().kind
+        val options = if (kind == ModifierKind.SPECIES) PokemonSpecies.all.map { ModifierOption(it.number, it.label, null) }
+            else (1..MAX_LEVEL).map { ModifierOption(it, it.toString(), null) }
+        return ModifierFamily(
+            title = cheat.name, kind = kind, source = ModifierSource.ITEM_LOAD, folderName = folderName,
+            role = roleOf("$folderName ${cheat.name}"), members = listOf(cheat), options = options, parameters = parameters,
+            instructions = cheat.description?.takeIf(String::isNotBlank),
+        )
+    }
+
+    /**
+     * `DA/DB addr` (relative) or `D5 value` (fixed form), then only loop/data/offset opcodes, then a relative
+     * `D7/D8` store. Absolute loads read game state such as the RNG, not a user-controlled count: never rewritten.
+     */
+    private fun parameterIn(block: ArBlock): ModifierParameter? {
+        val ins = block.instructions
+        for (i in ins.indices) {
+            val loadWidth = when (ins[i].a) {
+                ArCode.LOAD_16 -> 16
+                ArCode.LOAD_8 -> 8
+                ArCode.SET_DATA -> 0
+                else -> continue
+            }
+            if (loadWidth != 0 && ins[i].b >= ArCode.RAM_START) continue
+            var j = i + 1
+            while (j < ins.size && ins[j].a in SKIPPABLE) j++
+            val store = ins.getOrNull(j) ?: continue
+            val storeWidth = when (store.a) {
+                ArCode.STORE_16 -> 16
+                ArCode.STORE_8 -> 8
+                else -> continue
+            }
+            if (store.b >= ArCode.RAM_START) continue
+            val width = if (loadWidth == 0) storeWidth else loadWidth
+            val current = if (loadWidth == 0) ins[i].b.takeIf { it <= Int.MAX_VALUE }?.toInt() else null
+            return ModifierParameter(blockIndex = 0, instructionIndex = i, width = width, kind = ModifierKind.SPECIES, current = current)
+        }
+        return null
+    }
 
     internal fun roleOf(title: String): String = when {
         STARTER.containsMatchIn(title) -> "STARTER" + (SLOT.find(title)?.groupValues?.get(1)?.let { "#$it" } ?: "")
