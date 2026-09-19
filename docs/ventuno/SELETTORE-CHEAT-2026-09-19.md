@@ -115,9 +115,11 @@ Per ogni cheat **non** membro di una famiglia A, il cui nome o la cui cartella m
    modificatori (leggono un contatore di oggetti tramite puntatore: `DA000000 0000DCF6`) dai codici
    che leggono il generatore casuale (`DA000000 02250010`) — che hanno la stessa forma e sarebbero
    rotti dalla riscrittura. Per la forma fissa il vincolo si applica all'indirizzo dello store.
-3. Ogni blocco che soddisfa 1–2 è un `Parameter`. Il **primo** è `SPECIES` (width dalla load),
-   il **secondo** è `LEVEL`. Blocchi successivi (Platinum ne ha un terzo) restano intatti e non
-   sono parametri.
+3. Ogni blocco che soddisfa 1–2 è un `Parameter`, al massimo due per codice; blocchi successivi
+   (Platinum ne ha un terzo) restano intatti e non sono parametri. `kind` del parametro:
+   `LEVEL` se la load è a 8 bit (`DB`/`D8`) **o** se è il secondo parametro; altrimenti `SPECIES`.
+   Copre: HG `Wild Pokemon and Level Modifier` (DA poi DB), HG `Level Modifier Code` e SGP 41
+   `metodo classico` (solo DB → LEVEL), Platinum `(Calculator)` (DA, DA → SPECIES, LEVEL).
 4. `options`: `SPECIES` → `PokemonSpecies.all` (493 basta: HG/SS/D/P/Pt sono Gen 4; B/W hanno la
    gamba A); `LEVEL` → 1..100.
 5. `title` = nome del cheat. `instructions` = la sua `<note>`.
@@ -157,11 +159,19 @@ parametri `SPECIES` + `LEVEL`, il codice prodotto è il **canonico** a 28 word (
 serve a non perdere il toggle nativo.
 
 ### 4.4 Mutua esclusione
-Quando si abilita un membro/parametro di una famiglia di `kind ≠ GENERIC`, vengono disabilitati:
-i membri attivi della stessa famiglia **e i membri attivi di ogni altra famiglia dello stesso
-`kind` nello stesso gioco**. Un solo livello selvatico, una sola specie, una sola natura attivi.
-Copre: SGP 44/45/46 (tre cartelle NATURE), SGP 41/49 contro il livello della cartella 40,
-HG `Level N` contro `Level Modifier Code`. Le famiglie `GENERIC` si escludono solo al proprio interno.
+Ogni famiglia ha un **gruppo di esclusione** `(kind, role)`:
+- `role` = `STARTER` + l'eventuale `#n` del titolo (`Starter #2 Modifier` → `STARTER#2`) se il
+  titolo matcha `STARTER`; altrimenti `WILD` se matcha `WILD`; altrimenti `OTHER`.
+  Per `NATURE` il ruolo è ignorato (una natura riguarda sempre gli incontri selvatici).
+- `GENERIC` non ha gruppo: si esclude solo al proprio interno.
+
+Quando si abilita un membro/parametro di una famiglia, vengono disabilitati i membri attivi della
+stessa famiglia **e** quelli di ogni altra famiglia del gioco con lo stesso gruppo. Un solo livello
+selvatico, una sola specie selvatica, una sola natura, un solo starter per slot.
+Copre: SGP 44/45/46 (NATURE); SGP 41/49 (`LEVEL`,`WILD`) contro il parametro livello della
+cartella 40; SGP 50–59 e 40 (`SPECIES`,`WILD`); B/W Wild Gen 1–5 fra loro ma **non** contro
+Starter Gen 1–5; Platinum Starter #1 Gen 1–4 fra loro ma non contro Starter #2; HG `Play As Pokémon`
+(`SPECIES`,`OTHER`) non tocca i selvatici.
 
 ## 5. Interfaccia
 
@@ -226,11 +236,12 @@ Casi obbligatori:
   e riconosciuto come ITEM_LOAD; SGP 50 → famiglia SPECIES di 10, `LEGGIMI` fuori.
 - **Riscrittura**: `Wild Pokemon Modifier v1` HG + Pikachu → identico all'originale tranne
   `DA000000 0000DCF6` → `D5000000 00000019`; riconfigurazione a Bulbasaur; forma fissa riconosciuta.
-- **Non-regressione SGP, byte per byte**: cartella 40 + (Pikachu, 25) → esattamente il codice che
-  `WildEncounterCheat.code(25, 25)` produce oggi (il test lo fissa come costante letterale, non lo
+- **Non-regressione SGP, byte per byte**: cartella 40 + (Pikachu #025, livello 25) → esattamente
+  il codice che `WildEncounterCheat.code(25, 25)` produce oggi (il test lo fissa come costante letterale, non lo
   ricalcola); i tre `legacyCodes` aprono il selettore; le 75 righe di `sgp-nature-codes.tsv`
   formano tre famiglie NATURE mutuamente esclusive.
-- **Mutua esclusione** per `kind` (§4.4) — gli scenari di `WildEncounterViewModelTest` restano tutti,
+- **Mutua esclusione** per gruppo (§4.4), inclusi i casi negativi: Wild Gen 1 non spegne Starter
+  Gen 1; Starter #1 non spegne Starter #2 — gli scenari di `WildEncounterViewModelTest` restano tutti,
   riscritti sul modello generico: `genderAndNatureSelectionsAreExclusive…`,
   `enablingStandaloneLevelDisablesSelector…`, `configurationBlocksCommit…`, `undo…`, `failed…`.
 - **UI** (Robolectric, come oggi): ricerca/selezione/conferma; annulla non salva; disattiva;
