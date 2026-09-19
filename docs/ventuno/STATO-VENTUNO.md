@@ -1,7 +1,9 @@
-# melonDS Nightly 2.1 — ramo `ventuno` (stato al 12/09/2026, ore 12:40)
-Base: PR #1672 (21 commit, = build sulla Thor) + motore lib#16 (3ad4e940). Da allora 21 commit app + 1 motore, tutti su origin/ventuno e fork/ventuno. **Sulla Thor dal 12/09 20:03 c'è la 2.1 = app e5310e02 + motore bc060f4c** (aggiornata in place, dati conservati; congelata per i collaudi 1.2).
+# melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, ore 11:40)
+Base: PR #1672 (21 commit) + motore lib#16 (3ad4e940). Tutto su origin/ventuno. **Sulla Thor dal 19/09 11:32 c'è la 2.1.1 con la correzione delle icone della lista ROM = app a9b8ded2 + motore bc060f4c** (aggiornata in place con `install -r`, firma invariata, dati conservati; dettagli in `ICONE-LISTA-ROM-2026-09-19.md`).
 
 ## Commit oltre la PR (dal più recente)
+a9b8ded2 fix(roms): load ROM list icons on their own thread, not behind the directory scan (19/09; prima: icone vuote finché la scansione non finiva)
+… (commit dal 12/09 al 18/09: WFC, backup impostazioni, selettore SGP, CI; vedi `git log`)
 138baa2b feat(community): integrate five open upstream pull requests with corrections
 fb611635 fix(bios): run the guided BIOS setup off the main thread and clean up after failures
 70a1a8b2 build(engine): update the engine submodule (JIT literal guard, edge shaders, cache log)
