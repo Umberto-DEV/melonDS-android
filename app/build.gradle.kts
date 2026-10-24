@@ -11,6 +11,12 @@ plugins {
     alias(libs.plugins.room)
 }
 
+// Opt-in native sanitizer support (HWASan on device, or ASan/UBSan/etc): pass -PnativeSanitize=<value>
+// (e.g. hwaddress) to have CMake configure the NDK's sanitizer for this build only. Off by default.
+// See tools/README.md. Hoisted to file scope so both the debug buildType block and the androidComponents
+// block below (needed to scope packaging options to just this variant) can see it.
+val nativeSanitize = project.findProperty("nativeSanitize") as String?
+
 android {
     signingConfigs {
         create("release") {
@@ -48,6 +54,13 @@ android {
         viewBinding = true
         compose = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // Android 16+ shared-memory shadows use this JDK bridge on Java 21.
+            it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+        }
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -57,7 +70,25 @@ android {
         }
         getByName("debug") {
             applicationIdSuffix = ".dev"
+
+            if (nativeSanitize != null) {
+                externalNativeBuild {
+                    cmake {
+                        arguments("-DANDROID_SANITIZE=$nativeSanitize", "-DANDROID_STL=c++_shared")
+                    }
+                }
+                // HWASan (and other sanitizer) builds need a wrap.sh that sets LD_HWASAN=1 to
+                // run on a device/emulator whose OS image isn't itself built with the sanitizer
+                // (see https://developer.android.com/ndk/guides/hwasan and .../wrap-script).
+                // Android Studio only packages .so files from lib/, so wrap.sh has to live
+                // under resources/lib/<abi>/ instead, and useLegacyPackaging must be turned on
+                // for that directory layout to be packaged as-is (done below, scoped to just this
+                // variant via androidComponents: "packaging" here resolves to the top-level android.packaging
+                // extension, which would apply it to release too).
+                sourceSets.getByName("debug").resources.srcDir(rootProject.file("tools/hwasan-resources"))
+            }
         }
+
     }
 
     flavorDimensions += listOf("version", "build")
@@ -99,6 +130,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+}
+
+// Package the optional native sanitizer runtime only for debug builds.
+androidComponents {
+    if (nativeSanitize != null) {
+        onVariants(selector().withBuildType("debug")) { variant ->
+            variant.packaging.jniLibs.useLegacyPackaging = true
+        }
     }
 }
 
@@ -171,6 +211,12 @@ dependencies {
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${libs.versions.kotlinxCoroutines.get()}")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.test.core)

@@ -4,7 +4,7 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import me.magnum.melonds.common.vibration.TouchVibrator
 
-abstract class FeedbackInputHandler(inputListener: IInputListener, private val enableHapticFeedback: Boolean, private val touchVibrator: TouchVibrator) : BaseInputHandler(inputListener) {
+abstract class FeedbackInputHandler(inputListener: IInputListener, private val enableHapticFeedback: Boolean, private val touchVibrator: TouchVibrator?) : BaseInputHandler(inputListener) {
 
     enum class HapticFeedbackType {
         KEY_PRESS,

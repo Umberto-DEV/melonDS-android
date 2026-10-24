@@ -196,7 +196,7 @@ class XmlCheatDatabaseSAXHandler(private val listener: HandlerListener) : Defaul
 
     override fun characters(ch: CharArray?, start: Int, length: Int) {
         if (parsingText && ch != null) {
-            textStringBuilder.append(ch, 0, length)
+            textStringBuilder.append(ch, start, length)
         }
     }
 

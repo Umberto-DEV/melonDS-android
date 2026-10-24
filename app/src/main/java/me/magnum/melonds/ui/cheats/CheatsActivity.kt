@@ -49,8 +49,16 @@ class CheatsActivity : AppCompatActivity() {
                 viewModel.cheatChangesCommittedEvent.collectLatest {
                     if (!it) {
                         Toast.makeText(this@CheatsActivity, R.string.failed_save_cheat_changes, Toast.LENGTH_LONG).show()
+                    } else {
+                        finish()
                     }
-                    finish()
+                }
+            }
+        }
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.cheatModificationFailedEvent.collectLatest {
+                    Toast.makeText(this@CheatsActivity, R.string.failed_save_cheat_changes, Toast.LENGTH_LONG).show()
                 }
             }
         }

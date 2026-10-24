@@ -19,9 +19,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -75,8 +77,8 @@ class SharedPreferencesSettingsRepository(
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private val controllerConfiguration by lazy {
-        val initialConfiguration = try {
+    private fun readControllerConfigurationFromDisk(): ControllerConfiguration {
+        return try {
             val configFile = File(context.filesDir, CONTROLLER_CONFIG_FILE)
             configFile.inputStream().use {
                 val loadedConfiguration = json.decodeFromStream<ControllerConfigurationDto>(it)
@@ -85,9 +87,9 @@ class SharedPreferencesSettingsRepository(
         } catch (_: Exception) {
             controllerConfigurationFactory.buildDefaultControllerConfiguration()
         }
-
-        MutableStateFlow(initialConfiguration)
     }
+
+    private val controllerConfiguration by lazy { MutableStateFlow(readControllerConfigurationFromDisk()) }
     private val preferenceSharedFlows = mutableMapOf<String, MutableSharedFlow<Unit>>()
     private val renderConfigurationFlow: SharedFlow<RendererConfiguration>
 
@@ -95,6 +97,13 @@ class SharedPreferencesSettingsRepository(
         preferences.registerOnSharedPreferenceChangeListener(this)
         setDefaultThemeIfRequired()
         setDefaultMacAddressIfRequired()
+
+        // Warm the lazily-loaded controller configuration off the main thread now, since this repository is already
+        // constructed at app startup; otherwise its first read happens on the UI thread (e.g. when EmulatorActivity's
+        // ViewModel is first accessed) and shows up as a disk-read StrictMode violation.
+        preferencesCoroutineScope.launch(Dispatchers.IO) {
+            controllerConfiguration
+        }
 
         renderConfigurationFlow = combine(
             getVideoRenderer(),
@@ -157,11 +166,13 @@ class SharedPreferencesSettingsRepository(
             dsiNandUri = dsiDirDocument?.findFile("nand.bin")?.uri,
             internalDirectory = context.filesDir.absolutePath,
             fastForwardSpeedMultiplier = getFastForwardSpeedMultiplier(),
+            muteFastForwardAudio = shouldMuteFastForwardAudio(),
             rewindEnabled = isRewindEnabled(),
             rewindPeriodSeconds = getRewindPeriod(),
             rewindWindowSeconds = getRewindWindow(),
             useJit = isJitEnabled(),
             consoleType = consoleType,
+            rtcSyncToHost = isRtcSyncToHostEnabled(),
             soundEnabled = isSoundEnabled(),
             audioInterpolation = getAudioInterpolation(),
             audioBitrate = getAudioBitrate(),
@@ -181,6 +192,10 @@ class SharedPreferencesSettingsRepository(
     override fun getFastForwardSpeedMultiplier(): Float {
         val speedMultiplierPreference = preferences.getString("fast_forward_speed_multiplier", "-1")!!
         return speedMultiplierPreference.toFloat()
+    }
+
+    override fun shouldMuteFastForwardAudio(): Boolean {
+        return preferences.getBoolean("mute_fast_forward_audio", false)
     }
 
     override fun isRewindEnabled(): Boolean {
@@ -284,6 +299,13 @@ class SharedPreferencesSettingsRepository(
     override fun isJitEnabled(): Boolean {
         val defaultJitEnabled = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
         return preferences.getBoolean("enable_jit", defaultJitEnabled)
+    }
+
+    override fun isRtcSyncToHostEnabled(): Boolean {
+        // Off by default: enabling this changes the game clock's behavior (it starts
+        // catching up to the device's clock instead of only running while the game plays),
+        // and existing users updating the app should not have that sprung on them.
+        return preferences.getBoolean("rtc_sync_to_host", false)
     }
 
     override fun getVideoRenderer(): Flow<VideoRenderer> {
@@ -448,6 +470,10 @@ class SharedPreferencesSettingsRepository(
 
     override fun observeControllerConfiguration(): StateFlow<ControllerConfiguration> {
         return controllerConfiguration
+    }
+
+    override fun reloadControllerConfiguration() {
+        controllerConfiguration.value = readControllerConfigurationFromDisk()
     }
 
     override fun getSelectedLayoutId(): UUID {

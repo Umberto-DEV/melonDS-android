@@ -76,6 +76,7 @@ Java_me_magnum_melonds_MelonDSiNand_listTitles(JNIEnv* env, jobject thiz)
     jmethodID listConstructor = env->GetMethodID(listClass, "<init>", "()V");
     jmethodID listAddMethod = env->GetMethodID(listClass, "add", "(ILjava/lang/Object;)V");
     jobject jniTitleList = env->NewObject(listClass, listConstructor);
+    env->DeleteLocalRef(listClass);
 
     int index = 0;
     for (std::vector<u32>::iterator it = titleList.begin(); it != titleList.end(); it++)
@@ -83,6 +84,8 @@ Java_me_magnum_melonds_MelonDSiNand_listTitles(JNIEnv* env, jobject thiz)
         u32 titleId = *it;
         jobject titleData = getTitleData(env, category, titleId);
         env->CallVoidMethod(jniTitleList, listAddMethod, index++, titleData);
+        // ArrayList retains the title; the local handle must not accumulate across titles.
+        env->DeleteLocalRef(titleData);
     }
 
     return jniTitleList;
@@ -212,16 +215,23 @@ jobject getTitleData(JNIEnv* env, u32 category, u32 titleId)
     std::string title = englishTitle.substr(0, pos);
     std::string producer = englishTitle.substr(pos + 1);
 
+    jstring jniTitle = env->NewStringUTF(title.c_str());
+    jstring jniProducer = env->NewStringUTF(producer.c_str());
     jobject titleObject = env->NewObject(
         dsiWareTitleClass,
         dsiWareTitleConstructor,
-        env->NewStringUTF(title.c_str()),
-        env->NewStringUTF(producer.c_str()),
+        jniTitle,
+        jniProducer,
         (jlong) titleId,
         iconBytes,
         (jlong) header.DSiPublicSavSize,
         (jlong) header.DSiPrivateSavSize,
         header.AppFlags
     );
+    // The Java constructor stores these objects. Only return the title's local handle.
+    env->DeleteLocalRef(jniTitle);
+    env->DeleteLocalRef(jniProducer);
+    env->DeleteLocalRef(iconBytes);
+    env->DeleteLocalRef(dsiWareTitleClass);
     return titleObject;
 }

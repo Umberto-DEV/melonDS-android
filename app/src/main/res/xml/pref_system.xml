@@ -15,6 +15,12 @@
             app:iconSpaceReserved="false"
             android:fragment="me.magnum.melonds.ui.settings.fragments.CustomFirmwarePreferencesFragment" />
 
+    <Preference
+            android:title="@string/category_wfc_connections"
+            android:summary="@string/category_wfc_connections_summary"
+            app:iconSpaceReserved="false"
+            android:fragment="me.magnum.melonds.ui.settings.fragments.WfcConnectionsPreferencesFragment" />
+
     <SwitchPreference
             android:key="enable_jit"
             android:title="@string/enable_jit"
@@ -22,10 +28,20 @@
             app:iconSpaceReserved="false"
             android:defaultValue="true" />
 
+    <SwitchPreference
+            android:key="rtc_sync_to_host"
+            android:title="@string/rtc_sync_to_host"
+            android:summary="@string/rtc_sync_to_host_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="false" />
+
+    <!-- Disabled: the internal/external split relies on a "target" field that
+         LayoutConfigurationDto never serializes, so the filter always matches nothing.
+         The general backup/restore in General settings already covers all layouts. -->
     <Preference
             android:key="backup_internal_layout"
             android:title="@string/backup_internal_layout"
-            app:isPreferenceVisible="@bool/settings_backup_restore_enabled"
+            app:isPreferenceVisible="false"
             app:iconSpaceReserved="false" />
 
     <Preference
@@ -37,7 +53,7 @@
     <Preference
             android:key="restore_internal_layout"
             android:title="@string/restore_internal_layout"
-            app:isPreferenceVisible="@bool/settings_backup_restore_enabled"
+            app:isPreferenceVisible="false"
             app:iconSpaceReserved="false" />
 
     <Preference

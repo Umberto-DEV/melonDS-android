@@ -28,6 +28,42 @@ namespace MelonDSAndroid {
         FIRMWARE
     } RunMode;
 
+    /**
+     * One of the three Wi-fi access point slots of the firmware, as the WFC screens see it.
+     * @c name is the slot's SSID (NUL-terminated, at most 32 bytes, as in the firmware).
+     */
+    struct WfcSlotData {
+        bool enabled;
+        char name[33];
+        u8 primaryDns[4];
+        u8 secondaryDns[4];
+    };
+
+    /**
+     * Reads the three Wi-fi access point slots of the firmware the running instance booted with
+     * (generated or the user's file, DS or DSi). Returns false when no instance is running.
+     * @warning The emulator thread must be stopped: see pauseEmulationThreadForSyncOperation().
+     */
+    extern bool readRunningInstanceWfcSlots(WfcSlotData slots[3]);
+
+    /**
+     * Writes one Wi-fi access point slot into the firmware buffer the running instance serves
+     * over SPI, and requests a flush of the region to the firmware's backing file. The console
+     * re-reads the slots from SPI on every connection, so the change applies without a reset.
+     * Returns false when no instance is running or the firmware layout doesn't make sense.
+     * @warning The emulator thread must be stopped: see pauseEmulationThreadForSyncOperation().
+     */
+    extern bool writeRunningInstanceWfcSlot(int slot, const WfcSlotData& slotData);
+
+    /**
+     * Stops the emulator thread for an operation that touches the whole machine state and waits
+     * until it really is stopped. Returns whether it was already paused, which is what
+     * resumeEmulationThreadAfterSyncOperation() needs to restore the previous state.
+     * Implemented in MelonDSAndroidJNI.cpp, next to the thread it synchronises against.
+     */
+    extern bool pauseEmulationThreadForSyncOperation();
+    extern void resumeEmulationThreadAfterSyncOperation(bool wasPaused);
+
     extern OpenGLContext *openGlContext;
     extern AndroidFileHandler* fileHandler;
     extern AndroidCameraHandler* cameraHandler;
@@ -50,7 +86,7 @@ namespace MelonDSAndroid {
      * @param sramPath The path to the rom's SRAM file
      * @param gbaSlotConfig The config to be used for the GBA slot
      * @return The load result. 0 if everything was loaded successfully, 1 if the NDS ROM was loaded but the GBA ROM
-     * failed to load, 2 if the NDS ROM failed to load
+     * failed to load, 2 if the NDS ROM failed to load, 3 if there is no emulator instance because setup() failed
      */
     extern int loadRom(std::string romPath, std::string sramPath, RomGbaSlotConfig* gbaSlotConfig);
     extern int bootFirmware();
@@ -70,6 +106,8 @@ namespace MelonDSAndroid {
     extern bool loadRewindState(melonDS::RewindSaveState rewindSaveState);
     extern RewindWindow getRewindWindow();
     extern bool takeScreenshot();
+    /** Stages pending saves for the final flush. Call only after the emulator thread has been joined. */
+    extern void stageSaves();
     extern void stop();
     extern void cleanup();
 }
