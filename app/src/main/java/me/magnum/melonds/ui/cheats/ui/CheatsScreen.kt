@@ -47,6 +47,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import me.magnum.melonds.R
 import me.magnum.melonds.ui.cheats.CheatsNavigation
 import me.magnum.melonds.ui.cheats.CheatsViewModel
+import me.magnum.melonds.ui.cheats.model.CheatSearchTarget
 import me.magnum.melonds.ui.cheats.model.CheatsScreenUiState
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -100,7 +101,7 @@ fun CheatsScreen(
     }
     LaunchedEffect(Unit) {
         viewModel.openCheatsEvent.collect {
-            navController.navigate(CheatsNavigation.FolderCheats(it.newTitle))
+            navController.navigate(CheatsNavigation.FolderCheats(it.newTitle, it.searchTarget?.rowKey, it.searchTarget?.optionValue))
         }
     }
     LaunchedEffect(Unit) {
@@ -181,15 +182,18 @@ fun CheatsScreen(
                     folders = folders,
                     onFolderClick = { viewModel.setSelectedFolder(it) },
                     onAddFolder = { viewModel.addFolder(it) },
+                    onSearchResultClick = { viewModel.setSelectedFolder(it.folder, it.target) },
                 )
             }
-            composable<CheatsNavigation.FolderCheats> {
+            composable<CheatsNavigation.FolderCheats> { entry ->
+                val route = entry.toRoute<CheatsNavigation.FolderCheats>()
                 val items by viewModel.folderItems.collectAsStateWithLifecycle(CheatsScreenUiState.Loading())
 
                 CheatListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = padding,
                     items = items,
+                    searchTarget = route.targetRowKey?.let { CheatSearchTarget(it, route.targetOptionValue) },
                     onSelectFamilyOption = viewModel::selectFamilyOption,
                     onDisableFamily = viewModel::disableFamily,
                     onCheatClick = { viewModel.toggleCheat(it) },
