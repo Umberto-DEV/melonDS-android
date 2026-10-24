@@ -41,6 +41,7 @@ import me.magnum.melonds.ui.cheats.model.CheatListItem
 import me.magnum.melonds.ui.cheats.model.CheatSubmissionForm
 import me.magnum.melonds.ui.cheats.model.CheatsScreenUiState
 import me.magnum.melonds.ui.cheats.model.DeletedCheat
+import me.magnum.melonds.ui.cheats.model.CheatSearchTarget
 import me.magnum.melonds.ui.cheats.model.OpenScreenEvent
 import javax.inject.Inject
 
@@ -269,9 +270,9 @@ class CheatsViewModel @Inject constructor(
         _openFoldersEvent.trySend(OpenScreenEvent(game.name))
     }
 
-    fun setSelectedFolder(folder: CheatFolder) {
+    fun setSelectedFolder(folder: CheatFolder, searchTarget: CheatSearchTarget? = null) {
         savedStateHandle[KEY_SELECTED_FOLDER] = CheatFolderParcelable.fromCheatFolder(folder)
-        _openCheatsEvent.trySend(OpenScreenEvent(folder.name))
+        _openCheatsEvent.trySend(OpenScreenEvent(folder.name, searchTarget))
     }
 
     fun addFolder(folderName: String) {

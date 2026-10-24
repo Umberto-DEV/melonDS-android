@@ -1,5 +1,6 @@
 package me.magnum.melonds.ui.cheats.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -7,14 +8,17 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -32,6 +37,7 @@ import me.magnum.melonds.R
 import me.magnum.melonds.common.cheats.ModifierFamily
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.ui.cheats.model.CheatFormDialogState
+import me.magnum.melonds.ui.cheats.model.CheatSearchTarget
 import me.magnum.melonds.ui.cheats.model.CheatListItem
 import me.magnum.melonds.ui.cheats.model.CheatSubmissionForm
 import me.magnum.melonds.ui.cheats.model.CheatsScreenUiState
@@ -50,6 +56,7 @@ fun CheatListScreen(
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
     onDeleteCheatClick: (Cheat) -> Unit,
+    searchTarget: CheatSearchTarget? = null,
 ) {
     when (items) {
         is CheatsScreenUiState.Loading -> LoadingScreen(modifier.padding(contentPadding))
@@ -63,6 +70,7 @@ fun CheatListScreen(
             onAddNewCheat = onAddNewCheat,
             onUpdateCheat = onUpdateCheat,
             onDeleteCheatClick = onDeleteCheatClick,
+            searchTarget = searchTarget,
         )
     }
 }
@@ -87,15 +95,20 @@ private fun List(
     onAddNewCheat: (CheatSubmissionForm) -> Unit,
     onUpdateCheat: (Cheat, CheatSubmissionForm) -> Unit,
     onDeleteCheatClick: (Cheat) -> Unit,
+    searchTarget: CheatSearchTarget? = null,
 ) {
     var cheatFormDialogState by rememberSaveable(stateSaver = CheatFormDialogState.Saver) { mutableStateOf(CheatFormDialogState.Hidden) }
     var expandedFamilies by rememberSaveable(stateSaver = ExpandedFamiliesSaver) { mutableStateOf(emptySet<String>()) }
     var dialogFamilyKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var dialogOptionValue by rememberSaveable { mutableStateOf<Int?>(null) }
+    var consumedSearchTarget by rememberSaveable(searchTarget?.rowKey, searchTarget?.optionValue) { mutableStateOf(false) }
+    val listState = rememberLazyListState()
 
     val dialogFamily = items.filterIsInstance<CheatListItem.Family>().firstOrNull { it.key == dialogFamilyKey }?.family
     if (dialogFamily != null) {
         ModifierFamilyDialog(
             family = dialogFamily,
+            initialOptionValue = dialogOptionValue,
             onDismiss = { dialogFamilyKey = null },
             onDisable = {
                 onDisableFamily(dialogFamily)
@@ -122,6 +135,21 @@ private fun List(
         }
     }
 
+    LaunchedEffect(rows.map { it.key }, searchTarget) {
+        val target = searchTarget ?: return@LaunchedEffect
+        if (!consumedSearchTarget) {
+            val index = rows.indexOfFirst { it.key == target.rowKey }
+            if (index >= 0) {
+                consumedSearchTarget = true
+                listState.scrollToItem(index)
+                if (rows[index] is ListRow.FamilyRow) {
+                    dialogOptionValue = target.optionValue
+                    dialogFamilyKey = target.rowKey
+                }
+            }
+        }
+    }
+
     Box(modifier) {
         if (items.isEmpty()) {
             Text(
@@ -131,6 +159,7 @@ private fun List(
             )
         } else {
             LazyColumn(
+                state = listState,
                 modifier = modifier.consumeWindowInsets(contentPadding),
                 contentPadding = PaddingValues(
                     start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
@@ -152,14 +181,19 @@ private fun List(
                             modifier = Modifier.fillMaxWidth(),
                             family = row.item.family,
                             expanded = row.item.key in expandedFamilies,
-                            onClick = { dialogFamilyKey = row.item.key.toString() },
+                            onClick = {
+                                dialogOptionValue = null
+                                dialogFamilyKey = row.item.key.toString()
+                            },
                             onToggleExpanded = {
                                 val key = row.item.key.toString()
                                 expandedFamilies = if (key in expandedFamilies) expandedFamilies - key else expandedFamilies + key
                             },
                         )
                         is ListRow.CheatRow -> CheatItem(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().background(
+                                if (searchTarget?.rowKey == row.key) MaterialTheme.colors.secondary.copy(alpha = 0.12f) else Color.Transparent,
+                            ),
                             cheat = row.cheat,
                             onClick = { onCheatClick(row.cheat) },
                             onEditClick = { cheatFormDialogState = CheatFormDialogState.EditCheat(row.cheat) },

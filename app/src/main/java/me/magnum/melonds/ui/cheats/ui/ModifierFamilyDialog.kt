@@ -29,14 +29,15 @@ import me.magnum.melonds.ui.common.melonTextButtonColors
  * option value and the level (null when the family has no level parameter).
  */
 @Composable
-fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisable: () -> Unit, onConfirm: (value: Int, level: Int?) -> Unit) {
+fun ModifierFamilyDialog(family: ModifierFamily, onDismiss: () -> Unit, onDisable: () -> Unit, onConfirm: (value: Int, level: Int?) -> Unit, initialOptionValue: Int? = null) {
     val key = "${family.folderName}/${family.title}"
     val levelOnly = family.source == ModifierSource.ITEM_LOAD && family.kind == ModifierKind.LEVEL
     val showsLevelField = family.requiresLevel || levelOnly
-    var value by rememberSaveable(key) { mutableStateOf(family.current?.value) }
-    var level by rememberSaveable(key) { mutableStateOf((if (levelOnly) family.current?.value else family.currentLevel)?.toString() ?: "5") }
+    val initialOption = family.options.firstOrNull { it.value == initialOptionValue }
+    var value by rememberSaveable(key, initialOptionValue) { mutableStateOf(initialOption?.value ?: family.current?.value) }
+    var level by rememberSaveable(key, initialOptionValue) { mutableStateOf((if (levelOnly) initialOption?.value ?: family.current?.value else family.currentLevel)?.toString() ?: "5") }
     var showHelp by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable(key) { mutableStateOf("") }
+    var query by rememberSaveable(key, initialOptionValue) { mutableStateOf(initialOption?.label.orEmpty()) }
     val matches = remember(query, family) { search(family.options, query) }
     val selected = family.options.firstOrNull { it.value == value }
     val levelValue = level.toIntOrNull()?.takeIf { it in 1..100 }
