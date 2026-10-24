@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Preference
+            android:key="wfc_connections_info"
+            android:selectable="false"
+            android:summary="@string/wfc_connections_info"
+            app:iconSpaceReserved="false" />
+
+    <Preference
+            android:key="wfc_storage_location"
+            android:title="@string/wfc_storage_location"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
+    <Preference
+            android:key="wfc_use_recommended_servers"
+            android:title="@string/wfc_use_recommended_servers"
+            android:summary="@string/wfc_use_recommended_servers_summary"
+            app:iconSpaceReserved="false" />
+
+    <PreferenceCategory
+            android:key="wfc_slot_category_1"
+            android:title="@string/wfc_slot_title_1"
+            app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_1"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+                android:key="wfc_slot_0_enabled"
+                android:title="@string/wfc_slot_enabled"
+                app:iconSpaceReserved="false"
+                android:defaultValue="false" />
+        <EditTextPreference
+                android:key="wfc_slot_0_primary_dns"
+                android:title="@string/wfc_slot_primary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_0_enabled"
+                app:iconSpaceReserved="false" />
+        <EditTextPreference
+                android:key="wfc_slot_0_secondary_dns"
+                android:title="@string/wfc_slot_secondary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_0_enabled"
+                app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:key="wfc_slot_category_2"
+            android:title="@string/wfc_slot_title_2"
+            app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_2"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+                android:key="wfc_slot_1_enabled"
+                android:title="@string/wfc_slot_enabled"
+                app:iconSpaceReserved="false"
+                android:defaultValue="false" />
+        <EditTextPreference
+                android:key="wfc_slot_1_primary_dns"
+                android:title="@string/wfc_slot_primary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_1_enabled"
+                app:iconSpaceReserved="false" />
+        <EditTextPreference
+                android:key="wfc_slot_1_secondary_dns"
+                android:title="@string/wfc_slot_secondary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_1_enabled"
+                app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+            android:key="wfc_slot_category_3"
+            android:title="@string/wfc_slot_title_3"
+            app:iconSpaceReserved="false">
+        <EditTextPreference
+                android:key="wfc_slot_name_3"
+                android:title="@string/wfc_slot_name"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+                android:key="wfc_slot_2_enabled"
+                android:title="@string/wfc_slot_enabled"
+                app:iconSpaceReserved="false"
+                android:defaultValue="false" />
+        <EditTextPreference
+                android:key="wfc_slot_2_primary_dns"
+                android:title="@string/wfc_slot_primary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_2_enabled"
+                app:iconSpaceReserved="false" />
+        <EditTextPreference
+                android:key="wfc_slot_2_secondary_dns"
+                android:title="@string/wfc_slot_secondary_dns"
+                android:summary="%s"
+                app:useSimpleSummaryProvider="true"
+                android:dependency="wfc_slot_2_enabled"
+                app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

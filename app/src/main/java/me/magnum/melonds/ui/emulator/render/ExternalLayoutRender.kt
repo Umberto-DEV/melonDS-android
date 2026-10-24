@@ -68,6 +68,10 @@ class ExternalLayoutRender(
     private lateinit var uvBottom: FloatBuffer
 
     private var videoFiltering: VideoFiltering = VideoFiltering.NONE
+    // Note: updateRendererConfiguration() below is a no-op today, so this renderer never learns the
+    // real internal resolution scale. Kept at 1 (native) to preserve current behaviour; not something
+    // this fix expands the scope of.
+    private var textureScale: Int = 1
 
     private var viewWidth = 0
     private var viewHeight = 0
@@ -153,7 +157,7 @@ class ExternalLayoutRender(
 
     override fun onSurfaceCreated() {
         shader = ShaderFactory.createShaderProgram(
-            VideoFilterShaderProvider.getShaderSource(videoFiltering)
+            VideoFilterShaderProvider.getShaderSource(videoFiltering, textureScale)
         )
 
         val textures = IntArray(1)
@@ -260,7 +264,7 @@ class ExternalLayoutRender(
         if (this::shader.isInitialized) {
             shader.delete()
             shader = ShaderFactory.createShaderProgram(
-                VideoFilterShaderProvider.getShaderSource(videoFiltering)
+                VideoFilterShaderProvider.getShaderSource(videoFiltering, textureScale)
             )
         }
     }

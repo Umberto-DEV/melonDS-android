@@ -2,6 +2,7 @@ package me.magnum.melonds.ui.emulator
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import dagger.hilt.android.AndroidEntryPoint
@@ -10,6 +11,7 @@ import me.magnum.melonds.domain.model.Input
 import me.magnum.melonds.domain.model.input.SoftInputBehaviour
 import me.magnum.melonds.domain.model.layout.LayoutComponent
 import me.magnum.melonds.ui.common.LayoutView
+import me.magnum.melonds.ui.emulator.input.BaseInputHandler
 import me.magnum.melonds.ui.emulator.input.ButtonsInputHandler
 import me.magnum.melonds.ui.emulator.input.DpadInputHandler
 import me.magnum.melonds.ui.emulator.input.FrontendInputHandler
@@ -31,6 +33,10 @@ class RuntimeLayoutView(context: Context, attrs: AttributeSet? = null) : LayoutV
     private var currentRuntimeLayout: RuntimeInputLayoutConfiguration? = null
     private var frontendInputHandler: IInputListener? = null
     private var systemInputHandler: IInputListener? = null
+    // Every input handler currently installed on a view. Kept so that their pressed keys can be
+    // released before the handlers are replaced or the layout is torn down.
+    private val buttonInputHandlers = mutableListOf<BaseInputHandler>()
+    private var screenInputHandler: BaseInputHandler? = null
     private var isSoftInputVisible = true
     private var areScreensSwapped = false
     private var connectedControllersState: ConnectedControllersState = ConnectedControllersState.NoControllers
@@ -70,6 +76,12 @@ class RuntimeLayoutView(context: Context, attrs: AttributeSet? = null) : LayoutV
         toggleableImageView.setToggleState(isEnabled)
     }
 
+    override fun destroyLayout() {
+        releaseButtonInputHandlers()
+        releaseScreenInputHandler()
+        super.destroyLayout()
+    }
+
     fun instantiateLayout(runtimeLayout: RuntimeInputLayoutConfiguration, layoutTarget: LayoutTarget) {
         currentRuntimeLayout = runtimeLayout
         instantiateLayout(runtimeLayout.layout, layoutTarget)
@@ -79,6 +91,10 @@ class RuntimeLayoutView(context: Context, attrs: AttributeSet? = null) : LayoutV
     }
 
     private fun updateInputs() {
+        // The handlers installed so far are about to be replaced by new instances. Without this,
+        // any key held down at that moment stays down in the emulator forever.
+        releaseButtonInputHandlers()
+
         val currentRuntimeLayout = currentRuntimeLayout
         if (currentRuntimeLayout == null) {
             isGone = true
@@ -90,24 +106,24 @@ class RuntimeLayoutView(context: Context, attrs: AttributeSet? = null) : LayoutV
 
         val enableHapticFeedback = currentRuntimeLayout.isHapticFeedbackEnabled
         systemInputHandler?.let {
-            getLayoutComponentView(LayoutComponent.DPAD)?.view?.setOnTouchListener(DpadInputHandler(it, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTONS)?.view?.setOnTouchListener(ButtonsInputHandler(it, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_L)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.L, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_R)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.R, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_SELECT)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.SELECT, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_START)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.START, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_HINGE)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.HINGE, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.DPAD)?.view?.installInputHandler(DpadInputHandler(it, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTONS)?.view?.installInputHandler(ButtonsInputHandler(it, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_L)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.L, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_R)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.R, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_SELECT)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.SELECT, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_START)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.START, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_HINGE)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.HINGE, enableHapticFeedback, touchVibrator))
         }
         frontendInputHandler?.let {
-            getLayoutComponentView(LayoutComponent.BUTTON_RESET)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.RESET, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_PAUSE)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.PAUSE, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.FAST_FORWARD, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_MICROPHONE_TOGGLE)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.MICROPHONE, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_TOGGLE_SOFT_INPUT)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.TOGGLE_SOFT_INPUT, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_SWAP_SCREENS)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.SWAP_SCREENS, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_QUICK_SAVE)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.QUICK_SAVE, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_QUICK_LOAD)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.QUICK_LOAD, enableHapticFeedback, touchVibrator))
-            getLayoutComponentView(LayoutComponent.BUTTON_REWIND)?.view?.setOnTouchListener(SingleButtonInputHandler(it, Input.REWIND, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_RESET)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.RESET, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_PAUSE)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.PAUSE, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.FAST_FORWARD, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_MICROPHONE_TOGGLE)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.MICROPHONE, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_TOGGLE_SOFT_INPUT)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.TOGGLE_SOFT_INPUT, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_SWAP_SCREENS)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.SWAP_SCREENS, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_QUICK_SAVE)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.QUICK_SAVE, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_QUICK_LOAD)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.QUICK_LOAD, enableHapticFeedback, touchVibrator))
+            getLayoutComponentView(LayoutComponent.BUTTON_REWIND)?.view?.installInputHandler(SingleButtonInputHandler(it, Input.REWIND, enableHapticFeedback, touchVibrator))
         }
 
         getLayoutComponentViews().forEach {
@@ -127,10 +143,33 @@ class RuntimeLayoutView(context: Context, attrs: AttributeSet? = null) : LayoutV
         } else {
             LayoutComponent.BOTTOM_SCREEN to LayoutComponent.TOP_SCREEN
         }
-        systemInputHandler?.let {
-            getLayoutComponentView(touchScreenComponent)?.view?.setOnTouchListener(TouchscreenInputHandler(it))
+        // Same reasoning as updateInputs, and this path also runs on its own when the screens are
+        // swapped while the stylus is down.
+        releaseScreenInputHandler()
+
+        systemInputHandler?.let { listener ->
+            getLayoutComponentView(touchScreenComponent)?.view?.let { view ->
+                val handler = TouchscreenInputHandler(listener)
+                view.setOnTouchListener(handler)
+                screenInputHandler = handler
+            }
         }
         getLayoutComponentView(nonTouchScreenComponent)?.view?.setOnTouchListener(null)
+    }
+
+    private fun View.installInputHandler(handler: BaseInputHandler) {
+        setOnTouchListener(handler)
+        buttonInputHandlers += handler
+    }
+
+    private fun releaseButtonInputHandlers() {
+        buttonInputHandlers.forEach { it.releaseAll() }
+        buttonInputHandlers.clear()
+    }
+
+    private fun releaseScreenInputHandler() {
+        screenInputHandler?.releaseAll()
+        screenInputHandler = null
     }
 
     private fun updateVisibility() {

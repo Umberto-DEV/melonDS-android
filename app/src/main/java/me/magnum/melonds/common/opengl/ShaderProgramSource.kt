@@ -7,8 +7,12 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
     }
 
     companion object {
-        private const val TEXTURE_WIDTH = 256
-        private const val TEXTURE_HEIGHT = 192 * 2 + 2
+        // Native (1x) size of the composited screen texture. The texture actually bound at
+        // render time is scaled by the current internal resolution (GLCompositor::SetScaleFactor
+        // in GPU_OpenGL.cpp: ScreenW = 256 * scale, ScreenH = (384 + 2) * scale), so any shader
+        // that needs to reason about texel offsets must multiply these by that scale.
+        private const val NATIVE_TEXTURE_WIDTH = 256
+        private const val NATIVE_TEXTURE_HEIGHT = 192 * 2 + 2
 
         private const val DEFAULT_VERT_SHADER = "attribute vec2 vUV;\n" +
                 "attribute vec2 vPos;\n" +
@@ -66,8 +70,12 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
 
         // Author: Gigaherz
         // License: Public domain
-        val LcdShader = ShaderProgramSource(
-            TextureFiltering.NEAREST,
+        //
+        // Unlike the resampling filters below, this shader simulates the physical LCD panel, whose
+        // cell grid is fixed at the native 256x386 resolution regardless of the internal render scale.
+        fun lcdShader(): ShaderProgramSource {
+            return ShaderProgramSource(
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -79,7 +87,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    gl_Position = vec4(vPos, 0.0, 1.0);\n" +
                     "    uv = vUV;\n" +
                     "    alpha = vAlpha;\n" +
-                    "    omega = 3.141592654 * 2.0 * vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    omega = 3.141592654 * 2.0 * vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" +
                     "}",
             "#ifdef GL_FRAGMENT_PRECISION_HIGH\n" +
                     "precision highp float;\n" +
@@ -106,12 +114,17 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    gl_FragColor.rgb = yfactor * xfactors * texture2D(tex, uv).bgr;\n" +
                     "    gl_FragColor.a = alpha;\n" +
                     "}"
-        )
+            )
+        }
 
         // Author: Themaister
         // This code is hereby placed in the public domain.
-        val ScanlinesShader = ShaderProgramSource(
-            TextureFiltering.NEAREST,
+        //
+        // Unlike the resampling filters below, this shader simulates the physical LCD panel, whose
+        // scanline grid is fixed at the native 256x386 resolution regardless of the internal render scale.
+        fun scanlinesShader(): ShaderProgramSource {
+            return ShaderProgramSource(
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -119,14 +132,14 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "varying float alpha;\n" +
                     "varying vec2 omega;\n" +
                     "" +
-                    "vec2 inputSize = vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" + // What is this?
-                    "vec2 outputSize = vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" + // What is this?
+                    "vec2 inputSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" + // What is this?
+                    "vec2 outputSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" + // What is this?
                     "" +
                     "void main()\n" +
                     "{\n" +
                     "    gl_Position = vec4(vPos, 0.0, 1.0);\n" +
                     "    uv = vUV;\n" +
-                    "    vec2 textureSize = vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    vec2 textureSize = vec2($NATIVE_TEXTURE_WIDTH, $NATIVE_TEXTURE_HEIGHT);\n" +
                     "    alpha = vAlpha;\n" +
                     "    omega = vec2(3.1415 * outputSize.x * textureSize.x / inputSize.x, 2.0 * 3.1415 * textureSize.y);\n" +
                     "}",
@@ -151,7 +164,8 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    vec4 scanline = color * (base_brightness + dot(sine_comp * sin(uv * omega), vec2(1.0)));\n" +
                     "    gl_FragColor = clamp(scanline, 0.0, 1.0);\n" +
                     "}"
-        )
+            )
+        }
 
         // Hyllian's 2xBR Shader
         //
@@ -170,8 +184,11 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
         // You should have received a copy of the GNU General Public License
         // along with this program; if not, write to the Free Software
         // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-        val XbrShader = ShaderProgramSource(
-            TextureFiltering.NEAREST,
+        fun xbrShader(textureScale: Int): ShaderProgramSource {
+            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
+            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+            return ShaderProgramSource(
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -179,7 +196,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "varying float alpha;\n" +
                     "" +
                     "void main() {\n" +
-                    "    vec2 ps = 1.0 / vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    vec2 ps = 1.0 / vec2($textureWidth, $textureHeight);\n" +
                     "    uv[0] = vUV;\n" +
                     "    uv[1] = vec2(0.0, -ps.y);\n" +
                     "    uv[2] = vec2(-ps.x, 0.0);\n" +
@@ -203,7 +220,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "}\n" +
                     "" +
                     "void main() {\n" +
-                    "    vec2 fp = fract(uv[0] * vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT));\n" +
+                    "    vec2 fp = fract(uv[0] * vec2($textureWidth, $textureHeight));\n" +
                     "" +
                     "    vec2 g1 = uv[1] * (step(0.5, fp.x) + step(0.5, fp.y) - 1.0) +\n" +
                     "            uv[2] * (step(0.5, fp.x) - step(0.5, fp.y));\n" +
@@ -236,10 +253,14 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    }\n" +
                     "    gl_FragColor.a = alpha;\n" +
                     "}"
-        )
+            )
+        }
 
-        val Hq2xShader = ShaderProgramSource(
-            TextureFiltering.NEAREST,
+        fun hq2xShader(textureScale: Int): ShaderProgramSource {
+            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
+            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+            return ShaderProgramSource(
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -247,7 +268,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "varying float alpha;\n" +
                     "" +
                     "void main() {\n" +
-                    "    vec2 dg1 = 0.5 / vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    vec2 dg1 = 0.5 / vec2($textureWidth, $textureHeight);\n" +
                     "    vec2 dg2 = vec2(-dg1.x, dg1.y);\n" +
                     "    vec2 dx = vec2(dg1.x, 0.0);\n" +
                     "    vec2 dy = vec2(0.0, dg1.y);\n" +
@@ -317,7 +338,8 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    gl_FragColor.bgr = w1 * c10 + w2 * c21 + w3 * c12 + w4 * c01 + (1.0 - w1 - w2 - w3 - w4) * c11;\n" +
                     "    gl_FragColor.a = alpha;\n" +
                     "}"
-        )
+            )
+        }
 
         // 4xGLSLHqFilter shader
         //
@@ -336,8 +358,11 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
         // You should have received a copy of the GNU General Public License
         // along with this program; if not, write to the Free Software
         // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-        val Hq4xShader = ShaderProgramSource(
-            TextureFiltering.NEAREST,
+        fun hq4xShader(textureScale: Int): ShaderProgramSource {
+            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
+            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+            return ShaderProgramSource(
+                TextureFiltering.NEAREST,
                 "attribute vec2 vPos;\n" +
                     "attribute vec2 vUV;\n" +
                     "attribute float vAlpha;\n" +
@@ -346,7 +371,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "" +
                     "void main()\n" +
                     "{\n" +
-                    "    vec2 dg1 = 0.5 / vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    vec2 dg1 = 0.5 / vec2($textureWidth, $textureHeight);\n" +
                     "    vec2 dg2 = vec2(-dg1.x, dg1.y);\n" +
                     "    vec2 sd1 = dg1 * 0.5;\n" +
                     "    vec2 sd2 = dg2 * 0.5;\n" +
@@ -429,12 +454,16 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "    gl_FragColor.rgb = (w1*(i1+i3)+w2*(i2+i4)+w3*(s1+s3)+w4*(s2+s4)+c)/(2.0*(w1+w2+w3+w4)+1.0);\n" +
                     "    gl_FragColor.a = alpha;\n" +
                     "}"
-        )
+            )
+        }
 
         // Fragment shader based on "Improved texture interpolation" by Iñigo Quílez
         // Original description: http://www.iquilezles.org/www/articles/texture/texture.htm
-        val QuilezShader = ShaderProgramSource(
-            TextureFiltering.LINEAR,
+        fun quilezShader(textureScale: Int): ShaderProgramSource {
+            val textureWidth = NATIVE_TEXTURE_WIDTH * textureScale
+            val textureHeight = NATIVE_TEXTURE_HEIGHT * textureScale
+            return ShaderProgramSource(
+                TextureFiltering.LINEAR,
             DEFAULT_VERT_SHADER,
             "#ifdef GL_FRAGMENT_PRECISION_HIGH\n" +
                     "precision highp float;\n" +
@@ -446,7 +475,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "varying vec2 uv;\n" +
                     "" +
                     "vec4 getTexel(vec2 p) {\n" +
-                    "    vec2 textureSize = vec2($TEXTURE_WIDTH, $TEXTURE_HEIGHT);\n" +
+                    "    vec2 textureSize = vec2($textureWidth, $textureHeight);\n" +
                     "    p = p * textureSize + vec2(0.5);\n" +
                     "" +
                     "    vec2 i = floor(p);\n" +
@@ -461,6 +490,7 @@ class ShaderProgramSource private constructor(val textureFiltering: TextureFilte
                     "void main() {\n" +
                     "    gl_FragColor = vec4(getTexel(uv).bgr, alpha);\n" +
                     "}"
-        )
+            )
+        }
     }
 }

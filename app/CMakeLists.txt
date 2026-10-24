@@ -29,10 +29,12 @@ add_library(
         SHARED
 
         ${ANDROID-CPP}/AndroidMelonEventMessenger.cpp
+        ${ANDROID-CPP}/AudioOutputPolicy.cpp
         ${ANDROID-CPP}/CartLoader.cpp
         ${ANDROID-CPP}/DSiSupport.cpp
         ${ANDROID-CPP}/EmulatorArgsBuilder.cpp
         ${ANDROID-CPP}/EmulatorMessageQueueJNI.cpp
+        ${ANDROID-CPP}/FileModeString.cpp
         ${ANDROID-CPP}/JniEnvHandler.cpp
         ${ANDROID-CPP}/MelonDS.cpp
         ${ANDROID-CPP}/MelonDSAndroidCameraHandler.cpp
@@ -52,9 +54,11 @@ add_library(
         ${ANDROID-CPP}/RetroAchievementsMapper.cpp
         ${ANDROID-CPP}/RewindManager.cpp
         ${ANDROID-CPP}/RomIconBuilder.cpp
+        ${ANDROID-CPP}/RtcSync.cpp
         ${ANDROID-CPP}/SDCardArgsBuilder.cpp
         ${ANDROID-CPP}/SaveManager.cpp
         ${ANDROID-CPP}/UriFileHandler.cpp
+        ${ANDROID-CPP}/WfcSettingsJNI.cpp
         ${ANDROID-CPP}/performancehint/JniPerformanceHintManager.cpp
         ${ANDROID-CPP}/performancehint/NdkPerformanceHintManager.cpp
         ${ANDROID-CPP}/performancehint/PerformanceHintManagerFactory.cpp

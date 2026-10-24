@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import me.magnum.melonds.domain.repositories.SettingsRepository
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 class SettingsBackupManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val preferences: SharedPreferences,
+    private val settingsRepository: SettingsRepository,
 ) {
     companion object {
         private const val SETTINGS_FILE = "settings.json"
@@ -42,7 +44,12 @@ class SettingsBackupManager @Inject constructor(
 
     fun backup(treeUri: Uri) {
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return
+        backupToDocument(root)
+    }
 
+    // Extracted so tests can exercise the file-writing logic against a plain, file-backed
+    // DocumentFile (DocumentFile.fromFile) instead of needing a real SAF tree Uri.
+    internal fun backupToDocument(root: DocumentFile) {
         val settingsDoc = root.findFile(SETTINGS_FILE)
             ?: root.createFile("application/json", SETTINGS_FILE)
             ?: return
@@ -95,7 +102,11 @@ class SettingsBackupManager @Inject constructor(
 
     fun restore(treeUri: Uri) {
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return
+        restoreFromDocument(root)
+    }
 
+    // See backupToDocument: extracted for testing against a file-backed DocumentFile.
+    internal fun restoreFromDocument(root: DocumentFile) {
         val settingsDoc = root.findFile(SETTINGS_FILE)
         settingsDoc?.uri?.let { uri ->
             context.contentResolver.openInputStream(uri)?.use { input ->
@@ -148,6 +159,9 @@ class SettingsBackupManager @Inject constructor(
                     input.copyTo(output)
                 }
             }
+            // The repository caches this file's content in memory; without this it keeps serving the
+            // pre-restore configuration until the process restarts.
+            settingsRepository.reloadControllerConfiguration()
         }
 
         val layoutsDoc = root.findFile(LAYOUTS_FILE)

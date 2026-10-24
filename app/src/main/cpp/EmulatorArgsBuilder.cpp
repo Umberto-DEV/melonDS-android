@@ -221,8 +221,10 @@ Firmware generateFirmware(const EmulatorConfiguration& configuration, int type, 
                 Firmware::ExtendedWifiAccessPoint(),
             };
             firmware.UpdateChecksums();
-            CloseFile(f);
         }
+
+        // Close on both paths: the successful read used to leak the handle on every ROM boot.
+        CloseFile(f);
     }
 
     customizeFirmware(configuration, firmware, true, instanceId);

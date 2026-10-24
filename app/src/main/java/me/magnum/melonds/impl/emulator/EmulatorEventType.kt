@@ -19,6 +19,15 @@ enum class EmulatorEventType(val event: Int) {
     EventEmulatorStop(102),
 
     /**
+     * The save data could not be written to storage. Fired once per failure episode, not once
+     * per retry. Defined in EmulatorMessageQueueJNI.h, since it is fired by SaveManager. No data.
+     */
+    EventSaveFlushFailed(103),
+
+    /** Wild selector state changed. Data: active (`i32`, 0 or 1). */
+    EventWildEncounterToggled(104),
+
+    /**
      * RA achievement primed. Data:
      * * achievement ID (`i64`)
      */

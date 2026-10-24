@@ -17,6 +17,7 @@ interface SettingsRepository {
 
     fun getTheme(): Theme
     fun getFastForwardSpeedMultiplier(): Float
+    fun shouldMuteFastForwardAudio(): Boolean
     fun isRewindEnabled(): Boolean
     fun getRewindWindowPosition(): RewindWindowPosition
     fun isSustainedPerformanceModeEnabled(): Boolean
@@ -33,6 +34,7 @@ interface SettingsRepository {
     fun getDsiBiosDirectory(): Uri?
     fun showBootScreen(): Boolean
     fun isJitEnabled(): Boolean
+    fun isRtcSyncToHostEnabled(): Boolean
 
     fun getVideoRenderer(): Flow<VideoRenderer>
     fun getVideoInternalResolutionScaling(): Flow<Int>
@@ -57,6 +59,8 @@ interface SettingsRepository {
 
     fun getControllerConfiguration(): ControllerConfiguration
     fun observeControllerConfiguration(): StateFlow<ControllerConfiguration>
+    // Re-reads controller_config.json from disk, for callers (e.g. settings restore) that write that file directly
+    fun reloadControllerConfiguration()
     fun getSelectedLayoutId(): UUID
     fun getSoftInputBehaviour(): Flow<SoftInputBehaviour>
     fun isTouchHapticFeedbackEnabled(): Flow<Boolean>

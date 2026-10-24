@@ -71,6 +71,11 @@ class EmulatorSession {
         return !isRetroAchievementsHardcoreModeEnabled || !areRetroAchievementsEnabled
     }
 
+    fun isFastForwardAllowed(): Boolean {
+        // Cannot fast-forward when RA hardcore is enabled, same restriction as rewind/save-states
+        return !isRetroAchievementsHardcoreModeEnabled || !areRetroAchievementsEnabled
+    }
+
     fun currentSessionType(): SessionType? {
         return sessionType
     }

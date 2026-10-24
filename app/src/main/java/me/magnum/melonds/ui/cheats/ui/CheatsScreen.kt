@@ -184,12 +184,14 @@ fun CheatsScreen(
                 )
             }
             composable<CheatsNavigation.FolderCheats> {
-                val cheats by viewModel.folderCheats.collectAsStateWithLifecycle(CheatsScreenUiState.Loading())
+                val items by viewModel.folderItems.collectAsStateWithLifecycle(CheatsScreenUiState.Loading())
 
                 CheatListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = padding,
-                    cheats = cheats,
+                    items = items,
+                    onSelectFamilyOption = viewModel::selectFamilyOption,
+                    onDisableFamily = viewModel::disableFamily,
                     onCheatClick = { viewModel.toggleCheat(it) },
                     onAddNewCheat = viewModel::addNewCheat,
                     onUpdateCheat = viewModel::updateCheat,
