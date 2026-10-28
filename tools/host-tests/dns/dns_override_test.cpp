@@ -14,6 +14,7 @@
 #include "Platform.h"
 
 #include <arpa/inet.h>
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <netinet/in.h>
