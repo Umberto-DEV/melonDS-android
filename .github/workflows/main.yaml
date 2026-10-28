@@ -139,8 +139,8 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      CMAKE_BIN: /usr/bin/cmake
-      CMAKE: /usr/bin/cmake
+      CMAKE_BIN: cmake
+      CMAKE: cmake
       ASAN_OPTIONS: detect_leaks=0
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
       REQUIRE_CORE_TESTS: '1'

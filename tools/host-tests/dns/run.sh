@@ -11,7 +11,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BUILD_DIR="$REPO_ROOT/app/build/host-dns"
 
 CMAKE="${CMAKE:-$HOME/Library/Android/sdk/cmake/3.22.1/bin/cmake}"
-if [ ! -x "$CMAKE" ]; then
+if ! command -v "$CMAKE" >/dev/null 2>&1; then
     echo "cmake not found at $CMAKE (set CMAKE=... to override)" >&2
     exit 1
 fi
