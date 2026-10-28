@@ -16,19 +16,15 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
 import me.magnum.melonds.MelonDSApplication
 import me.magnum.melonds.R
 import me.magnum.melonds.common.cheats.CheatDatabaseParser
-import me.magnum.melonds.common.cheats.CheatDatabaseParserListener
+import me.magnum.melonds.common.cheats.importEvents
 import me.magnum.melonds.common.cheats.ProgressTrackerInputStream
 import me.magnum.melonds.common.cheats.UsrCheatDatabaseParser
 import me.magnum.melonds.common.cheats.XmlCheatDatabaseParser
-import me.magnum.melonds.domain.model.CheatDatabase
-import me.magnum.melonds.domain.model.Game
 import me.magnum.melonds.domain.repositories.CheatsRepository
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 @HiltWorker
 class CheatImportWorker @AssistedInject constructor(
@@ -75,43 +71,31 @@ class CheatImportWorker @AssistedInject constructor(
             }
 
             return parseCheatDatabase(uri, parser, totalFileSize)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return Result.failure()
         }
     }
 
-    private suspend fun parseCheatDatabase(uri: Uri, parser: CheatDatabaseParser, totalFileSize: Long?) = suspendCoroutine { continuation ->
-        applicationContext.contentResolver.openInputStream(uri)?.use {
+    private suspend fun parseCheatDatabase(uri: Uri, parser: CheatDatabaseParser, totalFileSize: Long?): Result {
+        val input = applicationContext.contentResolver.openInputStream(uri) ?: return Result.failure()
+        input.use {
             val progressTrackerStream = ProgressTrackerInputStream(it)
-            parser.parseCheatDatabase(progressTrackerStream, object : CheatDatabaseParserListener {
-                override fun onDatabaseParseStart(databaseName: String): CheatDatabase = runBlocking {
-                    cheatsRepository.deleteImportedCheatDatabases()
-                    cheatsRepository.addCheatDatabase(databaseName)
+            cheatsRepository.replaceImportedCheats(parser.importEvents(progressTrackerStream) { gameName ->
+                val readProgress = if (totalFileSize != null && totalFileSize > 0) {
+                    (progressTrackerStream.totalReadBytes.toDouble() / totalFileSize * 100).toInt().coerceIn(0, 100)
+                } else {
+                    0
                 }
-
-                override fun onGameParseStart(gameName: String) {
-                    val readProgress = if (totalFileSize != null) {
-                        (progressTrackerStream.totalReadBytes.toDouble() / totalFileSize * 100).toInt()
-                    } else {
-                        0
-                    }
-
-                    setForegroundAsync(createForegroundInfo(gameName, readProgress, totalFileSize == null))
-                    setProgressAsync(workDataOf(
-                        KEY_PROGRESS_RELATIVE to readProgress / 100f,
-                        KEY_PROGRESS_ITEM to gameName
-                    ))
-                }
-
-                override fun onGameParsed(game: Game): Unit = runBlocking {
-                    cheatsRepository.addGameCheats(game)
-                }
-
-                override fun onParseComplete() {
-                    continuation.resume(Result.success())
-                }
+                setForegroundAsync(createForegroundInfo(gameName, readProgress, totalFileSize == null))
+                setProgressAsync(workDataOf(
+                    KEY_PROGRESS_RELATIVE to readProgress / 100f,
+                    KEY_PROGRESS_ITEM to gameName
+                ))
             })
         }
+        return Result.success()
     }
 
     private fun createForegroundInfo(gameName: String?, progress: Int, indeterminate: Boolean): ForegroundInfo {

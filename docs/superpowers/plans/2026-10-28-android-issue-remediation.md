@@ -92,7 +92,17 @@
 - [ ] Run full, fragmented, EOF/truncated and offset-boundary cases on JVM and Android with bounded failure detection that cannot leave a runaway thread.
 - [ ] Check existing XML/modifier-family/search tests remain green. Commit independently; arbitrary cheat/game crashes remain separate.
 
-### Task 8: Integrated verification and issue disposition
+### Task 8: Atomic cheat database replacement
+
+**Evidence:** Actual worker/parser/Room regression loses the old imported code and retains a partially imported replacement on malformed XML, on both JVM and Android. Existing custom cheat survives; imported data does not.
+**Files:** `CheatImportWorker.kt`, parser event adapter, `CheatsRepository.kt`, `RoomCheatsRepository.kt`; shared SQLite/worker regressions.
+**Interfaces:** Add a bounded stream of import events consumed inside one Room transaction. The parser remains synchronous and runs outside the database executor; no whole-database buffering or schema changes.
+- [ ] Keep the malformed XML RED and valid replacement control; add DAT, missing header, parser/write failure and cancellation cases.
+- [ ] Commit deletion and all imported rows atomically only after completed parsing. Roll back on parser, storage or cancellation failure; retain custom cheats. Reject unavailable input immediately.
+- [ ] Exercise actual SQLite and worker import path on JVM/Android; test streaming cancellation and bounded buffering rather than mocking repository success.
+- [ ] Commit separately, with exact scope and source traceability.
+
+### Task 9: Integrated verification and issue disposition
 
 **Files:** New report directory `docs/maintenance/2026-10-28-android-bugfixes/`; retain prior PR archives and update unpublished drafts only.
 **Interfaces:** Reports consume actual task logs/commits, not inferred results.

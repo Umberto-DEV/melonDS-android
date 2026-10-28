@@ -22,6 +22,7 @@ import me.magnum.melonds.database.entities.GameEntity
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.domain.model.CheatDatabase
 import me.magnum.melonds.domain.model.CheatFolder
+import me.magnum.melonds.domain.model.CheatImportEvent
 import me.magnum.melonds.domain.model.CheatImportProgress
 import me.magnum.melonds.domain.model.Game
 import me.magnum.melonds.domain.model.RomInfo
@@ -145,6 +146,31 @@ class RoomCheatsRepository(private val context: Context, private val database: M
 
         val cheatFolderEntity = CheatFolderEntity(null, gameId, folderName)
         database.cheatFolderDao().insertCheatFolder(cheatFolderEntity)
+    }
+
+    override suspend fun replaceImportedCheats(events: Flow<CheatImportEvent>) {
+        database.withTransaction {
+            var importedDatabase: CheatDatabase? = null
+            var complete = false
+            events.collect { event ->
+                check(!complete) { "Data received after the database was complete" }
+                when (event) {
+                    is CheatImportEvent.Start -> {
+                        check(importedDatabase == null) { "Multiple database headers" }
+                        deleteImportedCheatDatabases()
+                        importedDatabase = addCheatDatabase(event.name)
+                    }
+                    is CheatImportEvent.ParsedGame -> {
+                        val databaseId = checkNotNull(importedDatabase?.id) { "Missing database header" }
+                        addGameCheats(event.game.copy(cheats = event.game.cheats.map { folder ->
+                            folder.copy(cheats = folder.cheats.map { it.copy(cheatDatabaseId = databaseId) })
+                        }))
+                    }
+                    CheatImportEvent.Complete -> complete = true
+                }
+            }
+            check(importedDatabase != null && complete) { "Incomplete cheat database" }
+        }
     }
 
     override suspend fun deleteImportedCheatDatabases() {

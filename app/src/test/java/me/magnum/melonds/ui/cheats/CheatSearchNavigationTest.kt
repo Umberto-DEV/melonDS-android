@@ -147,6 +147,7 @@ class CheatSearchNavigationTest {
         override suspend fun findGameForRom(romInfo: RomInfo): Game? = error("unused")
         override suspend fun getRomEnabledCheats(romInfo: RomInfo): List<Cheat> = error("unused")
         override suspend fun addCheatFolder(folderName: String, game: Game): Unit = error("unused")
+        override suspend fun replaceImportedCheats(events: kotlinx.coroutines.flow.Flow<me.magnum.melonds.domain.model.CheatImportEvent>): Unit = error("Import is outside this UI fixture")
         override suspend fun deleteImportedCheatDatabases(): Unit = error("unused")
         override suspend fun addCheatDatabase(databaseName: String): CheatDatabase = error("unused")
         override suspend fun addGameCheats(game: Game): Game = error("unused")

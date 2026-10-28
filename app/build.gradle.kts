@@ -246,6 +246,8 @@ dependencies {
     ksp(libs.hilt.compiler.android)
     ksp(libs.room.compiler)
 
+    testImplementation("androidx.work:work-testing:${libs.versions.work.get()}")
+    androidTestImplementation("androidx.work:work-testing:${libs.versions.work.get()}")
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

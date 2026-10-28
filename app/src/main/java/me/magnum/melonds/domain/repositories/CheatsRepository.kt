@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.domain.model.CheatDatabase
 import me.magnum.melonds.domain.model.CheatFolder
+import me.magnum.melonds.domain.model.CheatImportEvent
 import me.magnum.melonds.domain.model.CheatImportProgress
 import me.magnum.melonds.domain.model.Game
 import me.magnum.melonds.domain.model.RomInfo
@@ -19,6 +20,7 @@ interface CheatsRepository {
     suspend fun updateCheatsStatus(cheats: List<Cheat>)
     suspend fun updateCheats(cheats: List<Cheat>)
     suspend fun addCheatFolder(folderName: String, game: Game)
+    suspend fun replaceImportedCheats(events: Flow<CheatImportEvent>)
     suspend fun deleteImportedCheatDatabases()
     suspend fun addCheatDatabase(databaseName: String): CheatDatabase
     suspend fun addGameCheats(game: Game): Game
