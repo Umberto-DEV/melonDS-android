@@ -164,4 +164,24 @@ abstract class CheatImportIntegrityContract {
         job.cancelAndJoin()
         assertEquals(original, snapshot())
     }
+
+    @Test fun datTruncatedAtGameOffsetCannotEraseImportedCheats() = runBlocking {
+        val original = snapshot()
+        val source = file("").apply { writeBytes(UsrCheatFixture.bytes().copyOf(288)) }
+        var failed = false
+        try { import(source, UsrCheatDatabaseParser()) } catch (_: Exception) { failed = true }
+        assertTrue("Missing game data must not be accepted as an empty database", failed)
+        assertEquals(original, snapshot())
+    }
+
+    @Test(timeout = 10000)
+    fun sqliteFailureDuringRealDatParsingStopsProducerAndRollsBack() = runBlocking {
+        val original = snapshot()
+        val source = file("").apply { writeBytes(UsrCheatFixture.manyGames(100)) }
+        database.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_dat_import BEFORE INSERT ON cheat WHEN NEW.name = 'Test' BEGIN SELECT RAISE(ABORT, 'Injected DAT storage failure'); END")
+        var failed = false
+        try { import(source, UsrCheatDatabaseParser()) } catch (_: Exception) { failed = true }
+        assertTrue(failed)
+        assertEquals(original, snapshot())
+    }
 }

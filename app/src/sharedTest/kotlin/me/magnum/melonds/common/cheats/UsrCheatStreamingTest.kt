@@ -2,6 +2,7 @@ package me.magnum.melonds.common.cheats
 
 import me.magnum.melonds.domain.model.CheatDatabase
 import me.magnum.melonds.domain.model.Game
+import kotlinx.coroutines.CancellationException
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -25,6 +26,21 @@ object UsrCheatFixture {
         b.putInt(2); b.putInt(0x02000000); b.putInt(1)
         return data
     }
+    fun manyGames(gameCount: Int): ByteArray {
+        val block = bytes().copyOfRange(288, 356)
+        val dataStart = 256 + 16 * (gameCount + 1)
+        val data = ByteArray(dataStart + block.size * gameCount)
+        bytes().copyInto(data, endIndex = 256)
+        val b = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
+        repeat(gameCount) { i ->
+            b.position(256 + i * 16)
+            b.put(String.format(java.util.Locale.ROOT, "%04d", i).toByteArray())
+            b.putInt(0x12345678); b.putInt(dataStart + block.size * i); b.putInt(0)
+            block.copyInto(data, dataStart + block.size * i)
+        }
+        return data
+    }
+
 }
 
 class UsrCheatStreamingTest {
@@ -95,5 +111,34 @@ class UsrCheatStreamingTest {
         repeat(3) { assertEquals(-1, stream.read(ByteArray(10))) }
         assertEquals(-1, stream.read())
         assertEquals(3, stream.totalReadBytes)
+    }
+
+    @Test fun gameOffsetExactlyAtEofIsRejected() {
+        val listener = Listener()
+        assertThrows(Exception::class.java) {
+            UsrCheatDatabaseParser().parseCheatDatabase(ProgressTrackerInputStream(Response(UsrCheatFixture.bytes().copyOf(288))), listener)
+        }
+        assertFalse(listener.complete)
+    }
+    @Test fun cancellationFromGameListenerPropagatesInsteadOfReportingCompletion() {
+        var complete = false
+        val listener = object : CheatDatabaseParserListener {
+            override fun onDatabaseParseStart(databaseName: String) = CheatDatabase(7, databaseName)
+            override fun onGameParseStart(gameName: String) = Unit
+            override fun onGameParsed(game: Game) { throw CancellationException("Consumer cancelled") }
+            override fun onParseComplete() { complete = true }
+        }
+        assertThrows(CancellationException::class.java) {
+            UsrCheatDatabaseParser().parseCheatDatabase(ProgressTrackerInputStream(Response(UsrCheatFixture.bytes())), listener)
+        }
+        assertFalse(complete)
+    }
+
+    @Test fun gameOffsetInsideAddressBookIsRejected() {
+        val data = UsrCheatFixture.bytes()
+        ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).putInt(264, 0)
+        assertThrows(Exception::class.java) {
+            UsrCheatDatabaseParser().parseCheatDatabase(ProgressTrackerInputStream(Response(data)), Listener())
+        }
     }
 }

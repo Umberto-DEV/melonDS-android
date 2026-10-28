@@ -90,4 +90,12 @@ abstract class UILayoutProviderDisplayLifecycleContract {
 
         assertEquals(splitLayout, result)
     }
+
+    @Test
+    fun equivalentDisplayReconnectWithRotatedInsetsPreservesCustomLayout() = runBlocking {
+        val saved = splitVariant.copy(uiInsets = Insets(24, 0, 0, 0))
+        val rotated = saved.copy(uiInsets = Insets(0, 0, 24, 0), displays = LayoutDisplayPair(primary, external.copy(id = 42)))
+        val provider = provider(mapOf(saved to splitLayout), rotated)
+        assertEquals(splitLayout, layout(provider))
+    }
 }

@@ -178,7 +178,8 @@ class UILayoutProvider(private val defaultLayoutProvider: DefaultLayoutProvider)
 
         val bestVariant = layoutConfiguration.layoutVariants.entries.firstOrNull {
             it.key.orientation == variant.orientation && it.key.uiSize == variant.uiSize &&
-                it.key.displays == variant.displays
+                it.key.displays.mainScreenDisplay == variant.displays.mainScreenDisplay &&
+                it.key.displays.secondaryScreenDisplay?.copy(id = -1) == variant.displays.secondaryScreenDisplay?.copy(id = -1)
         }
         if (bestVariant != null) {
             if (bestVariant.key.uiInsets == variant.uiInsets) {

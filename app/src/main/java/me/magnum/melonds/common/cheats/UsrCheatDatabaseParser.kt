@@ -1,6 +1,8 @@
 package me.magnum.melonds.common.cheats
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -77,8 +79,7 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
                     if (toSkip > 0) {
                         streamReader.skip(toSkip)
                     } else if (toSkip < 0) {
-                        // Shouldn't happen
-                        continue
+                        throw InvalidUsrCheatDatabaseException("Game offset ${entry.offset} precedes position ${streamReader.bytesRead}")
                     }
 
                     // Determine how many bytes to read for this game
@@ -101,19 +102,26 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
             // The listener is notified immediately as each game is parsed.
             val workers = List(THREAD_POOL_SIZE) {
                 launch(Dispatchers.Default) {
-                    for (gameData in channel) {
-                        val gameName = peekGameName(gameData.data, charset)
-                        if (gameName != null) {
-                            synchronized(parseListener) {
-                                parseListener.onGameParseStart(gameName)
+                    try {
+                        for (gameData in channel) {
+                            val gameName = peekGameName(gameData.data, charset)
+                            if (gameName != null) {
+                                synchronized(parseListener) {
+                                    parseListener.onGameParseStart(gameName)
+                                }
+                            }
+                            val game = parseGame(gameData.data, gameData.entry, cheatDatabase, charset)
+                            if (game != null) {
+                                synchronized(parseListener) {
+                                    parseListener.onGameParsed(game)
+                                }
                             }
                         }
-                        val game = parseGame(gameData.data, gameData.entry, cheatDatabase, charset)
-                        if (game != null) {
-                            synchronized(parseListener) {
-                                parseListener.onGameParsed(game)
-                            }
-                        }
+                    } catch (cancelled: CancellationException) {
+                        // A cancelled import consumer must stop the standalone parser scope too.
+                        // Child cancellation alone would leave its producer blocked on a full channel.
+                        this@runBlocking.cancel(cancelled)
+                        throw cancelled
                     }
                 }
             }
@@ -177,16 +185,17 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
         val reader = ByteArrayReader(data)
 
         val gameName = reader.readPaddedString(charset)
-        if (gameName.isBlank()) {
-            return null
-        }
-
         // Read number of items (2 bytes) + master code enable flag (2 bytes)
         val itemHeader = reader.readBytes(4)
         val numItems = readU16LE(itemHeader, 0)
 
         // Skip master code (32 bytes)
         reader.skip(MASTER_CODE_SIZE)
+
+        // Even unused entries need a complete header; EOF is not an empty game.
+        if (gameName.isBlank()) {
+            return null
+        }
 
         // Parse items
         val folders = mutableListOf<CheatFolder>()
@@ -359,6 +368,9 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
         }
 
         fun skip(count: Int) {
+            if (count < 0 || count > data.size - position) {
+                throw InvalidUsrCheatDatabaseException("Unexpected end of data at position $position (skipping $count bytes)")
+            }
             position += count
         }
 

@@ -34,4 +34,12 @@ class CheatImportEventsTest {
             assertTrue("Producer must not accumulate the entire database", attempted.get() < 100)
         }
     }
+
+    @Test(timeout = 10000)
+    fun cancellingRealDatParserStopsItsNestedProducerAndWorkers() = runBlocking {
+        val stream = ProgressTrackerInputStream(ByteArrayInputStream(UsrCheatFixture.manyGames(100)))
+        withTimeout(5000) {
+            assertEquals(2, UsrCheatDatabaseParser().importEvents(stream) {}.take(2).toList().size)
+        }
+    }
 }
