@@ -175,6 +175,15 @@ class EmulatorActivity : AppCompatActivity() {
     private var presentation: ExternalPresentation? = null
 
     private lateinit var handler: Handler
+    private val lidClosePauseController by lazy {
+        LidClosePauseController(
+            handler = handler,
+            pause = { viewModel.pauseEmulator(false) },
+            stopRendering = { choreographerFrameRenderer.stopRendering() },
+            startGracePeriod = { ContextCompat.startForegroundService(this, Intent(this, LidCloseService::class.java)) },
+            finishGracePeriod = { stopService(Intent(this, LidCloseService::class.java)) },
+        )
+    }
     private val displayListener = object : DisplayManager.DisplayListener {
 
         override fun onDisplayAdded(displayId: Int) {
@@ -773,6 +782,7 @@ class EmulatorActivity : AppCompatActivity() {
                     .setTitle(getString(R.string.title_emulator_running))
                     .setMessage(getString(R.string.message_stop_emulation))
                     .setPositiveButton(R.string.ok) { _, _ ->
+                        lidClosePauseController.cancelPendingPause()
                         setIntent(intent)
                         viewModel.relaunchWithNewArgs(launchArgs)
                     }
@@ -791,7 +801,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        cancelPendingLidPause()
+        lidClosePauseController.cancelPendingPause()
         choreographerFrameRenderer.startRendering()
         emulatorMotionManager.resume()
 
@@ -847,35 +857,7 @@ class EmulatorActivity : AppCompatActivity() {
         } else {
             binding.textFps.isVisible = true
             val newParams = binding.textFps.layoutParams as ConstraintLayout.LayoutParams
-            when (fpsCounterPosition) {
-                FpsCounterPosition.TOP_LEFT -> {
-                    newParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.TOP_CENTER -> {
-                    newParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.TOP_RIGHT -> {
-                    newParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.BOTTOM_LEFT -> {
-                    newParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.BOTTOM_CENTER -> {
-                    newParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.BOTTOM_RIGHT -> {
-                    newParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                    newParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID
-                }
-                FpsCounterPosition.HIDDEN -> { /* Do nothing here */ }
-            }
+            newParams.positionFpsCounter(fpsCounterPosition)
             binding.textFps.layoutParams = newParams
         }
     }
@@ -1150,22 +1132,8 @@ class EmulatorActivity : AppCompatActivity() {
         viewModel.setSystemOrientation(orientation)
     }
 
-    // Most games play sound for <2secs after closing the lid
-    private val lidClosePauseDelayMs = 3000L
-
-    private val pauseAfterLidCloseRunnable = Runnable {
-        choreographerFrameRenderer.stopRendering()
-        viewModel.pauseEmulator(false)
-        stopService(Intent(this, LidCloseService::class.java))
-    }
-
     private fun isScreenOff(): Boolean {
         return getSystemService<PowerManager>()?.isInteractive == false
-    }
-
-    private fun cancelPendingLidPause() {
-        handler.removeCallbacks(pauseAfterLidCloseRunnable)
-        stopService(Intent(this, LidCloseService::class.java))
     }
 
     override fun onPause() {
@@ -1180,13 +1148,9 @@ class EmulatorActivity : AppCompatActivity() {
         if (isScreenOff()) {
             lidClosedByScreenOff = true
             melonTouchHandler.setLidClosed(true)
-            ContextCompat.startForegroundService(this, Intent(this, LidCloseService::class.java))
-
-            // Delay pausing the emulator just enough to let games play sounds after closing the lid
-            handler.postDelayed(pauseAfterLidCloseRunnable, lidClosePauseDelayMs)
+            lidClosePauseController.schedulePause()
         } else { // App switch, etc.
-            choreographerFrameRenderer.stopRendering()
-            viewModel.pauseEmulator(false)
+            lidClosePauseController.pauseNow()
         }
     }
 
@@ -1207,9 +1171,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        // The delayed pause runnable was only ever cancelled in onResume; cancel it here too so it
-        // doesn't fire (and pause a session that already went through a different lifecycle path).
-        cancelPendingLidPause()
+        lidClosePauseController.onStopped()
         getSystemService<DisplayManager>()?.unregisterDisplayListener(displayListener)
         getSystemService<InputManager>()?.unregisterInputDeviceListener(connectedControllerManager)
         connectedControllerManager.stopTrackingControllers()
@@ -1217,8 +1179,8 @@ class EmulatorActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        lidClosePauseController.destroy()
         super.onDestroy()
-        cancelPendingLidPause()
         emulatorMotionManager.stop()
         frameRenderCoordinator.stop()
         presentation?.dismiss()

@@ -20,6 +20,7 @@ mkdir -p "$BUILD_DIR"
 
 CXX="${CXX:-clang++}"
 CXXFLAGS=(-std=c++17 -Wall -Wextra -fsanitize=address,undefined -g -O1)
+export UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}"
 
 TEST_NAMES=()
 TEST_RESULTS=()
@@ -81,6 +82,10 @@ skip_core_tests() {
     echo "== Skipping the core-dependent JIT tests: $1 =="
     TEST_NAMES+=("JitInvalidationTest" "JitDifferentialTest")
     TEST_RESULTS+=("SKIPPED" "SKIPPED")
+    if [ "${REQUIRE_CORE_TESTS:-0}" = "1" ]; then
+        echo "Core tests are required in this environment." >&2
+        OVERALL_STATUS=1
+    fi
 }
 
 run_core_tests() {

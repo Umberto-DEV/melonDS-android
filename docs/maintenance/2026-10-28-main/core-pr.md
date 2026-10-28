@@ -19,4 +19,3 @@ Companion Android PR: https://github.com/rafaelvcaetano/melonDS-android/pull/168
 - The JIT/interpreter framebuffer comparison has a known discrepancy reproduced identically with the upstream and proposed cores. x86_64 runtime validation is still outstanding.
 
 Supersedes #18, whose original source fork was removed. No emulation changes have been added during this resubmission.
-

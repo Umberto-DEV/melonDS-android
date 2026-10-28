@@ -15,8 +15,13 @@ every 60 frames; it needs `MELONDS_TEST_ROM=/path/to/rom.nds` and skips without 
 
     MELONDS_TEST_ROM=~/roms/game.nds tools/host-tests.sh
 
-Both cover the ARM64 backend only: CMake force-disables the JIT for x86_64 on macOS, so the
-x64 recompiler is not exercised here and needs a Linux x86_64 machine.
+On Apple Silicon these cover the ARM64 backend. CMake disables the JIT for x86_64 on
+macOS; the GitHub Actions native matrix additionally exercises Linux x86_64 and ARM64.
+CI sets `REQUIRE_CORE_TESTS=1`, so an unavailable core or JIT backend fails verification.
+The ROM-dependent differential test still requires a private ROM fixture and is separate
+from the always-run synthetic invalidation test. UBSan findings fail the host checks by
+default. Leak detection remains disabled in the core harness; DNS packet tests are a
+separate functional check and are not sanitizer-instrumented.
 
 ## HWASan opt-in (debug builds)
 

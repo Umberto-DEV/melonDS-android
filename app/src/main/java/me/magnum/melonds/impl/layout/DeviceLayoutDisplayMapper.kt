@@ -1,5 +1,6 @@
 package me.magnum.melonds.impl.layout
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
@@ -16,8 +17,12 @@ abstract class DeviceLayoutDisplayMapper(private val context: Context) {
     protected fun mapDisplayToLayoutDisplay(display: Display, displayType: LayoutDisplay.Type): LayoutDisplay {
         // WindowMetrics API is available since API 30 (Android R), but there seems to be some issues regarding window context creation on that API version
         val (width, height) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val typePresentation = 2037 // This is equal to WindowManager.LayoutParams.TYPE_PRESENTATION, but the constant can't be used for some reason
+            // AOSP Presentation uses TYPE_PRESENTATION (2037), hidden from the public SDK.
+            // Preserve presentation metrics; TYPE_APPLICATION may use different display-area bounds.
+            // https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/app/Presentation.java
+            val typePresentation = 2037
             val displayContextType = if ((display.flags and Display.FLAG_PRIVATE) != 0) WindowManager.LayoutParams.TYPE_PRIVATE_PRESENTATION else typePresentation
+            @SuppressLint("WrongConstant") // Valid AOSP window type omitted from the public SDK IntDef.
             val displayWindowContext = context.createDisplayContext(display).createWindowContext(displayContextType, null)
             val displayWindowManager = displayWindowContext.getSystemService<WindowManager>()!!
 

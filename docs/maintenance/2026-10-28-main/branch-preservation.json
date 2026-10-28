@@ -1,0 +1,58 @@
+{
+  "app": {
+    "local_heads": [
+      "main"
+    ],
+    "remote_heads": [
+      "c252aa48ff1b6b407d8b3777101b1bc4bcdac970\trefs/heads/main"
+    ],
+    "preserved_original_heads": [
+      {
+        "ref": "refs/heads/android-fixes-2026-09",
+        "sha": "53334f61bc0c0abe6fb6d48124707405500250f4"
+      },
+      {
+        "ref": "refs/heads/feat/modifier-families",
+        "sha": "e5942872136bcd005fbf33746f69d9e982e789e4"
+      },
+      {
+        "ref": "refs/heads/master",
+        "sha": "3f3a1c8260850ce5f5ffe2b25ee4274b8674fa5f"
+      },
+      {
+        "ref": "refs/heads/pr-prep/app",
+        "sha": "6c6f79ddd6d1d9fc46c0d6cc54c9cc94644f7487"
+      },
+      {
+        "ref": "refs/heads/ventuno",
+        "sha": "39a9fe56312aee4e7cd014ebf9f753d8770a9c6e"
+      }
+    ]
+  },
+  "core": {
+    "local_heads": [
+      "main"
+    ],
+    "remote_heads": [
+      "20fb301428cbcdca014605741f5ea4bd28581e33\trefs/heads/main"
+    ],
+    "preserved_original_heads": [
+      {
+        "ref": "refs/heads/core-fixes-2026-09",
+        "sha": "3ad4e9409175d41560e6ffddf456c806b6fd2f72"
+      },
+      {
+        "ref": "refs/heads/master",
+        "sha": "431ab4bd0003c4356e25fce89640ae1004579b9b"
+      },
+      {
+        "ref": "refs/heads/pr-prep/core",
+        "sha": "bc060f4cb2faa1fc6ef6f4046c509feb5e686342"
+      },
+      {
+        "ref": "refs/heads/ventuno",
+        "sha": "bc060f4cb2faa1fc6ef6f4046c509feb5e686342"
+      }
+    ]
+  }
+}

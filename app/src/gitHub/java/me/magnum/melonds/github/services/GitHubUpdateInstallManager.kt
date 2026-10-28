@@ -7,7 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
 import android.net.Uri
-import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import kotlinx.coroutines.channels.awaitClose
@@ -34,18 +34,12 @@ class GitHubUpdateInstallManager(private val context: Context) : UpdateInstallMa
     private var pendingDownloadId: Long? = null
 
     init {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(
-                downloadCompleteReceiver,
-                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-                Context.RECEIVER_EXPORTED,
-            )
-        } else {
-            context.registerReceiver(
-                downloadCompleteReceiver,
-                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            )
-        }
+        ContextCompat.registerReceiver(
+            context,
+            downloadCompleteReceiver,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
     }
 
     override fun downloadAndInstallUpdate(update: AppUpdate): Flow<DownloadProgress> = flow {

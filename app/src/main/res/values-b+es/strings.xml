@@ -86,7 +86,7 @@
     <string name="save_states_not_supported">Los estados de guardado no son compatibles mientras se ejecuta el firmware</string>
     <string name="save_states_unavailable_ra_hardcore_enabled">Guardados no disponibles en modo Hardcore</string>
     <string name="rewind_time_seconds">%1$ss</string> <!-- Ej: 43,56s -->
-    <string name="rewind_time_minutes_seconds">%1$dmin2$ss</string> <!-- Ej: 2min37,93s -->
+    <string name="rewind_time_minutes_seconds">%1$dmin%2$ss</string> <!-- Ej: 2min37,93s -->
     <string name="rewind_not_enabled">El rebobinado no está habilitado</string>
     <string name="rewind_unavailable_ra_hardcore_enabled">El rebobinado no disponible en modo Hardcore</string>
     <string name="no_image_selected">Ninguna imagen seleccionada</string>
@@ -412,6 +412,7 @@
         <item>HQ4X</item>
         <item>Quilez</item>
         <item>LCD</item>
+        <item>Líneas de barrido</item>
     </string-array>
 
     <string-array name="dsi_camera_source_options">

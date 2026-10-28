@@ -45,4 +45,3 @@ Wi-Fi settings captured on an AYN Thor from the earlier tested build:
 ![Wi-Fi connection settings overview](https://raw.githubusercontent.com/Umberto-DEV/melonDS-android/aedb719f56d50b5457c08de1172e166b23f5861e/docs/images/wfc-overview.png)
 
 Supersedes #1681. The functional changes and community contributions are preserved; resubmission changes concern Actions, contribution metadata, screenshot filenames and the equivalent core revision.
-

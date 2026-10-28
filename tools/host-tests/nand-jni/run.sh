@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+export UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}"
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
 build_dir=$(mktemp -d "${TMPDIR:-/tmp}/melonds-nand-jni.XXXXXX")

@@ -72,7 +72,7 @@ jobs:
           path: app/build/outputs/apk/gitHubNightly/release/app-gitHub-nightly-release.apk
 
   verify:
-    name: Unit tests and ARM64 debug APK
+    name: Unit tests, lint and ARM64 debug APK
     if: github.repository != 'rafaelvcaetano/melonDS-android' || github.ref != 'refs/heads/master' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -93,10 +93,11 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Test and build ARM64 debug APK
+      - name: Test, lint and build ARM64 debug APK
         run: >-
           sh ./gradlew :app:testGitHubNightlyDebugUnitTest
           :app:assembleGitHubNightlyDebug
+          :app:lintGitHubNightlyDebug
           --no-daemon --max-workers=2
           -Pandroid.injected.build.abi=arm64-v8a
 
@@ -117,3 +118,42 @@ jobs:
           path: app/build/intermediates/apk/gitHubNightly/debug/app-gitHub-nightly-debug.apk
           retention-days: 7
           if-no-files-found: error
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: melonDS-lint-results
+          path: app/build/reports/lint-results-gitHubNightlyDebug.*
+          retention-days: 7
+          if-no-files-found: warn
+
+  native-tests:
+    name: Native sanitizer tests (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    env:
+      CC: clang
+      CXX: clang++
+      CMAKE_BIN: /usr/bin/cmake
+      CMAKE: /usr/bin/cmake
+      ASAN_OPTIONS: detect_leaks=0
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      REQUIRE_CORE_TESTS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Build instrumented core
+        run: bash tools/core-host-sanitize.sh
+      - name: Test native policies, saves and JIT invalidation
+        run: bash tools/host-tests.sh
+      - name: Test DNS packets
+        run: bash tools/host-tests/dns/run.sh
+      - name: Test NAND JNI reference lifetime
+        run: bash tools/host-tests/nand-jni/run.sh

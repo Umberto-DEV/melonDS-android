@@ -28,19 +28,19 @@
 ### Task 1: Inventory and preservation
 - [x] Inspect branches, dirty files, remotes and current PR metadata.
 - [x] Save bundles, dirty patch and untracked files outside the repository.
-- [ ] Compare all histories and tree differences; choose lossless consolidation.
-- [ ] Preserve updated remote refs in backup bundles.
+- [x] Compare all histories and tree differences; choose lossless consolidation.
+- [x] Preserve updated remote refs in backup bundles.
 
 ### Task 2: Consolidate branch names and PR state
-- [ ] Rename existing development branches to main and consolidate relevant app/core content.
-- [ ] Correct core fork URL and app gitlink.
-- [ ] Close archived PR 1682 and core PR 19; create no replacements.
-- [ ] Publish main, set fork default main, remove redundant branch refs only after preservation checks.
-- [ ] Record branch invariant verification.
+- [x] Rename existing development branches to main and consolidate relevant app/core content.
+- [x] Correct core fork URL and app gitlink.
+- [x] Close archived PR 1682 and core PR 19; create no replacements.
+- [x] Publish main, set fork default main, remove redundant branch refs only after preservation checks.
+- [x] Record branch invariant verification.
 
 ### Task 3: Community review and validation
-- [ ] Refresh open PR/issue inventory; compare against prior October 24 audit.
-- [ ] Integrate only reviewed relevant changes with focused regression tests.
+- [x] Refresh open PR/issue inventory; compare against prior October 24 audit.
+- [x] Integrate only reviewed relevant changes with focused regression tests.
 - [ ] Run JVM tests, ARM64 Android build, Android lint, native sanitizer/JNI/DNS checks and relevant x86_64 validation.
 - [ ] Run fork CI on final main commit and inspect completed results.
 - [ ] Review final changes and preserve evidence and updated unpublished PR descriptions.
@@ -54,3 +54,10 @@
 - Original backup: /Users/umbertocipriano/Developer/melonds-backup-20261028-125946.
 - Ruling: execute the explicitly authorized consolidation without another planning approval; preserve existing changes and avoid new branches per user instruction.
 
+- Consolidation complete: all original local branch tips remain ancestors of main; both user-owned forks and local repositories have exactly main. Core source equality verified before adding CI.
+- PRs 1682 and19 closed after complete body/metadata/comment archives. CLI used after connector403 (insufficient integration access). No new PR created.
+- Local integrated verification:190 JVM tests,0 failures/errors/skips, ARM64 debug APK built, lint0 errors/474 warnings. Three focused regressions observed failing then passing.
+- Review found recoverable UBSan reports could exit0; reproduced with a signed-overflow fixture (exit0 vs strict abort), enabled strict runtime failure for all native checks.
+- Ruling: retain the existing presentation-context behavior. The SDK excludes AOSP's valid hidden TYPE_PRESENTATION from its IntDef, so annotate only that call with its source rationale. A trial public-type rewrite was rejected; dual-display Robolectric geometry failed identically before/after and is archived as non-diagnostic, not claimed passing.
+- Other reviewed deferrals: whole audio stretching/paired buffer rewrite (#1676/core17), recovery state machine (#1666) and broad focus gating (#1657) lack safe bounded integration/device evidence; retain existing targeted adaptations.
+- Sacred Gold Plus coordination received. Daybreak must not be launched until the user confirms authentication/authorization; ordinary verification continues.

@@ -11,7 +11,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -94,8 +93,6 @@ import me.magnum.rcheevosapi.exception.UserTokenExpiredException
 import me.magnum.rcheevosapi.model.RAUserAuth
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -1109,18 +1106,5 @@ class EmulatorViewModel @Inject constructor(
         emulatorManager.cleanEmulator()
     }
 
-    private class EmulatorSessionCoroutineScope : CoroutineScope {
-        private var currentCoroutineContext: CoroutineContext = EmptyCoroutineContext
 
-        override val coroutineContext: CoroutineContext get() = currentCoroutineContext
-
-        fun notifyNewSessionStarted() {
-            cancel()
-            currentCoroutineContext = SupervisorJob() + Dispatchers.Main.immediate
-        }
-
-        fun cancel() {
-            currentCoroutineContext.cancel()
-        }
-    }
 }
