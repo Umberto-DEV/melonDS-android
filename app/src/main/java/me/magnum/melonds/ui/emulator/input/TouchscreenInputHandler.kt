@@ -23,8 +23,11 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
                 inputListener.onKeyPress(Input.TOUCHSCREEN)
                 inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height))
             }
-            MotionEvent.ACTION_MOVE -> {
+            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_POINTER_DOWN -> {
                 inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height))
+            }
+            MotionEvent.ACTION_POINTER_UP -> {
+                inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height, event.actionIndex))
             }
             // ACTION_CANCEL means the system took the gesture away: without it the stylus would
             // stay down in the emulator forever.
@@ -47,7 +50,7 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
         }
     }
 
-    private fun normalizeTouchCoordinates(event: MotionEvent, viewWidth: Int, viewHeight: Int): Point {
+    private fun normalizeTouchCoordinates(event: MotionEvent, viewWidth: Int, viewHeight: Int, excludedPointerIndex: Int = -1): Point {
         var averageTouchX = 0f
         var averageTouchY = 0f
 
@@ -55,12 +58,14 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
         // of this technology for some mechanics. Averaging out the coordinates of the touch position allows us to
         // simulate those nuances to some degree
         for (i in 0 until event.pointerCount) {
+            if (i == excludedPointerIndex) continue
             event.getPointerCoords(i, pointerCoordinates)
             averageTouchX += pointerCoordinates.x
             averageTouchY += pointerCoordinates.y
         }
-        averageTouchX /= event.pointerCount
-        averageTouchY /= event.pointerCount
+        val pointerCount = event.pointerCount - if (excludedPointerIndex >= 0) 1 else 0
+        averageTouchX /= pointerCount
+        averageTouchY /= pointerCount
 
         touchPoint.x = (averageTouchX / viewWidth * 256).toInt().coerceIn(0, 255)
         touchPoint.y = (averageTouchY / viewHeight * 192).toInt().coerceIn(0, 191)
