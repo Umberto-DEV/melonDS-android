@@ -238,12 +238,15 @@ namespace MelonDSAndroid
             micBuffer = (s16*) &mic_blow[0];
         }
 
+        // Device capture owns its cursor with its ring. The blow recording has a
+        // different length and must not carry its position into a new capture/session.
+        int& readPosition = micSource == 2 ? micInputCallback->bufferReadOffset : micBufferReadPos;
         int readlength = 0;
         while (readlength < maxlength)
         {
             int thislen = maxlength - readlength;
-            if ((micBufferReadPos + thislen) > micBufferLength)
-                thislen = micBufferLength - micBufferReadPos;
+            if ((readPosition + thislen) > micBufferLength)
+                thislen = micBufferLength - readPosition;
 
             if (micSource == 2)
             {
@@ -256,11 +259,11 @@ namespace MelonDSAndroid
             if (!thislen)
                 break;
 
-            memcpy(data, &micBuffer[micBufferReadPos], thislen * sizeof(s16));
+            memcpy(data, &micBuffer[readPosition], thislen * sizeof(s16));
             data += thislen;
-            micBufferReadPos += thislen;
-            if (micBufferReadPos >= micBufferLength)
-                micBufferReadPos -= micBufferLength;
+            readPosition += thislen;
+            if (readPosition >= micBufferLength)
+                readPosition -= micBufferLength;
 
             readlength += thislen;
         }

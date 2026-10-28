@@ -64,6 +64,24 @@ target_include_directories(MicInputGainTest PRIVATE
 target_compile_options(MicInputGainTest PRIVATE -fsanitize=float-cast-overflow)
 target_link_libraries(MicInputGainTest PRIVATE oboe)
 
+# Isolate stream opening at the boundary while compiling the actual audio lifecycle,
+# microphone reader and capture callback. No hardware stream is opened by this test.
+set(MIC_LIFECYCLE_DIR "${MELONDS_TEST_ROOT}/tools/host-tests/microphone/lifecycle")
+configure_file("${MELONDS_TEST_ROOT}/app/src/main/cpp/MelonDSAudio.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/mic-lifecycle/MelonDSAudio.cpp" COPYONLY)
+add_executable(MicSourceSwitchTest
+    "${MIC_LIFECYCLE_DIR}/MicSourceSwitchTest.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/mic-lifecycle/MelonDSAudio.cpp"
+    "${MELONDS_TEST_ROOT}/app/src/main/cpp/MicInputOboeCallback.cpp"
+    "${MELONDS_TEST_ROOT}/app/src/main/cpp/AudioOutputPolicy.cpp"
+)
+target_include_directories(MicSourceSwitchTest PRIVATE
+    "${MIC_LIFECYCLE_DIR}/stubs"
+    "${MELONDS_TEST_ROOT}/app/src/main/cpp"
+    "${MELONDS_TEST_ROOT}/melonDS-android-lib/src"
+    "${MELONDS_TEST_ROOT}/melonDS-android-lib/src/frontend"
+)
+
 # The NDK legacy toolchain sets CMAKE_SYSTEM_VERSION to 1, independently of the API.
 string(REGEX REPLACE "^android-" "" MELONDS_TEST_API "${ANDROID_PLATFORM}")
 if(NOT MELONDS_TEST_API MATCHES "^[0-9]+$")

@@ -12,6 +12,7 @@ public:
     s16* buffer;
     int bufferSize;
     int bufferOffset = 0;
+    int bufferReadOffset = 0;
     int bufferCount = 0;
     float micSampleFrac = 0;
 

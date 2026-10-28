@@ -69,6 +69,14 @@ run_test "WildEncounterToggleTest" "$CPP_DIR/WildEncounterToggleTest.cpp"
 run_test "FileModeStringTest" -I"$CORE_INCLUDE" -I"$CPP_DIR" "$CPP_DIR/FileModeString.cpp" "$CPP_DIR/FileModeStringTest.cpp"
 run_test "SaveManagerFlushTest" -I"$CORE_INCLUDE" -I"$CPP_DIR" "$CPP_DIR/FileModeString.cpp" "$CPP_DIR/SaveManager.cpp" "$CPP_DIR/SaveManagerFlushTest.cpp"
 
+if bash "$REPO_ROOT/tools/host-tests/microphone/lifecycle/run.sh"; then
+    TEST_RESULTS+=("PASS")
+else
+    TEST_RESULTS+=("FAIL")
+    OVERALL_STATUS=1
+fi
+TEST_NAMES+=("MicSourceSwitchTest")
+
 # ---------------------------------------------------------------------------------------
 # Core-dependent tests. Unlike everything above these link libcore.a, so they need the core
 # built for the host, and they need the core's PUBLIC compile definitions: without
