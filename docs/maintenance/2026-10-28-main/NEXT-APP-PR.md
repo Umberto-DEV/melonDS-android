@@ -23,6 +23,7 @@ This adds Wi-Fi connection settings, searchable cheat selectors and reliability 
 - Clear old FPS positioning constraints when moving the counter.
 - Collect cheat-import progress once per fragment lifecycle and register update broadcasts through AndroidX compatibility APIs.
 - Complete the missing translations in the seven supported locales, repair Spanish time formatting and Russian plurals, and expose the Scanlines filter in every locale.
+- Include the standard memory header directly in SaveManager, so standalone Linux builds do not depend on incidental standard-library includes.
 
 ### Actions correction
 
@@ -42,7 +43,7 @@ The search UI is adapted from [#1677](https://github.com/rafaelvcaetano/melonDS-
 
 ### Core dependency
 
-The replacement core proposal will originate from `Umberto-DEV/melonDS-android-lib:main`; insert its URL after publication is authorized. The app pins core `20fb301428cbcdca014605741f5ea4bd28581e33`. Its emulation source is identical to the earlier proposal, with an added sanitizer-build workflow. Review the pair together; merge the core first and update the app gitlink and submodule URL to the accepted upstream revision before upstream integration. WFC firmware editing does not require the optional hostname-override API.
+The replacement core proposal will originate from `Umberto-DEV/melonDS-android-lib:main`; insert its URL after publication is authorized. The app pins core `20cf21d7425ab97db75e96dda41190ab9e93494a`, which preserves the earlier proposal and additionally fixes JIT fast-memory teardown found by strict UBSan. Review the pair together; merge the core first and update the app gitlink and submodule URL to the accepted upstream revision before upstream integration. WFC firmware editing does not require the optional hostname-override API.
 
 Previous core proposal, now closed during branch consolidation: https://github.com/rafaelvcaetano/melonDS-android-lib/pull/19.
 

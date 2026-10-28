@@ -20,6 +20,7 @@
 #define SAVEMANAGER_H
 
 #include <atomic>
+#include <memory>
 #include <string>
 #include <unistd.h>
 #include <time.h>
