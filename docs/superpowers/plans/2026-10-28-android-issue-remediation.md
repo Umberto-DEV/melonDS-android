@@ -73,7 +73,26 @@
 - [ ] Run display/input group and Android instrumentation. Expected both default screens return on disconnect and controls pass.
 - [ ] Commit independently.
 
-### Task 6: Integrated verification and issue disposition
+### Task 6: Stationary multi-touch transitions
+
+**Files:** `app/src/main/java/me/magnum/melonds/ui/emulator/input/TouchscreenInputHandler.kt`; `TouchscreenPointerTransitionTest.kt` plus Android counterpart.
+**Interfaces:** Existing IInputListener remains; POINTER_DOWN updates the resistive centroid and POINTER_UP excludes only the pointer being lifted.
+- [ ] Run baseline MotionEvent tests: second stationary finger at192 after first at64 must report128; lifting it must report64 without requiring MOVE. Expected baseline: no new touch event in either case.
+- [ ] Cover lifting pointer index0 and a three-pointer centroid with independent literal coordinates, preserving one press/release gesture.
+- [ ] Handle pointer transitions and exclude actionIndex only on POINTER_UP.
+- [ ] Run all input tests and the Android transition cases. Expected no stale position, duplicated press or premature release.
+- [ ] Commit independently; do not claim Rhythm Heaven latency/Thor offset resolved.
+
+### Task 7: Robust usrcheat.dat streaming
+
+**Files:** `app/src/main/java/me/magnum/melonds/common/cheats/{UsrCheatDatabaseParser.kt,ProgressTrackerInputStream.kt}`; shared JVM/Android parser regressions.
+**Interfaces:** Existing parser/listener contracts stay; valid fragmented input decodes identically and truncated input throws rather than looping.
+- [ ] Preserve synthetic356-byte valid fixture with one game and code02000000 00000001; same bytes capped at7 per read fail baseline address-book parsing. Truncate to288 bytes with advertised game offset320; expected baseline timeout.
+- [ ] Use exact reads for address-book records, detect EOF while skipping and avoid subtracting EOF from progress. Assert content and total bytes, not parser internals.
+- [ ] Run full, fragmented, EOF/truncated and offset-boundary cases on JVM and Android with bounded failure detection that cannot leave a runaway thread.
+- [ ] Check existing XML/modifier-family/search tests remain green. Commit independently; arbitrary cheat/game crashes remain separate.
+
+### Task 8: Integrated verification and issue disposition
 
 **Files:** New report directory `docs/maintenance/2026-10-28-android-bugfixes/`; retain prior PR archives and update unpublished drafts only.
 **Interfaces:** Reports consume actual task logs/commits, not inferred results.

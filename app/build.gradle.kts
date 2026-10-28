@@ -152,6 +152,9 @@ android {
         }
     }
     sourceSets {
+        // Run pure production-logic regressions unchanged on both the JVM and Android ART.
+        getByName("test").kotlin.directories += "src/sharedTest/kotlin"
+        getByName("androidTest").kotlin.directories += "src/sharedTest/kotlin"
         // Adds exported schema location as test app assets.
         getByName("androidTest").assets.directories += "$projectDir/schemas"
     }
