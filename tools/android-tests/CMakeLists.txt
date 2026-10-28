@@ -82,6 +82,19 @@ target_include_directories(MicSourceSwitchTest PRIVATE
     "${MELONDS_TEST_ROOT}/melonDS-android-lib/src/frontend"
 )
 
+set(NAND_TEST_DIR "${MELONDS_TEST_ROOT}/tools/host-tests/nand-jni")
+configure_file("${MELONDS_TEST_ROOT}/app/src/main/cpp/MelonDSNandJNI.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/nand-boundary/MelonDSNandJNI.cpp" COPYONLY)
+foreach(NAND_TEST NandJniTest StorageNandTest)
+    add_executable(${NAND_TEST} "${NAND_TEST_DIR}/${NAND_TEST}.cpp")
+    target_include_directories(${NAND_TEST} PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/nand-boundary"
+        "${NAND_TEST_DIR}/stubs"
+        "${MELONDS_TEST_ROOT}/melonDS-android-lib/src"
+    )
+    target_compile_options(${NAND_TEST} PRIVATE -Wno-deprecated-declarations)
+endforeach()
+
 # The NDK legacy toolchain sets CMAKE_SYSTEM_VERSION to 1, independently of the API.
 string(REGEX REPLACE "^android-" "" MELONDS_TEST_API "${ANDROID_PLATFORM}")
 if(NOT MELONDS_TEST_API MATCHES "^[0-9]+$")

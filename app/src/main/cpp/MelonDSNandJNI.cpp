@@ -45,13 +45,15 @@ Java_me_magnum_melonds_MelonDSiNand_openNand(JNIEnv* env, jobject thiz, jobject 
         return NAND_INIT_ERROR_BIOS7_NOT_FOUND;
 
     u8 esKey[16];
-    Platform::FileSeek(bios7file, 0x8308, melonDS::Platform::FileSeekOrigin::Start);
-    Platform::FileRead(esKey, 16, 1, bios7file);
+    const bool hasEsKey = Platform::FileSeek(bios7file, 0x8308, melonDS::Platform::FileSeekOrigin::Start)
+        && Platform::FileRead(esKey, sizeof(esKey), 1, bios7file) == 1;
     Platform::CloseFile(bios7file);
+    if (!hasEsKey)
+        return NAND_INIT_ERROR_BIOS7_NOT_FOUND;
 
     auto nandfile = Platform::OpenLocalFile(configuration.dsiNandPath, melonDS::Platform::FileMode::ReadWriteExisting);
     if (!nandfile)
-        return false;
+        return NAND_INIT_ERROR_NAND_FAILED;
 
     nand = std::make_unique<melonDS::DSi_NAND::NANDImage>(nandfile, esKey);
     if (!*nand)
@@ -97,6 +99,13 @@ Java_me_magnum_melonds_MelonDSiNand_importTitle(JNIEnv* env, jobject thiz, jstri
     if (!nand)
         return TITLE_IMPORT_NAND_NOT_OPEN;
 
+    melonDS::DSi_TMD::TitleMetadata titleMetadata;
+    if (!tmdMetadata || env->GetArrayLength(tmdMetadata) < static_cast<jint>(sizeof(titleMetadata)))
+        return TITLE_IMPORT_INSATLL_FAILED;
+    env->GetByteArrayRegion(tmdMetadata, 0, sizeof(titleMetadata), reinterpret_cast<jbyte*>(&titleMetadata));
+    if (env->ExceptionCheck())
+        return TITLE_IMPORT_INSATLL_FAILED;
+
     u32 titleId[2];
 
     const char* titlePath = env->GetStringUTFChars(titleUri, NULL);
@@ -108,15 +117,23 @@ Java_me_magnum_melonds_MelonDSiNand_importTitle(JNIEnv* env, jobject thiz, jstri
         return TITLE_IMPORT_ERROR_OPENING_FILE;
     }
 
-    Platform::FileSeek(titleFile, 0x230, melonDS::Platform::FileSeekOrigin::Start);
-    Platform::FileRead(titleId, 8, 1, titleFile);
+    const bool hasTitleId = Platform::FileSeek(titleFile, 0x230, melonDS::Platform::FileSeekOrigin::Start)
+        && Platform::FileRead(titleId, sizeof(titleId), 1, titleFile) == 1;
     Platform::CloseFile(titleFile);
 
-    if (titleId[1] != DSI_NAND_FILE_CATEGORY)
+    if (!hasTitleId || titleId[1] != DSI_NAND_FILE_CATEGORY)
     {
         // Not a DSiWare title
         env->ReleaseStringUTFChars(titleUri, titlePath);
         return TITLE_IMPORT_NOT_DSIWARE_TITLE;
+    }
+
+    // The core uses the TMD identity for destination paths. Reject a different
+    // title before cleanup/import so malformed metadata cannot target another title.
+    if (titleMetadata.GetCategory() != titleId[1] || titleMetadata.GetID() != titleId[0])
+    {
+        env->ReleaseStringUTFChars(titleUri, titlePath);
+        return TITLE_IMPORT_INSATLL_FAILED;
     }
 
     if (nandMount->TitleExists(titleId[1], titleId[0]))
@@ -126,18 +143,14 @@ Java_me_magnum_melonds_MelonDSiNand_importTitle(JNIEnv* env, jobject thiz, jstri
         return TITLE_IMPORT_TITLE_ALREADY_IMPORTED;
     }
 
-    jbyte* tmdBytes = env->GetByteArrayElements(tmdMetadata, NULL);
-    auto titleMetadata = reinterpret_cast<melonDS::DSi_TMD::TitleMetadata*>(tmdBytes);
-
-    nandMount->DeleteTitle(titleId[0], titleId[1]);
-    bool result = nandMount->ImportTitle(titlePath, *titleMetadata, false);
+    nandMount->DeleteTitle(titleId[1], titleId[0]);
+    bool result = nandMount->ImportTitle(titlePath, titleMetadata, false);
 
     env->ReleaseStringUTFChars(titleUri, titlePath);
-    env->ReleaseByteArrayElements(tmdMetadata, tmdBytes, 0);
 
     if (!result)
     {
-        nandMount->DeleteTitle(titleId[0], titleId[1]);
+        nandMount->DeleteTitle(titleId[1], titleId[0]);
         return TITLE_IMPORT_INSATLL_FAILED;
     }
 

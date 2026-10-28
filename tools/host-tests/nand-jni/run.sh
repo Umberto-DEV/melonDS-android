@@ -11,5 +11,14 @@ production_source=${1:-"$repo_dir/app/src/main/cpp/MelonDSNandJNI.cpp"}
 cp "$production_source" "$build_dir/MelonDSNandJNI.cpp"
 ${CXX:-c++} -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations \
     -fsanitize=address,undefined -fno-omit-frame-pointer \
-    -I"$build_dir" -I"$script_dir/stubs" "$script_dir/NandJniTest.cpp" -o "$build_dir/nand-jni-test"
+    -I"$build_dir" -I"$script_dir/stubs" -I"$repo_dir/melonDS-android-lib/src" "$script_dir/NandJniTest.cpp" -o "$build_dir/nand-jni-test"
 "$build_dir/nand-jni-test"
+${CXX:-c++} -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations \
+    -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
+    -I"$build_dir" -I"$script_dir/stubs" -I"$repo_dir/melonDS-android-lib/src" \
+    "$script_dir/StorageNandTest.cpp" -o "$build_dir/storage-nand-test"
+status=0
+for scenario in missing_nand cleanup metadata_mismatch short_metadata short_header success; do
+    "$build_dir/storage-nand-test" "$scenario" "$build_dir/$scenario" || status=1
+done
+exit "$status"

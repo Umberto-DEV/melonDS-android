@@ -83,6 +83,14 @@ struct JNIEnv {
     jbyte* GetByteArrayElements(jbyteArray array, jboolean*) {
         requireLocal(array); return array->bytes.data();
     }
+    jint GetArrayLength(jbyteArray array) {
+        requireLocal(array); return static_cast<jint>(array->bytes.size());
+    }
+    void GetByteArrayRegion(jbyteArray array, jint start, jint length, jbyte* destination) {
+        requireLocal(array);
+        assert(start >= 0 && length >= 0 && start + length <= GetArrayLength(array));
+        std::copy_n(array->bytes.data() + start, length, destination);
+    }
     void ReleaseByteArrayElements(jbyteArray array, jbyte*, jint) { requireLocal(array); }
     jstring NewStringUTF(const char* value) {
         auto result = allocate(JavaObject::String);

@@ -30,6 +30,9 @@ tools/android-tests/run.sh --serial DEVICE_SERIAL
 tools/android-tests/run.sh --serial DEVICE_SERIAL --test MicInputGainTest
 # Actual source-switch and capture-ring lifecycle with stream-open adapters:
 tools/android-tests/run.sh --serial DEVICE_SERIAL --test MicSourceSwitchTest
+# Production JNI functions with explicit JNI/core boundary adapters:
+tools/android-tests/run.sh --serial DEVICE_SERIAL --test StorageNandTest
+tools/android-tests/run.sh --serial DEVICE_SERIAL --test NandJniTest
 # Equivalent device selection:
 ANDROID_SERIAL=DEVICE_SERIAL tools/android-tests/run.sh
 # Match an Android x86_64 device to its separately built binary:
@@ -49,6 +52,8 @@ tools/android-tests/run.sh --serial DEVICE_SERIAL > android-jit.log 2>&1
 `MicInputGainTest` compiles the unchanged production microphone callback against the real Android Oboe library and supplies eleven constant signed-PCM fixtures. It verifies silence, quiet signals, gain boundaries and positive/negative saturation; the old callback fails six fixtures and triggers float-cast-overflow. It does not open a physical microphone or certify device sensitivity, Bluetooth routing or a game's microphone feature.
 
 `MicSourceSwitchTest` compiles the production audio lifecycle, capture callback and microphone reader, substituting only the frontend/core and stream-opening boundaries. It exercises blow→device switching, a fresh device-microphone session, ring wrap, empty capture, mute and re-enable. A previous shared cursor caused a negative-length copy or stale samples. The copied production translation unit resolves quoted includes to those explicit adapters; its algorithm is not duplicated in tests. This test does not verify actual Oboe route changes or hardware callbacks.
+
+`StorageNandTest` checks production JNI error handling and import identity/cleanup using temporary files and a NAND mount model; `NandJniTest` checks reference lifetimes and title contents using a JNI object model. Neither loads ART or real NAND. The app's `NandOpenFailureTest` under `app/src/androidTest` separately exercises real JNI/platform file failures through Android instrumentation. See `tools/host-tests/nand-jni/README.md` for the exact boundaries.
 
 This exercises native JIT compilation, literal invalidation and fast-memory mapping on Android, including its shared-memory allocation path. The suite compares fast memory on/off, checks a physical DTCM sentinel, moves 4/8/16/32-KiB windows, and checks both mirrors of a 32-KiB window. Android/Linux runs assert that the requested fast-memory mode is active. A reported failure is a failed regression, not a successful harness result. Building alone does not establish any runtime test result.
 
