@@ -13,10 +13,11 @@ walks you through picking your BIOS and firmware files, tells you exactly which
 file is missing, wrong-sized or from the wrong console, and copies everything
 into place for you.
 
-**Online play made manageable.** A new "Online connections" screen lets you keep
-three separate online setups (for example Mystery Gift, GTS and battles) and
-switch between them without editing firmware by hand. It works with every
-firmware and can be changed from the pause menu while a game is running.
+**Online settings made manageable.** A new "Online connections" screen lets you
+configure three WFC slots and their DNS addresses without editing firmware by
+hand. It supports generated DS settings and compatible imported DS/DSi firmware.
+The pause menu can enable or disable the slots; DNS editing happens in Settings
+with the game closed. Service availability and game support depend on the server.
 
 **Back up and restore your settings.** One button saves your whole configuration
 to a file, another restores it — useful before reinstalling or moving to a new
@@ -45,24 +46,27 @@ toggle keeps working exactly as before.
 
 ## Important fixes
 
-**Saved games can no longer be corrupted.** The old code emptied the save file
-before writing the new data, so an interruption at the wrong moment lost
-everything. Now the file is only replaced once the new data is safely written,
-and you are told if a write fails.
+**Safer save writes and visible errors.** Save writes prefer opening the existing
+file without emptying it first, and failed writes are reported and retried.
+Some storage providers require a truncating fallback. This reduces data-loss
+risk; writes are not atomic replacements and interruption can still corrupt a save.
 
 **Sound comes back.** Audio no longer stays silent after you leave the app and
 return, and a crash when the audio device failed to open is gone.
 
-**Buttons behave.** Buttons no longer get stuck pressed when a gesture is
-interrupted or the screen rotates, two fingers on two buttons finally work, and
-touches register noticeably faster.
+**Better input handling.** Interrupted gestures and layout changes release held
+touch buttons, and two fingers can press the button pad independently. Touch input
+requests unbuffered dispatch; no general latency improvement is claimed without
+device measurements. The October follow-up also clears controller combinations
+and axes after focus loss.
 
-**The game list loads properly.** Cover icons now appear right away instead of
-waiting for the whole folder scan, and large 7z archives no longer run the app
-out of memory.
+**The game list loads more smoothly.** Icons load independently of directory
+scanning. 7z decoding is serialized and memory-bounded, with failure handling for
+archives that exceed the limit; oversized archives may need to be extracted first.
 
-**Games launched from other apps open correctly** instead of reporting the ROM as
-missing.
+**Better launches from other apps.** Document-ID matching and retained URI
+permissions resolve supported external-launch cases. Raw file paths can still be
+inaccessible under Android scoped storage.
 
 **Cheat database import reads every entry correctly.** The XML importer could
 read the wrong slice of the parser's buffer; it never showed on Android but

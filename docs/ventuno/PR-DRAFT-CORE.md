@@ -1,71 +1,30 @@
-# PR draft — engine (melonDS-android-lib)
+# Published PR — melonDS-android-lib
 
-**Status: draft, not submitted.** Prepared 19 Sep 2026 so a future PR only needs
-reviewing and pushing.
+Updated 24 October 2026. **Published with user approval: https://github.com/rafaelvcaetano/melonDS-android-lib/pull/18**
 
-- Branch: `pr-prep/core` in the `melonDS-android-lib` submodule
-- Base: `origin/master` (rafaelvcaetano/melonDS-android-lib), fast-forward, no conflicts
-- 7 commits, 14 files, +322/-169
-- Must be merged **before** the app PR: the app branch depends on the DNS
-  override and SCFG work below.
+## Proposed title
 
----
+Fix DS/DSi compatibility, Wi-Fi power saving and JIT invalidation
 
-## Title
+## Proposed body
 
-Core fixes: DSi register screening, Wi-Fi power saving, JIT literal guard, 3D renderer waste, optional DNS overrides
+This brings a small set of emulation and stability improvements used by the companion Android build.
 
-## Body
+- **DS/DSi compatibility:** apply the correct register setup and access rules when running DS games in DSi mode.
+- **Wi-Fi:** only power down the transceiver automatically when the emulated power-saving mode requests it.
+- **JIT correctness:** avoid folding literals from memory that is not tracked for invalidation.
+- **Rendering:** skip unchanged compute-renderer reconfiguration and remove unused edge-data work.
+- **Optional networking API:** allow a frontend to supply hostname-to-IPv4 answers. Disabled by default; this does not change the system DNS resolver.
 
-Seven independent changes, each one testable on its own. They come out of
-several months of running this core on an AYN Thor (Adreno 740, Android 13).
+**Companion Android PR:** https://github.com/rafaelvcaetano/melonDS-android/pull/1681. Review as a coordinated pair; merge this core change before updating the app's submodule to the accepted revision. The core remains usable independently. The Android WFC editor uses firmware DNS settings and does not call the optional hostname API.
 
-**`fix(dsi)` — DS carts no longer detect a DSi.** The SCFG registers were
-readable in DS mode, so some cartridges took a DSi code path on a plain DS.
-They are now screened by console mode.
+**Validation:** sanitizer host tests, synthetic JIT invalidation and DNS packet tests. I have played and tested the original paired ventuno 2.1.4 build on an AYN Thor for five weeks (19 September–24 October 2026), with no bugs or regressions observed; Android confirms the installed app's last update was on 19 September. One ROM framebuffer comparison differs between JIT and interpreter identically in stock and custom cores; no x86_64 validation or hardware validation of the additional 24 October app fixes is claimed.
 
-**`fix(wifi)` — the transceiver only auto powers down in automatic power saving
-mode**, as the hardware does, instead of whenever the game left it idle.
+## Notes for approval (historical preparation notes, not part of the published body)
 
-**`fix(jit)` — do not fold a literal whose address is not tracked for
-invalidation.** A literal load could be constant-folded from memory that the JIT
-was not watching, so a later write left stale code behind. Includes the
-follow-up that skips untracked literals and removes a "cache rejected" log line
-that fired on healthy runs.
-
-**`perf(gpu3d)` — two pieces of work nothing consumed:** an edge index list that
-was built and uploaded every frame but never read, and a full compute renderer
-rebuild triggered even when no setting had actually changed.
-
-**`feat(net)` — optional host name overrides for the built-in DNS responder.**
-Lets a frontend point specific host names at a chosen resolver without patching
-firmware. Off unless a table is supplied. Covered by synthetic-packet tests
-(6/6).
-
-## Commits
-
-```
-c552b389 fix(dsi): screen the SCFG registers so DS carts stop detecting a DSi
-53aff8bc fix(wifi): only auto power down the transceiver in automatic power saving mode
-b876d3b3 perf(gpu3d): skip the compute renderer rebuild when the settings did not change
-769d61de perf(gpu3d): stop building and uploading an edge index list nothing reads
-3ad4e940 fix(jit): do not fold a literal whose address is not tracked for invalidation
-137c4ba7 fix(jit,gl): skip untracked literals, drop the unused edge shaders and stop the false "cache rejected" log
-bc060f4c feat(net): optional host name overrides for the built-in DNS responder
-```
-
----
-
-## Note per la revisione (NON fa parte del corpo della PR)
-
-- I due commit JIT (`3ad4e940` + `137c4ba7`) sono uno il fixup dell'altro:
-  valutare uno squash prima di aprire la PR. `137c4ba7` mescola anche la
-  rimozione degli shader Edge (GL) con il log della cache — se si vuole essere
-  scrupolosi, andrebbe spezzato in due.
-- Questi 7 commit erano già stati proposti come lib#16 (ritirata il 19/09).
-  Rispetto ad allora ci sono in più `769d61de`, `137c4ba7` e `bc060f4c`.
-- Prima di aprire: `git fetch origin && git rebase origin/master` dentro il
-  submodule (ad oggi è già fast-forward, 0 indietro).
-- La PR va aperta dal fork `Umberto-DEV/melonDS` verso
-  `rafaelvcaetano/melonDS-android-lib`. Non rinominare mai il ramo head di una
-  PR aperta: la chiude.
+- Base: upstream `431ab4bd0003c4356e25fce89640ae1004579b9b`.
+- Reviewed custom core: `bc060f4cb2faa1fc6ef6f4046c509feb5e686342` (seven existing commits).
+- The core's new hostname API returns endpoint addresses; it does not redirect questions to a selected DNS resolver.
+- No core PR was blindly imported: #17 stays paired with the deferred app audio rewrite; #1/#3 target obsolete bridge code.
+- Do not add closing keywords for core issues #9, #8, #4 or #2: none is currently demonstrated fully resolved. Exact issue/PR attribution is in `audit-2026-10-24/ISSUES-TO-REFERENCE.md`.
+- Companion links are added only after the user approves publishing.

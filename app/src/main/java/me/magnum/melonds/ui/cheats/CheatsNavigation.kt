@@ -10,7 +10,7 @@ sealed class CheatsNavigation {
     @Serializable
     data class GameFolders(val gameName: String?) : CheatsNavigation()
     @Serializable
-    data class FolderCheats(val folderName: String?) : CheatsNavigation()
+    data class FolderCheats(val folderName: String?, val targetRowKey: String? = null, val targetOptionValue: Int? = null) : CheatsNavigation()
     @Serializable
     data object EnabledCheats : CheatsNavigation()
 }

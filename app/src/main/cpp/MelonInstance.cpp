@@ -21,6 +21,7 @@
 #include "RtcSync.h"
 #include "SDCardArgsBuilder.h"
 #include "EmulatorMessageQueueJNI.h"
+#include "WfcSaveRange.h"
 
 using namespace std;
 using namespace melonDS;
@@ -702,8 +703,9 @@ bool MelonInstance::writeWfcSlot(int slot, const WfcSlotData& slotData)
     // Same request the console's own firmware writes end up making (SPI.cpp,
     // FirmwareMem::Release()): the platform layer decides whether that means the whole firmware
     // file or just the Wi-fi region of wfcsettings.bin.
-    u32 wifiOffset = firmware.GetWifiAccessPointOffset();
-    Platform::WriteFirmware(firmware, wifiOffset, firmware.Length() - wifiOffset, this);
+    const auto range = wfcSaveRange(firmware.GetWifiAccessPointOffset(), sizeof(firmware.GetAccessPoints()),
+                                   firmware.GetExtendedAccessPointOffset(), firmwareOwnsExtendedAccessPoints(firmware));
+    Platform::WriteFirmware(firmware, range.offset, range.length, this);
     return true;
 }
 

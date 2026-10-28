@@ -1,5 +1,10 @@
 # melonDS Nightly 2.1 — ramo `ventuno` (stato al 19/09/2026, sera)
 
+> Aggiornamento 24/10/2026: audit completo e nuove correzioni locali in
+> [audit-2026-10-24/RESULTS.md](audit-2026-10-24/RESULTS.md). Le note sotto sono lo
+> storico della build 2.1.4, non l'esito dei test odierni. Le bozze PR sono state
+> riscritte; nessuna PR pubblicata. Il vecchio ramo `pr-prep/app` resta superato.
+
 ## 2.1.4 (versionCode 45) — selettore cheat a famiglie
 Spec `SELETTORE-CHEAT-2026-09-19.md`, piano `SELETTORE-CHEAT-PIANO-2026-09-19.md`, ramo `feat/modifier-families`
 (11 commit) merge in `ventuno`. Il selettore Pokémon non è più SGP-only: `common/cheats/ArCode.kt` (parser AR) e

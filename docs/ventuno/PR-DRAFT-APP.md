@@ -1,162 +1,48 @@
-# PR draft — app (melonDS-android)
+# Published PR — melonDS-android
 
-**Status: draft, not submitted.** Prepared 19 Sep 2026 so a future PR only needs
-reviewing and pushing.
+Updated 24 October 2026. **Published with user approval: https://github.com/rafaelvcaetano/melonDS-android/pull/1681**
+Supersedes the September draft. The old `pr-prep/app` branch is stale and must not be submitted.
 
-- Branch: `pr-prep/app` (local only, never pushed)
-- Base: `upstream/master` = rafaelvcaetano/melonDS-android `c42995ca`
-- 14 thematic commits, 147 files, +8167/-548
-- **Blocked on the engine PR** (`PR-DRAFT-CORE.md`): this branch still points the
-  submodule at upstream's `431ab4bd`, so it does not build until the engine
-  changes are merged and the pointer is bumped. That bump is deliberately left
-  out of the branch.
+## Proposed title
 
-For the plain-language feature list to paste into the PR body, see
-`WHATS-NEW-VS-UPSTREAM.md`.
+Add Wi-Fi connection settings and improve saves, audio and controls
 
----
+## Proposed body
 
-## Title
+This adds easier online setup and several everyday improvements to the current Nightly.
 
-melonDS nightly "ventuno": guided BIOS setup, online connection manager, settings backup, and a batch of stability fixes
+- **Wi-Fi connections:** configure three WFC slots and their DNS addresses in Settings; enable or disable slots from the pause menu. Includes more reliable persistence of DSi connection changes.
+- **Setup and preferences:** guided BIOS/firmware setup, settings backup/restore, and optional forward-only clock sync.
+- **Controls and cheats:** hold-to-fast-forward, combo hotkeys, optional fast-forward muting, and grouped cheat selectors. Interrupted touches and lost controller focus release held inputs.
+- **Reliability:** reduce save-write data-loss risks and report failures; restore audio after resume; improve ROM icon loading and bound 7z decoding memory.
+- **Other fixes:** align LCD/scanline filters to DS pixels, correct XML cheat import, and release temporary JNI references when listing DSiWare titles (#1678).
 
-## Body
+Includes adaptations of #1606/#1608 (WailAbou), #1625 (dysprosium), #1648 (N3MI-DG), and #1589 (DLCSharp), plus selected side fixes from #1666 (corigne).
 
-This is several months of work on an AYN Thor (Adreno 740, Android 13), split
-into one commit per area so each can be reviewed — or dropped — on its own.
-Every change here was seen working on the device; anything that only worked in
-theory was removed from the branch before this PR.
+**Issue coverage:**
+- Fixes #1678 (temporary JNI references accumulating while listing DSiWare titles).
+- Implements the settings/layout backup and restore requested in #264.
+- Partially addresses audio resume (#1644/#1635), clock drift (#1652/#1604), and 7z-related scanning crashes (#1519/#1378). Optional fast-forward muting offers a workaround for #1602. Remaining device-specific symptoms and audible fast-forward distortion are not claimed fixed.
 
-### Features
+**Companion core PR:** https://github.com/rafaelvcaetano/melonDS-android-lib/pull/18. Please review the two together. The app submodule should point to the accepted core revision to include its emulation fixes; the new WFC screen does not require the optional core hostname-override API.
 
-- **Guided BIOS setup** — classifies the files you point it at, explains what is
-  missing, wrong-sized or from the wrong console, and copies them into place off
-  the main thread.
-- **Online connections (WFC) manager** — three independent connection slots with
-  their own DNS, editable from the settings and from the pause menu, for every
-  firmware. Requires the engine's DNS override support.
-- **Settings backup and restore.**
-- **Optional console clock sync with the device**, off by default, applied on
-  resume, never moving the clock backwards.
+**Validation:** 165 JVM tests pass, ARM64 APK builds, and native/DNS tests pass. I have played and tested ventuno 2.1.4 on an AYN Thor for five weeks (19 September–24 October 2026), with no bugs or regressions observed. Android confirms the installed version was last updated on 19 September. The additional fixes prepared on 24 October have automated regression tests. Lint remains red, and one framebuffer comparison fails identically on stock and custom cores.
 
-### Fixes
+Stability references: `MelonDSNandJNI.cpp:79,88,232`, `MelonInstance.cpp:706`, `WfcSettingsStorage.kt:17`.
 
-- **Saves are no longer truncated before the new data is written**, with a
-  fallback path and a user-visible error when a write fails.
-- **Audio**: serialised stream state changes, reopen on resume, no dereference of
-  a stream that failed to open, and previous streams closed before a new session
-  starts (a use-after-free found with HWASan).
-- **Input**: multi-touch on the button pad, keys released on cancelled gestures
-  and layout changes, no opposing d-pad directions, and
-  `requestUnbufferedDispatch` on touchscreen `ACTION_DOWN` for lower latency.
-  Zero allocations on the touch path.
-- **ROM handling**: icons loaded off the directory-scan thread, a 7z memory limit
-  sized on the Java heap with one decoder at a time, and file names resolved for
-  non-document URIs.
-- **Video**: LCD and scanline filters anchored to the native DS grid.
-- **Emulator bridge**: guarded instance access, serialised state operations, an
-  atomic event pipe, checked save-state results, camera handler cleanup on stop.
+Wi-Fi connection settings on AYN Thor, captured from the installed ventuno 2.1.4 build:
 
-### Upstream pull requests integrated
+![WFC connection name, enabled switch, and primary/secondary DNS on AYN Thor](https://raw.githubusercontent.com/Umberto-DEV/melonDS-android/4e7e4516035b66859ecaebc9922cf42303aa7d5c/docs/images/wfc-slot-dns-ventuno-2.1.4.png)
 
-Five open PRs by other contributors were applied by hand and adapted, each with
-corrections (details in commit `138baa2b` on the source branch):
+![WFC settings overview on AYN Thor](https://raw.githubusercontent.com/Umberto-DEV/melonDS-android/4e7e4516035b66859ecaebc9922cf42303aa7d5c/docs/images/wfc-overview-ventuno-2.1.4.png)
 
-- #1608 hold to fast forward (WailAbou) — held state reset on pause/focus loss
-- #1606 combo hotkeys (WailAbou)
-- #1625 mute while fast forwarding (dysprosium) — flags are atomics read without
-  the audio mutex
-- #1648 ROM not found from external apps (N3MI-DG) — matched by SAF document id,
-  launch URI permission persisted
-- #1589 sleep/wake mapped to the DS lid (DLCSharp) — lid reopened on resume, text
-  moved to resources
+## Notes for approval (historical preparation notes, not part of the published body)
 
-Not taken: #1657 (too invasive), #1666 (rejected, only its three side fixes),
-#1664 (superseded).
-
-### Testing
-
-~114 JVM/Robolectric unit tests plus four C++ host suites under ASan/UBSan.
-Built and run on the device as `2.1.3` (versionCode 44).
-
-## Commits
-
-```
-3ba3f502 build: string, array and test resources for the changes that follow
-a7644498 fix(core-bridge): guard the emulator instance and make the event pipe safe
-cf1d81a3 fix(save): never truncate a save file before the new data is written
-09f4b7b7 fix(audio): serialise stream state changes and reopen the stream on resume
-b5de523f fix(input): multi-touch, stuck keys and lower touchscreen latency
-80c00944 feat(rtc): optional clock sync with the device, off by default
-4e0d850c fix(roms): archive handling, icon loading and file name resolution
-db986311 feat(bios): guided BIOS setup and clearer firmware diagnostics
-b942e9fd fix(video): keep the LCD and scanline filters on the native DS grid
-0b5810e1 feat(wfc): manage the online connection slots from the settings
-e945b3f7 feat(cheats): SGP wild encounter picker with an in-game toggle
-468a73b8 feat(settings): back up and restore the settings
-dcc6789c fix(app): lid handling, pause menu and lifecycle gaps
-6c6f79dd build: unit test dependencies and Robolectric test options
-```
-
----
-
-## Note per la revisione (NON fa parte del corpo della PR)
-
-### Come è stato costruito il ramo
-Non è un rebase della storia di `ventuno`. La storia originale non si riapplica:
-l'upstream ha riscritto `MultiButtonInputHandler.kt` il 12/09 e il cherry-pick
-confligge a catena. Il ramo è ricostruito **partendo dallo stato finale di
-`ventuno`** (quello installato e collaudato sulla Thor) e spezzato in commit
-tematici per file. Verifica fatta: `git diff pr-prep/app ventuno` restituisce
-solo i file volutamente esclusi (sotto).
-
-Conseguenze da tenere a mente:
-- I singoli commit **non sono compilabili in isolamento** (partizione per file,
-  non per hunk). Niente `git bisect` su questo ramo.
-- Un file toccato da più aree finisce tutto nel commit della sua area primaria:
-  qualche commit contiene un po' più di quanto dice il titolo.
-- Gli autori dei commit originali (`MELONDS-INTEGRA <melonds-integra@local>`) non
-  compaiono: i 14 commit sono firmati con l'identità git corrente.
-
-### Volutamente esclusi dal ramo
-- `.github/workflows/*` — modifiche CI specifiche del fork
-- `README.md` — riferimenti al fork
-- `buildSrc/.../AppConfig.kt` — versionCode 44 / versionName 2.1.3, il versioning
-  è dell'upstream
-- `melonDS-android-lib` — puntatore submodule, da bumpare solo dopo il merge del
-  motore
-- `docs/ventuno/**` e `tools/**` — documentazione interna, host test runner,
-  sanitizer script, wrap.sh HWASan
-- da `app/build.gradle.kts`: il build type `profiling` e l'opzione
-  `-PnativeSanitize`. Del file resta solo `testOptions` + le dipendenze di test.
-
-### Aggiornamento 19/09 sera — `pr-prep/app` è superato
-`ventuno` è andato avanti (selettore a famiglie 2.1.4 + correzione dell'importatore XML):
-`pr-prep/app` va **rigenerato** da `ventuno` con lo stesso criterio (§ Come è stato costruito).
-Con la 2.1.4 il commit `feat(cheats)` non è più SGP-only: è il selettore generico su
-`common/cheats/` + `ui/cheats/`, con `WildEncounterCheat` ridotto al profilo canonico SGP.
-La decisione 2 qui sotto va riletta in questa luce: il generico è proponibile, il toggle
-nativo (`WildEncounterToggle.h`) resta la parte SGP-specifica da valutare.
-
-### Decisioni aperte prima di aprire la PR
-1. **Spezzare la PR.** 147 file in un colpo solo è tanto da rivedere. Ordine
-   suggerito, dal meno controverso: save → audio → input → roms → video →
-   core-bridge, poi le feature (bios, wfc, settings backup, rtc) separatamente.
-   I 14 commit sono già i pezzi.
-2. **`feat(cheats)` SGP picker: probabilmente da togliere.** È il supporto a una
-   singola ROM hack (Sacred Gold Plus), 20 file. Difficile che l'upstream lo
-   voglia in-tree. Va tolto per primo se si vuole una PR snella.
-3. **PR di terzi integrate.** Il corpo le attribuisce, ma l'upstream potrebbe
-   preferire che quelle PR vengano merge-ate dai loro autori. Da valutare se
-   rimuoverle dal ramo e lasciarle ai rispettivi PR.
-4. **Attribuzione.** I commit originali hanno `Co-Authored-By: Claude`. Decidere
-   se mantenerlo nei commit ricostruiti (ora non c'è).
-
-### Sequenza per aprire le PR quando sarà il momento
-1. Aprire la PR del motore (`pr-prep/core`, vedi `PR-DRAFT-CORE.md`) e aspettare
-   il merge.
-2. Nel submodule: `git fetch origin && git checkout <nuovo master>`.
-3. Su `pr-prep/app`: commit del nuovo puntatore submodule + verifica build
-   (`sh ./gradlew :app:testGitHubNightlyDebugUnitTest`, poi `assembleGitHubNightlyDebug`).
-4. `git fetch upstream` e merge/rebase se `upstream/master` è avanzato.
-5. Push su `origin` come ramo nuovo, PR verso `rafaelvcaetano:master`.
+- Replace companion placeholder after both PRs are opened, as explicitly requested by the user.
+- The screenshot is an unedited ADB capture of the installed `2.1.4 GH (NIGHTLY) (PROFILING)` build, versionCode 45, last updated on 19 September 2026. Replace the local image path with a GitHub attachment URL only after publication approval. An additional overview and capture metadata are in `audit-2026-10-24/screenshots/`. The capture does not validate today's code changes on hardware.
+- Current scope includes the generic family selector and existing SGP-specific native toggle. Clearly distinguish them if the maintainer requests a split.
+- Keep original author attribution; these are adaptations, not claims to authorship of others' work.
+- A coordinated pair is accurate. A circular compile dependency is not: the app's changed C++ sources compile against stock core headers too.
+- Source references and precise fresh test totals are in `audit-2026-10-24/RESULTS.md`; synchronize before any publication.
+- Issue/PR attribution and closure wording are detailed in `audit-2026-10-24/ISSUES-TO-REFERENCE.md`. Only #1678 currently receives an automatic-closing keyword; integration of another author's PR does not mean all of its related issues are solved.
+- Do not claim corruption-proof saves, arbitrary live DNS editing, faster touch measurements, every external launcher fixed, online service availability, or every issue resolved.

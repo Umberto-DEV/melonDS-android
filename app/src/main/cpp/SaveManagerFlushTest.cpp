@@ -18,6 +18,7 @@
 #include "SaveManager.h"
 #include "EmulatorMessageQueueJNI.h"
 #include "FileModeString.h"
+#include "WfcSaveRange.h"
 
 #include <csignal>
 #include <cstdarg>
@@ -288,6 +289,41 @@ static void test_failing_flush_reports_once_per_episode()
     expect(saveFlushFailedEvents == 1, "the user is told once per failure episode, not once per retry");
 }
 
+// A live WFC edit changes both AP copies. Only the first RequestFlush copies the whole
+// image; subsequent requests must cover the extended blocks as well as the basic ones.
+static void test_consecutive_wfc_edits_keep_extended_slots()
+{
+    for (bool generated : {false, true})
+    {
+        const u32 extendedOffset = 0x1F400;
+        const u32 basicOffset = 0x1FA00;
+        std::vector<u8> firmware(0x20000, 0x44);
+        const u32 savedOffset = generated ? extendedOffset : 0;
+        const u32 savedLength = generated ? 0x900 : firmware.size();
+        const std::string path = testPath(generated ? "wfc-generated.bin" : "wfc-firmware.bin");
+        SaveManager manager(path);
+        manager.RequestFlush(firmware.data() + savedOffset, savedLength, 0, savedLength);
+        manager.CheckFlush();
+        expect(manager.FlushSecondaryBuffer(), "initial WFC image is written");
+
+        for (u32 slot = 0; slot < 3; slot++)
+        {
+            firmware[extendedOffset + slot * 0x200] = 0xA0 + slot;
+            firmware[extendedOffset + slot * 0x200 + 0x1FE] = 0xB0 + slot;
+            firmware[basicOffset + slot * 0x100] = 0xC0 + slot;
+            const auto range = MelonDSAndroid::wfcSaveRange(basicOffset, 0x300, extendedOffset, true);
+            manager.RequestFlush(firmware.data() + savedOffset, savedLength,
+                                 range.offset - savedOffset, range.length);
+            manager.CheckFlush();
+            expect(manager.FlushSecondaryBuffer(), "consecutive WFC edit is written");
+            const std::vector<u8> expected(firmware.begin() + savedOffset,
+                                          firmware.begin() + savedOffset + savedLength);
+            expect(readWholeFile(path) == expected,
+                   "every WFC edit persists all extended slots and their checksums");
+        }
+    }
+}
+
 int main()
 {
     char directoryTemplate[] = "/tmp/melonds-savemanager-testXXXXXX";
@@ -306,6 +342,7 @@ int main()
     test_preserving_flush_survives_a_kill();
     test_manager_without_a_path_is_destroyed_safely();
     test_failing_flush_reports_once_per_episode();
+    test_consecutive_wfc_edits_keep_extended_slots();
 
     if (failures != 0)
     {

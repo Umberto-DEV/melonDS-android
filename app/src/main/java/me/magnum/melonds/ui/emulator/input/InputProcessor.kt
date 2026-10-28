@@ -14,6 +14,7 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
     private val keyCombinations: List<Pair<Input, InputConfig.Assignment.Key>>
     private val pressedKeys = mutableSetOf<Int>()
     private val activeKeyCombinations = mutableMapOf<Input, InputConfig.Assignment.Key>()
+    private val activeInputs = mutableSetOf<Input>()
 
     init {
         val assignments = controllerConfiguration.inputMapper.flatMap { inputConfig ->
@@ -81,9 +82,16 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
         return keyIsInCombination(keyEvent.keyCode)
     }
 
-    // Clears keys tracked as held down; needed on focus loss since no ACTION_UP is guaranteed to arrive.
+    // Focus loss can swallow key-up and neutral-axis events. Release what was actually
+    // dispatched and reset every physical-input state so the next press starts fresh.
     fun clearPressedKeys() {
         pressedKeys.clear()
+        activeKeyCombinations.clear()
+        axisStates.values.forEach {
+            it.active = false
+            it.value = 0f
+        }
+        activeInputs.toList().forEach(::dispatchInputReleased)
     }
 
     override fun onMotionEvent(motionEvent: MotionEvent): Boolean {
@@ -165,6 +173,7 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
     }
 
     private fun dispatchInputPressed(input: Input) {
+        activeInputs.add(input)
         if (input.isSystemInput) {
             systemInputListener.onKeyPress(input)
         } else {
@@ -173,6 +182,10 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
     }
 
     private fun dispatchInputReleased(input: Input) {
+        // Ignore a late key-up after focus-loss cleanup already released the input.
+        if (!activeInputs.remove(input)) {
+            return
+        }
         if (input.isSystemInput) {
             systemInputListener.onKeyReleased(input)
         } else {

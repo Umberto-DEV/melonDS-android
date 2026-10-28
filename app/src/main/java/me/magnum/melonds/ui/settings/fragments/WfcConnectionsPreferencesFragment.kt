@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.magnum.melonds.R
 import me.magnum.melonds.common.WfcSettings
+import me.magnum.melonds.common.WfcSettingsStorage
 import me.magnum.melonds.domain.model.ConsoleType
 import me.magnum.melonds.domain.model.WfcAccessPointSlot
 import me.magnum.melonds.domain.model.isValidIpv4
@@ -89,6 +89,7 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
     private lateinit var slotWidgets: List<SlotWidgets>
     private var target: WfcTarget? = null
     private var isReadOnly = false
+    private var slotEditVersion = 0L
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.pref_wfc_connections, rootKey)
@@ -231,48 +232,33 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
     /**
      * Copies the user's firmware file next to itself as "<name>.bak" before the very first write,
-     * once per console type. A corrupted firmware would cost the user their console identity
+     * unless that specific directory already contains a backup. A corrupted firmware would cost
+     * the user their console identity
      * (nickname, MAC, WFC ID), which is not something a settings screen should be able to do
      * without a way back.
      */
     private fun ensureFirmwareBackup(target: WfcTarget.FirmwareFile): Boolean {
-        val preferences = preferenceManager.sharedPreferences ?: return false
-        val key = if (target.isDsi) BACKUP_DONE_DSI_KEY else BACKUP_DONE_DS_KEY
-        if (preferences.getBoolean(key, false)) {
-            return true
-        }
-
         return try {
             val directory = DocumentFile.fromTreeUri(appContext, target.directory) ?: return false
-            val backupName = "${target.fileName}.$BACKUP_EXTENSION"
-            val existing = directory.findFile(backupName)
-            if (existing != null && existing.length() > 0) {
-                // A backup from an earlier install is still a backup: don't overwrite it with a
-                // firmware this screen may already have edited.
-                preferences.edit { putBoolean(key, true) }
-                return true
-            }
-
-            val backup = existing ?: directory.createFile(BACKUP_MIME_TYPE, backupName) ?: return false
-            appContext.contentResolver.openInputStream(target.path.toUri())?.use { input ->
-                appContext.contentResolver.openOutputStream(backup.uri, "wt")?.use { output ->
-                    input.copyTo(output)
-                } ?: return false
-            } ?: return false
-
-            preferences.edit { putBoolean(key, true) }
-            true
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to back up the firmware file", e)
+            WfcSettingsStorage.ensureFirmwareBackup(
+                appContext, directory, target.path.toUri(), target.fileName,
+            )
+        } catch (error: Exception) {
+            Log.w("WfcConnections", "Failed to access firmware backup directory", error)
             false
         }
     }
 
     private fun writeSlot(index: Int, enabled: Boolean, primaryDns: String, secondaryDns: String) {
         val target = target ?: return
+        val widgets = slotWidgets
+        slotEditVersion++
 
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { writeSlotBlocking(target, index, enabled, primaryDns, secondaryDns) }
+            val result = WfcSettingsStorage.withTransaction {
+                withContext(Dispatchers.IO) { writeSlotBlocking(target, index, enabled, primaryDns, secondaryDns) }
+            }
+            if (this@WfcConnectionsPreferencesFragment.target != target || slotWidgets !== widgets) return@launch
             if (result != WriteResult.OK) {
                 Toast.makeText(requireContext(), result.messageResource, Toast.LENGTH_SHORT).show()
                 // The widget already flipped to the new value optimistically; put it back in sync
@@ -295,14 +281,20 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
     private fun applyRecommendedServers() {
         val target = target ?: return
+        val widgets = slotWidgets
+        slotEditVersion++
 
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                slotWidgets.withIndex()
-                    .map { (index, widgets) -> writeSlotBlocking(target, index, true, widgets.recommendedDns, widgets.recommendedDns) }
-                    .firstOrNull { it != WriteResult.OK }
-                    ?: WriteResult.OK
+            val result = WfcSettingsStorage.withTransaction {
+                withContext(Dispatchers.IO) {
+                    widgets.withIndex()
+                        .map { (index, widgets) -> writeSlotBlocking(target, index, true, widgets.recommendedDns, widgets.recommendedDns) }
+                        .firstOrNull { it != WriteResult.OK }
+                        ?: WriteResult.OK
+                }
             }
+
+            if (this@WfcConnectionsPreferencesFragment.target != target || slotWidgets !== widgets) return@launch
 
             loadCurrentSlots()
             Toast.makeText(
@@ -315,21 +307,28 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
     private fun loadCurrentSlots() {
         val target = target ?: return
+        val widgets = slotWidgets
+        val editVersion = slotEditVersion
 
         lifecycleScope.launch {
-            val rawSlots = withContext(Dispatchers.IO) {
-                // With a session running the file is behind the core's own buffer, so show what
-                // the console is actually serving. Outside a session there is nothing live to
-                // read and readLiveSlots() returns null.
-                (if (isReadOnly) WfcSettings.readLiveSlots() else null)
-                    ?: WfcSettings.readSlots(target.path, target.isFirmwareFile)
+            val rawSlots = WfcSettingsStorage.withTransaction {
+                withContext(Dispatchers.IO) {
+                    // With a session running the file is behind the core's own buffer, so show what
+                    // the console is actually serving. Outside a session there is nothing live to
+                    // read and readLiveSlots() returns null.
+                    (if (isReadOnly) WfcSettings.readLiveSlots() else null)
+                        ?: WfcSettings.readSlots(target.path, target.isFirmwareFile)
+                }
             }
+            // A pending read must not reset a newer optimistic edit or a recreated screen.
+            if (this@WfcConnectionsPreferencesFragment.target != target || slotWidgets !== widgets
+                || slotEditVersion != editVersion) return@launch
             if (rawSlots == null) {
                 Toast.makeText(requireContext(), R.string.wfc_read_error, Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
-            slotWidgets.forEachIndexed { index, widgets ->
+            widgets.forEachIndexed { index, widgets ->
                 val slot = rawSlots.getOrNull(index)?.let { WfcAccessPointSlot.parse(it) }
                 widgets.enabled.isChecked = slot?.enabled ?: false
                 widgets.primaryDns.text = slot?.primaryDns ?: DEFAULT_DNS
@@ -356,7 +355,6 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
     override fun getTitle() = getString(R.string.category_wfc_connections)
 
     private companion object {
-        const val TAG = "WfcConnections"
 
         // Must match EmulatorArgsBuilder.cpp's kWifiSettingsPath and the file name used by
         // Platform::OpenInternalFile (relative to the app's internal files dir).
@@ -364,10 +362,6 @@ class WfcConnectionsPreferencesFragment : BasePreferenceFragment(), PreferenceFr
 
         // Same name SharedPreferencesSettingsRepository looks for in the BIOS directories.
         const val FIRMWARE_FILE_NAME = "firmware.bin"
-        const val BACKUP_EXTENSION = "bak"
-        const val BACKUP_MIME_TYPE = "application/octet-stream"
-        const val BACKUP_DONE_DS_KEY = "wfc_ds_firmware_backed_up"
-        const val BACKUP_DONE_DSI_KEY = "wfc_dsi_firmware_backed_up"
 
         const val DEFAULT_DNS = "0.0.0.0"
 

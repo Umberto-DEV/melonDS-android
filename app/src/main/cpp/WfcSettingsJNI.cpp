@@ -89,7 +89,7 @@ namespace
 
         bool ok = FileWrite(slots.extended.data(), sizeof(slots.extended), 1, f) == 1
                && FileWrite(slots.basic.data(), sizeof(slots.basic), 1, f) == 1;
-        CloseFile(f);
+        ok = CloseFile(f) && ok;
         return ok;
     }
 
