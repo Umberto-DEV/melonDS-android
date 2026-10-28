@@ -49,6 +49,21 @@ else()
 endif()
 target_link_libraries(JitInvalidationTest PRIVATE core teakra ${CMAKE_DL_LIBS})
 
+# Compile the production microphone callback against the real Android Oboe API.
+# The test supplies PCM directly; it does not require microphone permission/hardware.
+set(OBOE_BUILD_TESTS OFF CACHE BOOL "No Oboe test app" FORCE)
+add_subdirectory("${MELONDS_TEST_ROOT}/app/src/main/cpp/oboe" oboe-build EXCLUDE_FROM_ALL)
+add_executable(MicInputGainTest
+    "${MELONDS_TEST_ROOT}/tools/host-tests/microphone/MicInputGainTest.cpp"
+    "${MELONDS_TEST_ROOT}/app/src/main/cpp/MicInputOboeCallback.cpp"
+)
+target_include_directories(MicInputGainTest PRIVATE
+    "${MELONDS_TEST_ROOT}/app/src/main/cpp"
+    "${MELONDS_TEST_ROOT}/melonDS-android-lib/src"
+)
+target_compile_options(MicInputGainTest PRIVATE -fsanitize=float-cast-overflow)
+target_link_libraries(MicInputGainTest PRIVATE oboe)
+
 # The NDK legacy toolchain sets CMAKE_SYSTEM_VERSION to 1, independently of the API.
 string(REGEX REPLACE "^android-" "" MELONDS_TEST_API "${ANDROID_PLATFORM}")
 if(NOT MELONDS_TEST_API MATCHES "^[0-9]+$")

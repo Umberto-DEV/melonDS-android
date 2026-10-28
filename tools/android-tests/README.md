@@ -1,4 +1,4 @@
-# Native JIT regression tests on Android
+# Native regression tests on Android
 
 This builds an Android executable and runs it on an ADB-connected Android device or emulator. The machine running CMake is only a cross-build host; the test never executes there. No APK is installed and no device is created, reset or wiped.
 
@@ -26,6 +26,8 @@ The configuration follows the [official NDK CMake toolchain workflow](https://de
 
 ```sh
 tools/android-tests/run.sh --serial DEVICE_SERIAL
+# Microphone conversion using the production callback and real Oboe headers:
+tools/android-tests/run.sh --serial DEVICE_SERIAL --test MicInputGainTest
 # Equivalent device selection:
 ANDROID_SERIAL=DEVICE_SERIAL tools/android-tests/run.sh
 # Match an Android x86_64 device to its separately built binary:
@@ -34,13 +36,15 @@ tools/android-tests/run.sh --abi x86_64 --serial DEVICE_SERIAL
 
 Without a selector, ADB's normal single-device selection applies. `ADB_BIN` overrides the SDK's `platform-tools/adb`. The runner prints the device serial, SDK, ABI list and `getconf PAGESIZE`, and rejects an incompatible SDK/ABI before uploading anything.
 
-Only the executable is pushed into a fresh `/data/local/tmp/melonds-core-tests.*` directory. The runner sets strict `UBSAN_OPTIONS`, returns the test's actual exit code, and removes its own executable and directory on exit. A disconnected device can prevent cleanup; the runner then reports the exact directory left behind. Output stays on stdout/stderr, so capture it on the build machine if needed:
+Only the selected executable is pushed into a fresh `/data/local/tmp/melonds-core-tests.*` directory. The runner sets strict `UBSAN_OPTIONS`, returns the test's actual exit code, and removes its own executable and directory on exit. A disconnected device can prevent cleanup; the runner then reports the exact directory left behind. Output stays on stdout/stderr, so capture it on the build machine if needed:
 
 ```sh
 tools/android-tests/run.sh --serial DEVICE_SERIAL > android-jit.log 2>&1
 ```
 
 ## What this proves
+
+`MicInputGainTest` compiles the unchanged production microphone callback against the real Android Oboe library and supplies eleven constant signed-PCM fixtures. It verifies silence, quiet signals, gain boundaries and positive/negative saturation; the old callback fails six fixtures and triggers float-cast-overflow. It does not open a physical microphone or certify device sensitivity, Bluetooth routing or a game's microphone feature.
 
 This exercises native JIT compilation, literal invalidation and fast-memory mapping on Android, including its shared-memory allocation path. The suite compares fast memory on/off, checks a physical DTCM sentinel, moves 4/8/16/32-KiB windows, and checks both mirrors of a 32-KiB window. Android/Linux runs assert that the requested fast-memory mode is active. A reported failure is a failed regression, not a successful harness result. Building alone does not establish any runtime test result.
 

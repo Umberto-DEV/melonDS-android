@@ -3,21 +3,24 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 [--abi arm64-v8a|x86_64] [--serial DEVICE_SERIAL]"
+    echo "Usage: $0 [--abi arm64-v8a|x86_64] [--serial DEVICE_SERIAL] [--test JitInvalidationTest|MicInputGainTest]"
     echo "Environment: ANDROID_SERIAL, ADB_BIN, ANDROID_SDK_ROOT/ANDROID_HOME"
 }
 
 abi=arm64-v8a
 serial="${ANDROID_SERIAL:-}"
+test_name=JitInvalidationTest
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --abi) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; abi="$2"; shift 2 ;;
         --serial) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; serial="$2"; shift 2 ;;
+        --test) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; test_name="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; exit 2 ;;
     esac
 done
 case "$abi" in arm64-v8a|x86_64) ;; *) usage >&2; exit 2 ;; esac
+case "$test_name" in JitInvalidationTest|MicInputGainTest) ;; *) usage >&2; exit 2 ;; esac
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
@@ -36,7 +39,7 @@ adb=("$adb_bin")
 if [ -n "$serial" ]; then adb+=(-s "$serial"); fi
 
 build_dir="$repo_root/app/build/android-native-tests/$abi"
-binary="$build_dir/JitInvalidationTest"
+binary="$build_dir/$test_name"
 metadata="$build_dir/android-test.properties"
 if [ ! -f "$binary" ] || [ ! -f "$metadata" ]; then
     echo "Build first: $repo_root/tools/android-tests/build.sh --abi $abi" >&2
@@ -73,7 +76,7 @@ fi
 cleanup() {
     local result=$?
     trap - EXIT
-    if ! "${adb[@]}" shell "rm -f '$remote_dir/JitInvalidationTest' && rmdir '$remote_dir'"; then
+    if ! "${adb[@]}" shell "rm -f '$remote_dir/$test_name' && rmdir '$remote_dir'"; then
         echo "Could not clean this run's directory: $remote_dir" >&2
     fi
     exit "$result"
@@ -82,12 +85,12 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-"${adb[@]}" push "$binary" "$remote_dir/JitInvalidationTest"
-"${adb[@]}" shell "chmod 700 '$remote_dir/JitInvalidationTest'"
+"${adb[@]}" push "$binary" "$remote_dir/$test_name"
+"${adb[@]}" shell "chmod 700 '$remote_dir/$test_name'"
 set +e
 # Modern ADB shell protocol preserves remote exit codes. -T avoids a terminal; do not use -x.
-"${adb[@]}" shell -T "cd '$remote_dir' && UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./JitInvalidationTest"
+"${adb[@]}" shell -T "cd '$remote_dir' && UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./$test_name"
 result=$?
 set -e
-printf 'Android JitInvalidationTest exit code: %s\n' "$result"
+printf 'Android %s exit code: %s\n' "$test_name" "$result"
 exit "$result"
