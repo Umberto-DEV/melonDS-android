@@ -12,6 +12,7 @@ This fixes DS/DSi register handling, Wi-Fi power saving and JIT literal invalida
 - **Wi-Fi:** automatically power down the transceiver only when automatic power-saving mode is selected. Disabled power saving must not leave the radio off after the beacon countdown.
 - **JIT:** fold literals only when their memory is tracked for invalidation, and use the actual write mask when invalidating a block. Both ARM64 and x86_64 backends check whether a literal was registered.
 - **JIT teardown:** release fast-memory mappings while ARM9 is still alive. Strict Linux UBSan exposed a read of ARM9's DTCM configuration after its destruction; backing memory remains owned by the JIT until all other components have been destroyed.
+- **JIT fast memory on Android:** bound DTCM mappings to their configured windows and physical offsets, keep map/unmap symmetric, and invalidate the old RAM mapping when DTCM moves. This fixes RAM/DTCM aliasing reproduced on Android ARM64; sub-page windows retain the slow fallback.
 - **Rendering:** skip unchanged compute-renderer configuration and stop generating/uploading edge data or compiling shaders for the inactive edge pass.
 - **Optional networking API:** let a frontend provide hostname-to-IPv4 answers to the built-in DNS responder. The table is empty by default; ordinary resolver behavior is preserved.
 
@@ -23,10 +24,11 @@ Earlier paired proposals, closed during branch consolidation: Android #1682 (htt
 
 ### Validation and limits
 
-- Consolidation retains both local and previously published histories from the earlier `f950b5e6` proposal. The additional runtime correction is the fast-memory teardown fix described above. A new CI workflow builds the core with ASan/UBSan on Linux x86_64 and ARM64; the companion app runs native regressions on both architectures.
+- Consolidation retains both local and previously published histories from the earlier `f950b5e6` proposal. Additional corrections cover teardown and DTCM mapping. Teardown matches the earlier report by maximxlss in [melonDS-emu/melonDS#2537](https://github.com/melonDS-emu/melonDS/issues/2537) and RSDuck's analysis; the local fix is not a copied upstream patch. No equivalent ready-made DTCM patch was found in the targeted search.
+- Strict UBSan regressions pass on Android 15 ARM64 with 4-KiB and 16-KiB pages. The failed baseline and sentinel check isolate the RAM alias from literal folding; tests include remapping and both halves of a 32-KiB configured window. These use a synthetic cartridge, with frontend services stubbed.
 - Companion app validation: 190 JVM tests, ARM64 debug APK build and zero lint errors (474 warnings). Host sanitizer checks cover synthetic JIT invalidation; companion DNS and JNI tests cover packet behavior and reference lifetimes.
 - **Insert final reviewed commit and successful paired CI links after the coordinated audit.** The original 180-test run remains historical evidence, not verification of the updated app.
-- The optional real-ROM JIT/interpreter framebuffer comparison has a discrepancy reproduced identically upstream; it remains unresolved. Core host leak detection is disabled. ARM64/x86_64 synthetic checks do not replace game-specific or device validation.
+- Game-specific Android JIT/interpreter comparisons and physical-device acceptance remain pending. Core host leak detection is disabled. Synthetic checks do not establish that Android issues #579/#751 or every ROM hack are fixed.
 - A prior paired Android build received five weeks of user testing on an AYN Thor. New Android corrections still require Thor acceptance testing.
 
 Supersedes #19 and the earlier #18. New PR publication remains blocked until the coordinated review is complete and the user authorizes it.

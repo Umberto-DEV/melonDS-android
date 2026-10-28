@@ -3,7 +3,7 @@
  * instructions assembled by this file, wrapped in an NDS header, direct-booted into main RAM.
  * No commercial ROM and no BIOS dump are involved, so this test always runs.
  *
- * Three properties are checked, each of which a specific past bug broke:
+ * The regression properties include:
  *
  *  1. a literal held in main RAM is folded into the compiled block, and rewriting it drops
  *     the block so the next execution sees the new value;
@@ -12,6 +12,8 @@
  *  3. a literal the JIT cannot localise to a code region (here: one living in the DTCM) is
  *     left alone -- neither registered for invalidation nor folded into the code -- so the
  *     value read stays correct even though nothing is watching that address.
+ *  4. fast memory keeps DTCM separate from neighboring main RAM, uses the correct physical
+ *     slice/mirror, and restores ordinary RAM access when DTCM is moved.
  *
  * The number of live blocks is read straight out of ARMJIT::JitBlocks9. That is a public
  * member today but it is marked "TODO: Encapsulate" upstream; if it ever becomes private,
@@ -92,12 +94,16 @@ private:
     std::vector<u32> Words;
 };
 
-static std::unique_ptr<NDS> Boot(const std::vector<u8>& rom, u32 entryPoint)
+static std::unique_ptr<NDS> Boot(const std::vector<u8>& rom, u32 entryPoint, JITArgs jitArgs = {})
 {
     NDSArgs args {};
-    args.JIT = JITArgs();
+    args.JIT = jitArgs;
 
     auto nds = std::make_unique<NDS>(std::move(args), nullptr);
+#if defined(__ANDROID__) || defined(__linux__)
+    JitTest::Expect(nds->JIT.FastMemoryEnabled() == jitArgs.FastMemory,
+                    "Android/Linux exercises the requested fast-memory mode");
+#endif
     nds->SetNDSCart(NDSCart::ParseROM(rom.data(), static_cast<u32>(rom.size()), nullptr));
     nds->Reset();
     nds->SetupDirectBoot("melonds-jit-test.nds");
@@ -204,9 +210,10 @@ static void test_only_the_written_chunk_is_invalidated()
 
 // -- 3: a literal outside any code region is neither registered nor folded -------------------
 
-static void test_a_literal_in_dtcm_is_not_folded()
+static void test_a_literal_in_dtcm_is_not_folded(bool fastMemory, bool literalOptimizations)
 {
-    printf("== a literal in the DTCM is left untracked and unfolded ==\n");
+    printf("== DTCM literal: fast memory %s, literal optimization %s ==\n",
+           fastMemory ? "on" : "off", literalOptimizations ? "on" : "off");
 
     // ARMJIT::LocaliseCodeAddress returns 0 for the DTCM, because CodeMemRegions has no entry
     // for it. Two things must then happen, and this case covers both:
@@ -229,7 +236,10 @@ static void test_a_literal_in_dtcm_is_not_folded()
     rom.Put(CodeBase + 8, BranchTo(CodeBase + 8, CodeBase));
     rom.Put(Result, 0);
 
-    auto nds = Boot(rom.Build(CodeBase), CodeBase);
+    JITArgs jitArgs {};
+    jitArgs.FastMemory = fastMemory;
+    jitArgs.LiteralOptimizations = literalOptimizations;
+    auto nds = Boot(rom.Build(CodeBase), CodeBase, jitArgs);
 
     nds->ARM9.CP15Write(0x910, DtcmBase | DtcmSizeSetting);
     const bool mapped = nds->ARM9.DTCMBase == DtcmBase;
@@ -240,6 +250,10 @@ static void test_a_literal_in_dtcm_is_not_folded()
         memcpy(&nds->ARM9.DTCM[address & (DTCMPhysicalSize - 1)], &value, sizeof(value));
     };
 
+    // A main-RAM store must never alias this physical DTCM location. In the broken
+    // fast-memory mapping, Result was overlaid by a 16-KiB DTCM mirror.
+    constexpr u32 Sentinel = 0xC0DEC0DE;
+    writeDtcm(Result, Sentinel);
     writeDtcm(Literal, 0xAAAA1111);
     RunFrames(*nds, 4);
     const u32 before = nds->ARM9Read32(Result);
@@ -251,9 +265,50 @@ static void test_a_literal_in_dtcm_is_not_folded()
     writeDtcm(Literal, 0xBBBB2222);
     RunFrames(*nds, 4);
     const u32 after = nds->ARM9Read32(Result);
+    u32 dtcmSentinel;
+    memcpy(&dtcmSentinel, &nds->ARM9.DTCM[Result & (DTCMPhysicalSize - 1)], sizeof(dtcmSentinel));
     printf("  after DTCM rewrite: result=%08x, %zu block(s) compiled\n",
            after, nds->JIT.JitBlocks9.size());
+    printf("  loaded R0=%08x, physical DTCM sentinel=%08x\n", nds->ARM9.R[0], dtcmSentinel);
     JitTest::Expect(after == 0xBBBB2222, "the untracked literal was re-read instead of folded");
+    JitTest::Expect(dtcmSentinel == Sentinel, "main-RAM stores do not overwrite physical DTCM");
+}
+
+static void test_dtcm_mapping_and_remap(u32 base, u32 sizeSetting)
+{
+    printf("== DTCM mapping and remap: base %08x, setting %u ==\n", base, sizeSetting);
+    constexpr u32 Result = CodeBase + 0x300;
+    SyntheticRom rom;
+    rom.Put(CodeBase, 0xE5910000); // LDR r0, [r1], no PC-relative literal folding
+    rom.Put(CodeBase + 4, StrPcRelative(0, CodeBase + 4, Result));
+    rom.Put(CodeBase + 8, BranchTo(CodeBase + 8, CodeBase));
+
+    auto nds = Boot(rom.Build(CodeBase), CodeBase);
+    nds->ARM9.CP15Write(0x910, base | (sizeSetting << 1));
+    nds->ARM9.R[1] = base;
+    const u32 first = 0x12345678;
+    memcpy(&nds->ARM9.DTCM[base & (DTCMPhysicalSize - 1)], &first, sizeof(first));
+    RunFrames(*nds, 2);
+    JitTest::Expect(nds->ARM9Read32(Result) == first, "DTCM load and neighboring main-RAM store remain distinct");
+
+    if (sizeSetting == 6)
+    {
+        nds->ARM9.R[1] = base + DTCMPhysicalSize;
+        RunFrames(*nds, 2);
+        JitTest::Expect(nds->ARM9Read32(Result) == first, "the second 16-KiB mirror reads the same physical DTCM");
+        const u32 updated = 0x13579BDF;
+        memcpy(nds->ARM9.DTCM, &updated, sizeof(updated));
+        RunFrames(*nds, 2);
+        JitTest::Expect(nds->ARM9Read32(Result) == updated, "physical DTCM updates are visible through the second mirror");
+        nds->ARM9.R[1] = base;
+    }
+
+    // Move DTCM outside the old main-RAM mirror. Its old hole must become ordinary RAM,
+    // even when both the DTCM and main-RAM fast mappings already exist.
+    nds->ARM9.CP15Write(0x910, (base + 0x01000000) | (sizeSetting << 1));
+    nds->ARM9Write32(base, 0x87654321);
+    RunFrames(*nds, 2);
+    JitTest::Expect(nds->ARM9Read32(Result) == 0x87654321, "moving DTCM restores reads from the old main-RAM address");
 }
 
 int main()
@@ -264,7 +319,13 @@ int main()
 
     test_rewriting_a_literal_recompiles_the_block();
     test_only_the_written_chunk_is_invalidated();
-    test_a_literal_in_dtcm_is_not_folded();
+    test_a_literal_in_dtcm_is_not_folded(false, true);
+    test_a_literal_in_dtcm_is_not_folded(true, false);
+    test_a_literal_in_dtcm_is_not_folded(true, true);
+    test_dtcm_mapping_and_remap(0x02001000, 3); // 4 KiB
+    test_dtcm_mapping_and_remap(0x02002000, 4); // 8 KiB
+    test_dtcm_mapping_and_remap(0x02004000, 5); // 16 KiB
+    test_dtcm_mapping_and_remap(0x02008000, 6); // 32 KiB, mirrored physical DTCM
 
     printf("%s\n", JitTest::Failures == 0 ? "PASS" : "FAIL");
     return JitTest::Failures == 0 ? 0 : 1;
