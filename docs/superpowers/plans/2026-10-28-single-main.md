@@ -15,7 +15,7 @@
 - Preserve existing local changes and original contribution credits.
 - New PR source will be main; target remains the actual upstream default master.
 - Archive exact existing PR bodies, refs and comments before closing them.
-- Do not publish replacement PRs or contact another chat until authorized/identified.
+- Do not publish replacement PRs. Coordination with the identified Sacred Gold Plus chat is authorized.
 - Report actual checks and outstanding limitations; never describe skipped or unapproved CI as passed.
 
 ## Review Focus
@@ -41,12 +41,12 @@
 ### Task 3: Community review and validation
 - [x] Refresh open PR/issue inventory; compare against prior October 24 audit.
 - [x] Integrate only reviewed relevant changes with focused regression tests.
-- [ ] Run JVM tests, ARM64 Android build, Android lint, native sanitizer/JNI/DNS checks and relevant x86_64 validation.
-- [ ] Run fork CI on final main commit and inspect completed results.
-- [ ] Review final changes and preserve evidence and updated unpublished PR descriptions.
+- [x] Run JVM tests, ARM64 Android build, Android lint, native sanitizer/JNI/DNS checks and relevant x86_64 validation.
+- [x] Run fork CI on the final functional main commit and inspect completed results; recheck the documentation-only follow-up in the final chat report.
+- [x] Review final changes and preserve evidence and updated unpublished PR descriptions.
 
 ### Task 4: Publication gate
-- [ ] BLOCKED BY USER: no new PR publication until additional debugging and coordination with the chat the user will name.
+- [ ] BLOCKED BY USER: no new PR publication until additional debugging coordinated with the identified Sacred Gold Plus chat and a later explicit publication instruction.
 
 ## Progress and decisions
 - Initial app HEAD: 39a9fe56; published app PR HEAD: aedb719f. They are different histories; ventuno alone is incomplete.
@@ -62,3 +62,6 @@
 - Other reviewed deferrals: whole audio stretching/paired buffer rewrite (#1676/core17), recovery state machine (#1666) and broad focus gating (#1657) lack safe bounded integration/device evidence; retain existing targeted adaptations.
 - Sacred Gold Plus coordination received. Daybreak must not be launched until the user confirms authentication/authorization; ordinary verification continues.
 - The first native CI attempt exposed a runner-specific hardcoded CMake path; the second reached tests and exposed a missing standard memory include and a genuine JIT teardown lifetime error on both Linux architectures. These failures were archived and corrected without disabling checks. Fast-memory mappings now reset in NDS destruction while ARM9 is alive, with unchanged memory ownership and member order; independent review confirmed the DSi and no-JIT paths. Local native checks and the no-JIT core build passed, and Android tests/build/lint remain green. Updated Linux CI is required before completing Task 3.
+- Final functional CI is green: app ca39ab65 / run40697791508, core fd758240 / run40696625134. DNS test compilation additionally needed its own cstdarg include; all mandatory native checks then passed on Linux x64 and ARM64.
+- User clarified Android-only scope. Added NDK/ADB native regression harness and reproduced the DTCM alias on Android15 ARM64. Strict UBSan regressions, 4/8/16/32-KiB remapping and second-mirror checks pass on Android with both 4-KiB and16-KiB pages. APK install/cold-launch and16-KiB ZIP alignment pass. Temporary AVDs were removed; physical Thor acceptance remains pending.
+- Refreshed and categorized all246 open Android/lib issues in13 functional areas; preserved body hashes, baseline reasoning, evidence references and explicit unresolved scope. See ISSUE-CATEGORIES.md, KNOWN-JIT-ISSUES.md and VALIDATION.md in docs/maintenance/2026-10-28-main/. Mac-specific differences are not Android certification.
