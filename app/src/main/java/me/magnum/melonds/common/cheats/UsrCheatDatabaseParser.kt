@@ -142,14 +142,8 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
     private fun readAddressBook(stream: StreamReader): List<GameEntry> {
         val entries = mutableListOf<GameEntry>()
 
-        val addressBookEntry = ByteArray(ADDRESS_BOOK_ENTRY_SIZE)
-        val buffer = ByteBuffer.wrap(addressBookEntry).order(ByteOrder.LITTLE_ENDIAN)
-
         while (true) {
-            buffer.position(0)
-            if (stream.read(addressBookEntry) != ADDRESS_BOOK_ENTRY_SIZE) {
-                throw InvalidUsrCheatDatabaseException("Invalid address book entry")
-            }
+            val buffer = ByteBuffer.wrap(stream.readBytes(ADDRESS_BOOK_ENTRY_SIZE)).order(ByteOrder.LITTLE_ENDIAN)
 
             val gameCodeBytes = ByteArray(4)
             buffer.get(gameCodeBytes)
@@ -325,15 +319,14 @@ class UsrCheatDatabaseParser : CheatDatabaseParser {
             return if (totalRead == maxCount) buffer else buffer.copyOf(totalRead)
         }
 
-        fun read(buffer: ByteArray): Int {
-            return stream.read(buffer)
-        }
-
         fun skip(count: Int) {
             var remaining = count
             do {
                 val toRead = min(remaining, skipBuffer.size)
                 val read = stream.read(skipBuffer, 0, toRead)
+                if (read == -1) {
+                    throw InvalidUsrCheatDatabaseException("Unexpected end of stream at position $bytesRead")
+                }
                 if (read == 0) {
                     // skip() returned 0, try reading a byte to see if the stream has stalled, or we have reached end of stream
                     readOneByte()
