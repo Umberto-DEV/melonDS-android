@@ -34,3 +34,7 @@ submodules and licenses. No ROM, personal save, BIOS/firmware/NAND, credentials
 or signing material is distributed. No separate core or legacy Thor APK is
 provided by this delivery. In-app update discovery still follows the original
 project; UD updates use this fork's release downloads.
+
+## Subsequent execution
+
+The release-time limits above are historical. See the separately dated [post-release Android smoke](POST-RELEASE-SMOKE.md) for the exact public APK update and copied-save execution on 6 November 2026.
