@@ -43,7 +43,7 @@ complete game playthrough, multiplayer/DSi qualification, performance benchmark,
 power-loss test or universal compatibility claim. The copies used no active
 Day Care course or Pro shiny hunt; those populated workflows are not inferred.
 
-Use the [current release APK](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11).
+Use the [current release APK](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11-r2).
 The source patches are for rebuilding source code. They cannot convert the
 original author's differently signed APK into an in-place UD update. In-app
 update discovery still follows the original project; obtain UD updates from

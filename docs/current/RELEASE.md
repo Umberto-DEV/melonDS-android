@@ -1,6 +1,6 @@
 # Current release: UD Nightly 2.1.11/52
 
-[Download and release assets](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11).
+[Download and release assets](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11-r2).
 Only this Android release is offered. Previous Android release packages were
 withdrawn on 6 November 2026; source tags and published history remain.
 
@@ -39,3 +39,11 @@ or signing material is distributed. No legacy Thor `.perf` APK is provided by
 this release. Use [the update guide](../user-guide/UD-NIGHTLY.md#installation-and-data-preservation)
 to preserve package, signer and data; the inherited in-app checker still
 follows the original project.
+
+## Package revision 2
+
+The `ud-nightly-2.1.11-r2` release updates the source/documentation package.
+The signed code 52 APK and its app ac425614/core 06f3df98 binary identities
+remain unchanged. The new source archive and source patches include current
+English documentation and pin the core documentation checkpoint 83d443c5.
+BUILD-MANIFEST.json identifies binary and packaged-source revisions separately.
