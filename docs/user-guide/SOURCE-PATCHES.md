@@ -11,23 +11,30 @@ patch that can replace the official developer's Android signature.
 | Android app | `feab12e597402565d245796669b2d0597f4b860d` |
 | Android core | `431ab4bd0003c4356e25fce89640ae1004579b9b` |
 
-Start with a clean checkout of those revisions, including all submodules.
-Keep your working project and its data backed up. The patches intentionally
-exclude the app gitlink and `.gitmodules`: the reviewer controls the accepted
-core revision and repository URL.
-
-From the app source directory, check both patches before applying either:
+The Android app patch includes `.gitmodules` and the core gitlink, so it
+reconstructs the complete app source revision. Start with a clean checkout of
+the stated Android app base. Keep your working project and its data backed up.
 
 ```sh
-git -C melonDS-android-lib apply --check /path/to/melonDS-UD-2.1.11-core-source.patch
 git apply --check /path/to/melonDS-UD-2.1.11-app-source.patch
-git -C melonDS-android-lib apply /path/to/melonDS-UD-2.1.11-core-source.patch
 git apply /path/to/melonDS-UD-2.1.11-app-source.patch
+git submodule update --init --recursive
 ```
 
-Stop if a check fails. Do not force patches onto a different revision. Both
-patches were applied to temporary exports of the stated bases and the resulting
-changed files were compared byte-for-byte with the fork source.
+The submodule command fetches the exact pinned core and other dependencies.
+Do not then apply the core patch to that already updated core checkout.
+
+The separate core patch is an alternative for developers working directly
+from the official core revision listed above:
+
+```sh
+git apply --check /path/to/melonDS-UD-2.1.11-core-source.patch
+git apply /path/to/melonDS-UD-2.1.11-core-source.patch
+```
+
+Stop if a check fails. Do not force patches onto a different revision. Each
+patch was applied to a temporary index at its stated base; the resulting
+complete index, including file modes and app gitlinks, matched the fork.
 
 The self-contained source archive is an alternative: it includes the pinned
 core and other submodule sources, with their licenses. A plain GitHub automatic
