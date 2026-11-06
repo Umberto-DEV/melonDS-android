@@ -2,7 +2,10 @@
 
 This guide describes the fork's changes relative to official Nightly app `c42995ca` and core `431ab4bd`. Release notes identify the exact source and APK that a download contains. Source changes are not a test result for an unbuilt APK.
 
-Current main has integrated [upstream RTC PR #1664](../maintenance/2026-11-04-upstream-alignment/README.md). The published 2.1.8 artifacts predate this source merge. Emulator-resume synchronization now exists upstream; the fork retains its existing default-off, forward-only, 30-second policy and preference key.
+The current public release is [UD Nightly 2.1.11/52](../current/RELEASE.md),
+including official app `feab12e5` and upstream RTC PR #1664. Resume
+synchronization exists upstream; UD retains its existing default-off,
+forward-only, 30-second policy and preference key.
 
 ## BIOS and firmware setup
 
@@ -10,7 +13,7 @@ Guided setup checks the files selected for DS and DSi mode and reports the resul
 
 Provide your own valid dumps. File checks do not authenticate a dump or provide missing system files. DSi setup and DS direct boot have different requirements; a successful DS game does not validate a DSi NAND.
 
-[Setup implementation and tests](../maintenance/2026-10-28-refinement/INTEGRATION-REPORT.md#1-funzioni-aggiunte-nellapp) · [Incomplete-copy checks](../maintenance/2026-10-28-refinement/VALIDATION.md)
+[Setup implementation and tests](../current/FEATURES.md) · [Incomplete-copy checks](../current/VALIDATION.md)
 
 ## Online connection settings
 
@@ -18,7 +21,7 @@ The app exposes the firmware's three Nintendo WFC connection slots. You can name
 
 This is configuration support, not a new multiplayer implementation. Game compatibility, access-point behavior and server availability require separate testing. Keep a backup of custom firmware before editing it.
 
-[Wi-Fi feature scope and tests](../maintenance/2026-10-28-refinement/INTEGRATION-REPORT.md#1-funzioni-aggiunte-nellapp)
+[Wi-Fi feature scope and tests](../current/FEATURES.md)
 
 ## Cheat search and import
 
@@ -28,7 +31,7 @@ For supported Action Replay code families, grouped selectors replace long lists 
 
 XML and DAT import have size and work limits. A failed, cancelled or invalid import preserves the previous cheat database; retries are supported. DAT support already existed upstream and is not a new format introduced by this fork.
 
-[Search, selector and contributor details](../maintenance/2026-10-28-refinement/INTEGRATION-REPORT.md) · [Database preservation and retry](../maintenance/2026-10-28-android-bugfixes/VALIDATION.md) · [Additional parser limits](../maintenance/2026-11-03-security-followup/FINDING-DETAILS.md)
+[Search, selector and contributor details](../current/FEATURES.md) · [Database preservation and retry](../current/VALIDATION.md) · [Additional parser limits](../current/security/README.md)
 
 ## Settings and controls
 
@@ -36,18 +39,18 @@ The existing upstream settings/layout backup manager is available from the app. 
 
 Additional options include hold to fast-forward, combination hotkeys and fast-forward mute. Sleep/wake handling follows the emulated lid sequence. Optional clock synchronization only moves time forward and is off by default. Fast-forward mute does not fix every audio timing or resampling problem.
 
-[Features and original contributors](../maintenance/2026-10-28-refinement/INTEGRATION-REPORT.md) · [Save and lifecycle regressions](../maintenance/2026-10-28-main/VALIDATION.md)
+[Features and original contributors](../current/FEATURES.md) · [Save and lifecycle regressions](../current/VALIDATION.md)
 
 ## What the fixes change
 
 | Area | Previous behavior | Corrected behavior and evidence |
 | --- | --- | --- |
-| Cheat imports | A failed import could replace or damage the old database | Import is committed as a transaction; parse/write/cancel failures retain old contents. [Checks](../maintenance/2026-10-28-android-bugfixes/VALIDATION.md) |
-| Save writes | Failures could truncate a file or lose pending writes | Existing non-truncating access is preferred, failures are reported and pending work can be retried. Some provider fallbacks retain limits. [Checks](../maintenance/2026-10-28-main/VALIDATION.md) |
-| NAND save replacement | Failed replacement could leave the previous generation inconsistent | Staging, rollback and recovery preserve the previous generation in tested failure cases. [Before/after](../maintenance/2026-11-03-nand-rename-fault/README.md) |
-| ROM library | Errors could leave scanning active or mutate lists already shown | Scans are serialized, state returns to idle on failure and emitted lists remain stable. [Evidence](../maintenance/2026-10-28-refinement/INTEGRATION-REPORT.md) |
-| Input, audio and display | Interrupted input, source changes and renderer failure could leave stale state | Session ownership, input release, bounded microphone samples and actual-renderer fallback are corrected. [Evidence](../maintenance/2026-10-28-android-bugfixes/REPORT.md) |
-| Files and native state | Some sizes, indices and work requests reached native consumers unchecked | Input limits and state validation reject affected paths before buffer access or unbounded work. [Individual details](../maintenance/2026-11-03-security-followup/FINDING-DETAILS.md) |
+| Cheat imports | A failed import could replace or damage the old database | Import is committed as a transaction; parse/write/cancel failures retain old contents. [Checks](../current/VALIDATION.md) |
+| Save writes | Failures could truncate a file or lose pending writes | Existing non-truncating access is preferred, failures are reported and pending work can be retried. Some provider fallbacks retain limits. [Checks](../current/VALIDATION.md) |
+| NAND save replacement | Failed replacement could leave the previous generation inconsistent | Staging, rollback and recovery preserve the previous generation in tested failure cases. [Before/after](../current/bugs/core-nand-rename-fault.md) |
+| ROM library | Errors could leave scanning active or mutate lists already shown | Scans are serialized, state returns to idle on failure and emitted lists remain stable. [Evidence](../current/FEATURES.md) |
+| Input, audio and display | Interrupted input, source changes and renderer failure could leave stale state | Session ownership, input release, bounded microphone samples and actual-renderer fallback are corrected. [Evidence](../current/bugs/README.md) |
+| Files and native state | Some sizes, indices and work requests reached native consumers unchecked | Input limits and state validation reject affected paths before buffer access or unbounded work. [Individual details](../current/security/README.md) |
 
 The finding register counts reports separately from underlying causes. Proof levels distinguish source analysis, focused regression tests and Android execution. These fixes do not establish that every game or device is free of defects.
 
@@ -70,8 +73,8 @@ Never uninstall or clear app data to make a mismatched update install. A differe
 
 A source patch applies to documented app/core revisions. It does not modify an installed APK or preserve the original author's signature. The author can review the patch, build it and sign an official update with their own key.
 
-[Public release identities and Android checks](../maintenance/2026-11-04-ud-nightly/README.md) · [Physical legacy-package update and limits](../maintenance/2026-11-04-thor-update/README.md)
+[Public release identities and Android checks](../current/RELEASE.md) · [Current public-package execution and limits](../current/POST-RELEASE-SMOKE.md)
 
 ## Contributor and issue status
 
-Selected contributor work is adapted with attribution. The [issue/PR coverage register](../maintenance/2026-10-28-refinement/ISSUE-PR-COVERAGE.csv) records links and the exact scope of each adaptation. Locally corrected code, a closed upstream issue and a merged PR are different states. Partial DSi HOME, microphone, casting and game-specific reports are not claimed fully resolved.
+Selected contributor work is adapted with attribution. The [issue/PR coverage register](../current/ISSUE-COVERAGE.csv) records links and the exact scope of each adaptation. Locally corrected code, a closed upstream issue and a merged PR are different states. Partial DSi HOME, microphone, casting and game-specific reports are not claimed fully resolved.

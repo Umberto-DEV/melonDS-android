@@ -1,0 +1,15 @@
+# Crafted savestates escape camera, GPU2D, SD, RTC, I2C, GBA, DSP, and DMA invariants
+
+[Security index](../README.md) · [Disposition register](../FINDINGS.csv)
+
+**Canonical disposition:** `CORRECTED_SECOND_SCAN`.
+
+- **Identity and status:** `occ_54a7deb0ad08a3fafebc1726` · scan `ab26b107-97dd-4557-9c4b-2942e5df879d` · severity `high` · layer `app`. Technical disposition from CSV: CORRECTED_SECOND_SCAN. The Security UI state may remain **Open**; it is separate from the technical disposition.
+- **Summary:** Structurally valid Android savestates still commit device-local selectors, cursors, transfer geometry, state-machine values, queue shapes, timestamps, and table indices without re-establishing their concrete native invariants.
+- **Attack path:** document-provider state URI -&gt; native state buffer -&gt; DSi 'DoSavestate()' -&gt; unchecked selectors/cursors -&gt; SD FIFO or camera buffer native access
+- **Evidence and proof level:** **static** in the sealed finding (`validated`): Semantic reduction of two independent static restore-to-sink traces, preserving each distinct peripheral instance Additional corroboration: Offline cross-check against prior occurrence root cause/remediation plus direct current-source sink tracing.; Camera selectors and cursors are restored without… Disposition evidence: **recorded post-fix class/suite tests, without an individual dynamic reproduction of the trigger** — Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report. This card is supported by source analysis unless it cites a specific RED/GREEN result; aggregate final checks are not counted as an individual finding GREEN.
+- **Counterevidence:** Normal emulator-produced states preserve these invariants. Generic FIFO checks validate internal queue state but not the enclosing SD CurFIFO selector.
+- **Limitations:** Static validation only; no malformed state or sanitizer fixture was executed. Exact corruption or disclosure contents depend on the selected field, restored device activity, and native object layout.
+- **Recommended correction:** Make semantic validation mandatory for every native 'DoSavestate()' boundary and deserialize affected metadata into temporaries before atomic commit.
+- **Disposition, patch and before/after:** [SAVESTATE-INVARIANTS] Enforce the production invariant and its adjacent valid boundary; see the second-campaign report **Before:** Scan source evidence plus reachable caller/consumer review; dynamic RED where the report records it **After:** Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report Recorded integration pair: [app 0018cddb](https://github.com/Umberto-DEV/melonDS-android/commit/0018cddb04278f2bca5054804de501a459eb1de9); [core ac5e6ba0](https://github.com/Umberto-DEV/melonDS-android-lib/commit/ac5e6ba0fb795b7aa8a43fdefed62eed8a37eff8).
+- **Source and evidence:** [app/src/main/cpp/MelonDS.cpp:333 @ 9929f530](https://github.com/Umberto-DEV/melonDS-android/blob/9929f530df6f60b86d50c324f4aec83747e5745b/app/src/main/cpp/MelonDS.cpp#L333); [Canonical CSV](../FINDINGS.csv); [Second-campaign report](../SECOND-CAMPAIGN.md).

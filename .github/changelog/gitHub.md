@@ -1,6 +1,7 @@
-**Changelog:**  
-2.0.1
-* Allow components in custom layouts to be placed within the display cutout area
-* Improve OpenGL renderer performance under most scenarios
-* Update Simplified Chinese translation
-* Multiple crash fixes
+**Changelog:**
+UD Nightly 2.1.11
+
+* Current features, downloads and contributor credits are described in the README.
+* Some bugs fixed.
+
+[Current release identity and validation](https://github.com/Umberto-DEV/melonDS-android/blob/main/docs/current/RELEASE.md)

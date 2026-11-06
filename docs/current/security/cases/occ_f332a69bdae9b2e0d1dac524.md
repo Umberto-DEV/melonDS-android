@@ -1,0 +1,15 @@
+# Savestate scheduler fix leaves DisplayFIFO event parameters able to corrupt native memory
+
+[Security index](../README.md) · [Disposition register](../FINDINGS.csv)
+
+**Canonical disposition:** `CORRECTED_SECOND_SCAN`.
+
+- **Identity and status:** `occ_f332a69bdae9b2e0d1dac524` · scan `ab26b107-97dd-4557-9c4b-2942e5df879d` · severity `high` · layer `core`. Technical disposition from CSV: CORRECTED_SECOND_SCAN. The Security UI state may remain **Open**; it is separate from the technical disposition.
+- **Summary:** A crafted Android savestate can retain a legitimate DisplayFIFO callback ID but supply a non-canonical event parameter. Scheduler validation accepts it; resuming the emulator passes it to GPU::DisplayFIFO, where unsigned subtraction creates a huge buffer offset and SampleFIFO writes outside DispFIFOBuffer.
+- **Attack path:** A lower-trust state file restores a valid DisplayFIFO callback with an invalid parameter and gains guest-to-host native writes on resume.
+- **Evidence and proof level:** **static** in the sealed finding (`validated`): Independent static source trace from Android state-file load through scheduler restoration and GPU callback execution; Savestate restores callback ID and parameter but validates only the callback; No callback-specific invariant is applied to the attacker-controlled Param. Disposition evidence: **recorded post-fix class/suite tests, without an individual dynamic reproduction of the trigger** — Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report. This card is supported by source analysis unless it cites a specific RED/GREEN result; aggregate final checks are not counted as an individual finding GREEN.
+- **Counterevidence:** Normal display scheduling begins at zero and advances by eight. The previous remediation correctly rejects invalid callback-table indices and missing receiver pointers.
+- **Limitations:** No crashing savestate or exploit payload was executed.
+- **Recommended correction:** Define and enforce per-event parameter validators during savestate restoration before the scheduler state is committed. Also make GPU::DisplayFIFO reject values outside its canonical sequence and bounds-check offset plus count in SampleFIFO.
+- **Disposition, patch and before/after:** [SAVESTATE-INVARIANTS] Enforce the production invariant and its adjacent valid boundary; see the second-campaign report **Before:** Scan source evidence plus reachable caller/consumer review; dynamic RED where the report records it **After:** Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report Recorded integration pair: [app 0018cddb](https://github.com/Umberto-DEV/melonDS-android/commit/0018cddb04278f2bca5054804de501a459eb1de9); [core ac5e6ba0](https://github.com/Umberto-DEV/melonDS-android-lib/commit/ac5e6ba0fb795b7aa8a43fdefed62eed8a37eff8).
+- **Source and evidence:** [melonDS-android-lib/src/NDS.cpp:704 @ 65952aec](https://github.com/Umberto-DEV/melonDS-android-lib/blob/65952aec868bedd2dc33151ed850804e3e13df05/src/NDS.cpp#L704); [Canonical CSV](../FINDINGS.csv); [Second-campaign report](../SECOND-CAMPAIGN.md).

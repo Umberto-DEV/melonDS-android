@@ -1,0 +1,15 @@
+# A crafted DSi guest can extend the selected host NAND file beyond its declared capacity
+
+[Security index](../README.md) · [Disposition register](../FINDINGS.csv)
+
+**Canonical disposition:** `CORRECTED_SECOND_SCAN`.
+
+- **Identity and status:** `occ_cb3a39caab485844bb03f2f0` · scan `ab26b107-97dd-4557-9c4b-2942e5df879d` · severity `low` · layer `core`. Technical disposition from CSV: CORRECTED_SECOND_SCAN. The Security UI state may remain **Open**; it is separate from the technical disposition.
+- **Summary:** Guest CMD24/CMD25 supplies a 32-bit byte address. 'WriteBlock()' seeks and writes at that address without comparing the complete span with the immutable 'NANDImage::Length', so aligned commands can extend a seekable Android backing file far beyond the mounted NAND capacity and persistently damage or consume storage.
+- **Attack path:** Guest 'Param' -&gt; 'RWAddress' -&gt; unchecked 'FileSeek'/'FileWrite' -&gt; selected NAND backing file
+- **Evidence and proof level:** **static** in the sealed finding (`status not specified`): static media-address to host-file trace; Guest write command preserves byte address; For NAND byte addressing, the guest's 32-bit parameter is forwarded as the backing-file offset. Disposition evidence: **recorded post-fix class/suite tests, without an individual dynamic reproduction of the trigger** — Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report. This card is supported by source analysis unless it cites a specific RED/GREEN result; aggregate final checks are not counted as an individual finding GREEN.
+- **Counterevidence:** Some document providers may reject seek or extension. Each individual command is capped at 512 bytes and targets only the selected NAND file.
+- **Limitations:** No provider-specific runtime extension test was allowed.
+- **Recommended correction:** Reject media commands unless 'addr &lt;= nand.GetLength()' and 'len &lt;= nand.GetLength() - addr', then require exact seek/write success and return an emulated media error without extending the file. Dedup-0027 refinement: Before every NAND transfer, use checked arithmetic and require addr &lt;= length and len &lt;= length - addr.
+- **Disposition, patch and before/after:** [NAND-CAPACITY] Enforce the production invariant and its adjacent valid boundary; see the second-campaign report **Before:** Scan source evidence plus reachable caller/consumer review; dynamic RED where the report records it **After:** Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report Recorded integration pair: [app 0018cddb](https://github.com/Umberto-DEV/melonDS-android/commit/0018cddb04278f2bca5054804de501a459eb1de9); [core ac5e6ba0](https://github.com/Umberto-DEV/melonDS-android-lib/commit/ac5e6ba0fb795b7aa8a43fdefed62eed8a37eff8).
+- **Source and evidence:** [melonDS-android-lib/src/DSi_SD.cpp:983 @ 65952aec](https://github.com/Umberto-DEV/melonDS-android-lib/blob/65952aec868bedd2dc33151ed850804e3e13df05/src/DSi_SD.cpp#L983); [Canonical CSV](../FINDINGS.csv); [Second-campaign report](../SECOND-CAMPAIGN.md).

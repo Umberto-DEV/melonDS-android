@@ -8,7 +8,7 @@ patch that can replace the official developer's Android signature.
 
 | Component | Official source revision |
 | --- | --- |
-| Android app | `c42995caff0144f37ad9791dc9bc96d82e8a6f65` |
+| Android app | `feab12e597402565d245796669b2d0597f4b860d` |
 | Android core | `431ab4bd0003c4356e25fce89640ae1004579b9b` |
 
 Start with a clean checkout of those revisions, including all submodules.
@@ -19,10 +19,10 @@ core revision and repository URL.
 From the app source directory, check both patches before applying either:
 
 ```sh
-git -C melonDS-android-lib apply --check /path/to/melonDS-UD-2.1.8-core-source.patch
-git apply --check /path/to/melonDS-UD-2.1.8-app-source.patch
-git -C melonDS-android-lib apply /path/to/melonDS-UD-2.1.8-core-source.patch
-git apply /path/to/melonDS-UD-2.1.8-app-source.patch
+git -C melonDS-android-lib apply --check /path/to/melonDS-UD-2.1.11-core-source.patch
+git apply --check /path/to/melonDS-UD-2.1.11-app-source.patch
+git -C melonDS-android-lib apply /path/to/melonDS-UD-2.1.11-core-source.patch
+git apply /path/to/melonDS-UD-2.1.11-app-source.patch
 ```
 
 Stop if a check fails. Do not force patches onto a different revision. Both
@@ -43,7 +43,9 @@ your own signing key in untracked `local.properties`, following the main
 sh ./gradlew :app:assembleGitHubNightlyRelease
 ```
 
-The distributed UD binary uses the build-only version name `2.1.8-UD`; its manifest records this override. Set that value in `AppConfig.versionName` before building if you want the same label. This metadata change does not alter the data formats.
+The distributed UD binary uses version code 52 and the display version
+`2.1.11-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in
+`BUILD-MANIFEST.json`; do not lower the version code of an existing installation.
 
 Use the existing signing identity for the installation you intend to update.
 The original developer can sign the patched source with their official key;

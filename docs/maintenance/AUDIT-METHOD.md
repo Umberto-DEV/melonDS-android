@@ -142,5 +142,7 @@ Keep regression source tests that protect a distinct contract. Delete a test onl
 when the behavior is obsolete or a replacement proves the same failure/control;
 record the replacement and run the relevant suite. Generated test output is a
 different category. Preserve unique reproducers, reduced inputs and small result
-summaries. Keep historical evidence dated and immutable, mark superseded status,
-and link it from this index instead of duplicating it as a current report.
+summaries. Keep original evidence identities and limitations immutable. Consolidate useful
+regression detail in the current dossiers, preserving private originals before
+removing obsolete public release/status documents. Do not relabel historical
+acceptance as a new result.

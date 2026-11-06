@@ -1,0 +1,15 @@
+# Static-camera image decoding lacks a dimension and pixel budget
+
+[Security index](../README.md) · [Disposition register](../FINDINGS.csv)
+
+**Canonical disposition:** `CORRECTED_SECOND_SCAN`.
+
+- **Identity and status:** `occ_6cb0ac532a98fc7abd11b3aa` · scan `ab26b107-97dd-4557-9c4b-2942e5df879d` · severity `medium` · layer `app`. Technical disposition from CSV: CORRECTED_SECOND_SCAN. The Security UI state may remain **Open**; it is separate from the technical disposition.
+- **Summary:** The DSi static-camera source repeatedly decodes a persistently granted JPEG/PNG when selected. API 24-27 calls BitmapFactory.decodeFileDescriptor with no bounds pass or sampling, allocating the full source before scaling.
+- **Attack path:** Not separately specified in the sealed finding.
+- **Evidence and proof level:** **static** in the sealed finding (`validated`): Independent baseline packet plus parent review of picker authority, API-level dispatch, both decode paths, target arithmetic, and camera trigger.; Persisted image authority; The user explicitly grants and persists a provider URI; a provider can later return hostile image bytes under that authority. Disposition evidence: **recorded post-fix class/suite tests, without an individual dynamic reproduction of the trigger** — Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report. This card is supported by source analysis unless it cites a specific RED/GREEN result; aggregate final checks are not counted as an individual finding GREEN.
+- **Counterevidence:** Static image is opt-in and requires explicit provider selection. Android decoders reject some malformed inputs.
+- **Limitations:** Static offline validation; no image was decoded on a device.
+- **Recommended correction:** Read and validate image metadata first using checked wide arithmetic and a conservative source dimension/pixel budget. Decode with sampling directly to a fixed 640x480 result, compute crop in source coordinates, and require the returned bitmap to be non-recycled and exactly 640x480 before buffer copy. Correct legacy recycling so only obsolete intermediates are recycled.
+- **Disposition, patch and before/after:** [CAMERA-PIXEL-BUDGET] Enforce the production invariant and its adjacent valid boundary; see the second-campaign report **Before:** Scan source evidence plus reachable caller/consumer review; dynamic RED where the report records it **After:** Focused regression plus final host/JVM/NDK/ART checks recorded in the second-campaign report Recorded integration pair: [app 0018cddb](https://github.com/Umberto-DEV/melonDS-android/commit/0018cddb04278f2bca5054804de501a459eb1de9); [core ac5e6ba0](https://github.com/Umberto-DEV/melonDS-android-lib/commit/ac5e6ba0fb795b7aa8a43fdefed62eed8a37eff8).
+- **Source and evidence:** [app/src/main/res/xml/pref_video.xml:58 @ 9929f530](https://github.com/Umberto-DEV/melonDS-android/blob/9929f530df6f60b86d50c324f4aec83747e5745b/app/src/main/res/xml/pref_video.xml#L58); [Canonical CSV](../FINDINGS.csv); [Second-campaign report](../SECOND-CAMPAIGN.md).

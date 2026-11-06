@@ -1,0 +1,15 @@
+# Android RCHV loader discards the real buffer length before native deserialization
+
+[Security index](../README.md) · [Disposition register](../FINDINGS.csv)
+
+**Canonical disposition:** `CORRECTED`.
+
+- **Identity and status:** `occ_e9fbed34ba4f36c73dc9449a` · scan `4c41e000-6ba0-4453-aaa7-3cdbec542687` · severity `medium` · layer `app`. Technical disposition from CSV: CORRECTED. The Security UI state may remain **Open**; it is separate from the technical disposition.
+- **Summary:** RetroAchievements savestate loading reads a file-controlled size, allocates exactly that many bytes before proving the RCHV payload remains, and then calls the legacy unsized rc_runtime_deserialize_progress wrapper.
+- **Attack path:** RCHV bytes -&gt; attacker u32 payload length -&gt; exact new[]/VarArray -&gt; unsized API -&gt; UINT32_MAX sized wrapper -&gt; unchecked marker/chunk reads
+- **Evidence and proof level:** **static** in the sealed finding (`validated`): Manual source-to-sink review against the Android build and JNI call path.; File size is allocated and unsized API is called; The caller knows the size but neither caps it nor passes it to the nested parser. Disposition evidence: **recorded dynamic post-fix checks**; pre-fix evidence remains static unless the report records an explicit RED — sized API and 16 MiB/remaining checks compile and pass. No dynamic RED is inferred unless the report records it explicitly.
+- **Counterevidence:** The rcheevos library provides a sized API with checks, but the Android caller selects the unsized wrapper. A wrong marker fails early, but the correct four-byte marker bypasses that protection.
+- **Limitations:** No sanitizer reproduction was run. No reliable information disclosure or write primitive was demonstrated.
+- **Recommended correction:** Before allocation, require rcheevosStateSize to fit the validated remaining RCHV bytes and a conservative runtime-progress maximum, abort immediately on Savestate::Error, and use a bounded allocation whose failure is handled. Call rc_runtime_deserialize_progress_sized with the real length, deserialize into temporary runtime state, and commit only on complete success.
+- **Disposition, patch and before/after:** Pass remaining serialized byte count to rcheevos and cap it **Before:** unsized native deserializer call found at reachable RCHV load **After:** sized API and 16 MiB/remaining checks compile and pass Recorded integration pair: [app a77ccaaa](https://github.com/Umberto-DEV/melonDS-android/commit/a77ccaaac5ca99f4ac1893b1dfb9b41326f75811); [core 65952aec](https://github.com/Umberto-DEV/melonDS-android-lib/commit/65952aec868bedd2dc33151ed850804e3e13df05).
+- **Source and evidence:** [app/src/main/cpp/retroachievements/RetroAchievementsManager.cpp:139 @ 6a9d7a1f](https://github.com/Umberto-DEV/melonDS-android/blob/6a9d7a1f19cfd44ba7fccdedec9f9196d3e04108/app/src/main/cpp/retroachievements/RetroAchievementsManager.cpp#L139); [Canonical CSV](../FINDINGS.csv); [First-campaign report](../FIRST-CAMPAIGN.md).
