@@ -632,4 +632,6 @@
     <string name="forget_rom_action">Убрать</string>
     <string name="forget_rom_confirmation">Убрать %1$s из библиотеки?\n\n%2$s\n\nБудут удалены только настройки и история этой записи. ROM, сохранения игр, состояния, читы и другие записи останутся без изменений. Если файл ROM ещё существует, сканирование может добавить его снова.</string>
     <string name="forget_rom_failed">Не удалось сохранить изменение. Запись сохранена. Повторите попытку.</string>
+    <string name="error_rom_out_of_memory">Недостаточно памяти для распаковки «%1$s». Распакуйте ROM вручную.</string>
+    <string name="downloading_update_version">Загрузка обновления %1$s…</string>
 </resources>

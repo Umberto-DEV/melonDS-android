@@ -510,4 +510,6 @@
     <string name="forget_rom_action">Rimuovi</string>
     <string name="forget_rom_confirmation">Rimuovere %1$s dalla libreria?\n\n%2$s\n\nSaranno rimosse solo le impostazioni e la cronologia di gioco di questa voce. ROM, salvataggi, stati di salvataggio, trucchi e altre voci resteranno invariati. Se il file ROM esiste ancora, una scansione può aggiungerlo di nuovo.</string>
     <string name="forget_rom_failed">Impossibile salvare la modifica alla libreria. La voce è stata conservata. Riprova.</string>
+    <string name="error_rom_out_of_memory">Memoria insufficiente per estrarre \"%1$s\". Estrai la ROM manualmente.</string>
+    <string name="downloading_update_version">Scaricamento dell\'aggiornamento %1$s…</string>
 </resources>

@@ -128,7 +128,7 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
     private inline fun <T> readArchivedRom(romUri: Uri, block: (RomFileStream) -> T): T? {
         return archiveLock.withLock {
             context.contentResolver.openInputStream(romUri)?.use { fileStream ->
-                getNdsEntryStreamInFileStream(fileStream)?.use(block)
+                getNdsEntryStreamInFileStream(fileStream, romUri)?.use(block)
             }
         }
     }
@@ -180,7 +180,7 @@ abstract class CompressedRomFileProcessor(private val context: Context, private 
     /**
      * Retrieves the [RomFileStream] that points to the ROM in the compressed file. May return null if a ROM entry was not found in the compressed archive.
      */
-    abstract fun getNdsEntryStreamInFileStream(fileStream: InputStream): RomFileStream?
+    abstract fun getNdsEntryStreamInFileStream(fileStream: InputStream, romUri: Uri): RomFileStream?
 
     class RomFileStream(stream: InputStream, val romFileSize: SizeUnit?) : FilterInputStream(
         BoundedArchiveInputStream(stream, ArchiveReadBudget.MAX_ROM_BYTES),

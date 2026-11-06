@@ -199,6 +199,6 @@ physical update did not repeat native SAVE or game Continue on the device's
 active checkpoint. Earlier physical gameplay evidence retains its original
 code 50 identity and limitations.
 
-Upstream integration remains at `fa214944`; the six later app commits observed
-at `feab12e5` are not integrated by this correction. Core code is unchanged by
-the library-entry removal feature.
+For the exact 2.1.10 candidates documented above, upstream integration remains
+at `fa214944`; the six later commits at `feab12e5` are outside those APKs.
+Current main reconciles them separately in the [source integration report](../2026-11-06-upstream-reconciliation/README.md), without replacing published artifacts or transferring old runtime acceptance. Core code is unchanged by the library-entry removal feature.

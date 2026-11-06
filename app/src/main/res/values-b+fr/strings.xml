@@ -451,4 +451,6 @@
     <string name="forget_rom_action">Retirer</string>
     <string name="forget_rom_confirmation">Retirer %1$s de la bibliothèque ?\n\n%2$s\n\nSeuls les paramètres et l’historique de cette entrée seront supprimés. Les ROM, sauvegardes, états de sauvegarde, codes de triche et autres entrées resteront inchangés. Si le fichier ROM existe encore, une analyse pourra le rajouter.</string>
     <string name="forget_rom_failed">Impossible d’enregistrer la modification. L’entrée a été conservée. Réessayez.</string>
+    <string name="error_rom_out_of_memory">Mémoire insuffisante pour extraire \"%1$s\". Veuillez extraire la ROM manuellement.</string>
+    <string name="downloading_update_version">Téléchargement de la mise à jour %1$s…</string>
 </resources>

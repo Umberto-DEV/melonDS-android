@@ -43,7 +43,8 @@ class CompressedRomFileProcessorTest {
 
     /** Archive decoder stand-in: reports how many entries are being decoded at the same time. */
     private inner class RecordingProcessor(ndsRomCache: NdsRomCache) : CompressedRomFileProcessor(context, notNeeded(), ndsRomCache) {
-        override fun getNdsEntryStreamInFileStream(fileStream: InputStream): RomFileStream {
+        override fun getNdsEntryStreamInFileStream(fileStream: InputStream, romUri: Uri): RomFileStream {
+            assertEquals(this@CompressedRomFileProcessorTest.romUri, romUri)
             val open = decodersOpen.incrementAndGet()
             maxDecodersOpen.accumulateAndGet(open) { a, b -> maxOf(a, b) }
             Thread.sleep(150)

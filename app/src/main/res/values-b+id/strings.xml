@@ -628,4 +628,6 @@
     <string name="forget_rom_action">Hapus</string>
     <string name="forget_rom_confirmation">Hapus %1$s dari pustaka?\n\n%2$s\n\nHanya pengaturan dan riwayat entri ini yang akan dihapus. ROM, simpanan permainan, status tersimpan, cheat, dan entri lain tidak berubah. Jika berkas ROM masih ada, pemindaian dapat menambahkannya kembali.</string>
     <string name="forget_rom_failed">Perubahan tidak dapat disimpan. Entri tetap dipertahankan. Coba lagi.</string>
+    <string name="error_rom_out_of_memory">Memori tidak cukup untuk mengekstrak \"%1$s\". Ekstrak ROM secara manual.</string>
+    <string name="downloading_update_version">Mengunduh pembaruan %1$s…</string>
 </resources>
