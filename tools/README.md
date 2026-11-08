@@ -29,13 +29,23 @@ All app/core source patches include complete Git changes, including gitlinks,
 applied at its stated base in a temporary index and must reconstruct the full
 target tree. The recursive source ZIP includes all pinned dependency licenses.
 
-The output includes `app-gitHub-nightly-release.apk`,
-`melonDS-UD-nightly-2.1-source.zip`, both `melonDS-UD-2.1-*-source.patch` files,
-and `melonDS-UD-nightly-2.1.zip` containing the same payloads and release notices.
+Publish exactly these three release assets, selecting each named file explicitly:
+
+- `app-gitHub-nightly-release.apk`
+- `melonDS-UD-nightly-2.1.zip`
+- `DOWNLOADS-SHA256SUMS`
+
+`DOWNLOADS-SHA256SUMS` contains exactly the APK and full ZIP hashes. The complete
+ZIP already contains the APK, source ZIP, both app/core source patches, licenses,
+README, build manifest and payload `SHA256SUMS`. The tool also retains these
+payloads and the legacy `BUNDLE-SHA256SUMS` locally for inspection; upload only
+the three named assets above, without a wildcard over the output directory.
+Preserve the bytes of already published APKs and ZIPs when simplifying an
+existing release's asset list.
+
 The optional release date defaults to the current UTC date. The generated source
 recipe applies the app patch with `--index`, synchronizes submodule URLs and then
-initializes the exact index pins recursively. `SHA256SUMS` covers the payloads;
-`BUNDLE-SHA256SUMS` covers the final ZIP.
+initializes the exact index pins recursively.
 Existing nonempty outputs are refused, and the storage estimate reserves
 at least 10 GiB. Packaging success does not establish Android update safety.
 

@@ -7,9 +7,13 @@ UD Nightly is a fork of [melonDS Android](https://github.com/rafaelvcaetano/melo
 Check each release for its exact version, Android package, CPU architectures, signing certificate and test results. An older release does not establish that the latest source has been packaged or tested on your device.
 
 **UD Nightly 2.1/53 is the current download.**
-[Standalone ZIP, APK, complete recursive source and source patches](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1)
-include the latest integrated official app `27321156`. This is an independent UD
-fork release, with its own signing certificate. [Release identity and checks](docs/current/RELEASE.md)
+[The APK and complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1)
+include the integrated official app `27321156`. The ZIP contains the complete
+recursive source, source patches, license, build instructions and verification
+manifest. Check either download with the release's `DOWNLOADS-SHA256SUMS`.
+The published APK and ZIP retain app source `e68e9459`; `main` may contain later
+documentation or packaging-tool changes. This is an independent UD fork
+release, with its own signing certificate. [Release identity and checks](docs/current/RELEASE.md)
 identify the exact binary and evidence; historical results retain their original
 candidate identities. The 2.1 publication replaces inherited tag names at the fork maintainer's
 request; published commit history and contributor attribution are preserved.
@@ -74,16 +78,16 @@ The [issue and PR coverage register](docs/current/ISSUE-COVERAGE.csv) distinguis
 
 ## Install or update
 
-Use the APK listed in a release and verify its SHA-256 checksum before installing. Commercial game images, personal BIOS/firmware, NAND and game saves are not included. The source retains the upstream freely redistributable BIOS replacement and its license.
+Use the APK listed in a release and verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS) before installing. The [complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip) also includes that APK, source, source patches and the verification manifest. Commercial game images, personal BIOS/firmware, NAND and game saves are not included. The source retains the upstream freely redistributable BIOS replacement and its license.
 
 - **New UD installation:** use the standalone UD Nightly APK and select your own game and system files.
 - **Existing UD installation:** an in-place update requires the same Android package and signing certificate, with a higher version code. Back up saves, settings, layouts, cheats and system files first. Keep the app installed; do not clear its data as an update step.
 - **Official Nightly installation:** UD Nightly follows the `.nightly` package name but has a different signing identity. Android will reject replacing the author's signed APK with a fork-signed APK.
 - **Earlier `.nightly.perf` installation:** the current public release provides no compatible legacy APK. The public `.nightly` APK cannot update it in place. Private databases and saved document permissions do not transfer automatically between package names.
 
-A [source patch](docs/user-guide/SOURCE-PATCHES.md) is for developers applying changes to the documented source revision and rebuilding. It cannot turn the author's signed APK into an update signed by this fork. [Installation and update details](docs/user-guide/UD-NIGHTLY.md#installation-and-data-preservation)
+A [source patch](docs/user-guide/SOURCE-PATCHES.md), included in the complete ZIP, is for developers applying changes to the documented source revision and rebuilding. It cannot turn the author's signed APK into an update signed by this fork. [Installation and update details](docs/user-guide/UD-NIGHTLY.md#installation-and-data-preservation)
 
-The persistent UD release signing certificate has SHA-256 fingerprint `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86`. Verify the downloaded APK against its release manifest. Earlier `.perf` builds use a different preserved local identity and require their separately labeled update.
+The persistent UD release signing certificate has SHA-256 fingerprint `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86`. Verify the downloaded APK against the manifest inside the complete ZIP. Earlier `.perf` builds use a different preserved local identity and require their separately labeled update.
 
 ## Supported behavior and limits
 
@@ -101,7 +105,7 @@ cd melonds-android
 sh ./gradlew :app:assembleGitHubNightlyDebug
 ```
 
-A plain source ZIP does not contain submodule contents. In an existing checkout, use `git submodule update --init --recursive`; do not use `--remote` when reproducing a pinned build. The debug build has a separate `.dev` ID and is not the release update.
+GitHub's automatic source ZIP does not contain submodule contents. The complete source ZIP inside the UD distribution ZIP includes the pinned dependencies; extract it and build from its `source/` directory. In an existing checkout, use `git submodule update --init --recursive`; do not use `--remote` when reproducing a pinned build. The debug build has a separate `.dev` ID and is not the release update.
 
 Use Java 21 and the SDK, NDK and CMake versions declared by the project. Release builds use `:app:assembleGitHubNightlyRelease` and require an owner-controlled signing key configured in untracked `local.properties`:
 

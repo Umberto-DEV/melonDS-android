@@ -1,8 +1,18 @@
 # Applying the UD source patches
 
-The download contains one Android APK for fresh installation or a same-signer
-UD update, and separate **source patches** for developers. There is no binary
-patch that can replace the official developer's Android signature.
+Download the [complete UD Nightly ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip),
+verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS),
+then extract it. It contains the Android APK, complete recursive source ZIP,
+app/core **source patches**, build instructions, license, `BUILD-MANIFEST.json`
+and payload `SHA256SUMS`. Use the extracted patch paths in the commands below.
+
+The standalone APK is also available for fresh installation or a same-signer
+UD update. A source patch must be rebuilt and signed; it cannot replace the
+official developer's Android signature.
+
+The bundle reconstructs released app `e68e9459b240e297407bbf166c520d5e39e6e02c`
+and pinned core `83d443c546e1c338eb69003ba27347ad5c5599f5`. Later documentation
+or packaging-tool commits on `main` do not change the published binary or ZIP.
 
 ## Exact starting revisions
 
@@ -39,12 +49,14 @@ Stop if a check fails. Do not force patches onto a different revision. Each
 patch was applied to a temporary index at its stated base; the resulting
 complete index, including file modes and app gitlinks, matched the fork.
 
-The self-contained source archive is an alternative: it includes the pinned
-core and other submodule sources, with their licenses. A plain GitHub automatic
-source ZIP does not include submodule contents.
+To use the complete source instead of patches, extract
+`melonDS-UD-nightly-2.1-source.zip` from the bundle. Its `source/` directory
+includes the pinned core and other submodule sources, with their licenses.
+A GitHub automatic source ZIP does not include submodule contents.
 
 ## Build and sign
 
+Run the build from the extracted `source/` directory or the patched app checkout.
 Use Java 21 and the SDK, NDK and CMake versions declared by the source. Configure
 your own signing key in untracked `local.properties`, following the main
 [build instructions](../../README.md#building), then run:
@@ -54,7 +66,7 @@ sh ./gradlew :app:assembleGitHubNightlyRelease
 ```
 
 The distributed UD binary uses version code 53 and the display version
-`2.1-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in
+`2.1-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in the bundle's
 `BUILD-MANIFEST.json`; do not lower the version code of an existing installation.
 
 Use the existing signing identity for the installation you intend to update.
@@ -65,5 +77,5 @@ allowed versionCode to update an existing package.
 
 Before distributing a rebuilt APK, repeat the release checks and data-preserving
 update tests. A successfully applied source patch is not Android runtime
-acceptance. ROMs, saves, BIOS, firmware, NAND, private keys and personal backups
+acceptance. Commercial ROMs, personal saves, BIOS/firmware/NAND dumps, private keys and personal backups
 are not part of these patches or source packages.

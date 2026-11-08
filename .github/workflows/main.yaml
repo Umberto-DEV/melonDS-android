@@ -95,6 +95,11 @@ jobs:
       - name: Verify immutable CI dependencies
         run: python3 .github/check_ci_integrity.py
 
+      - name: Test release packaging
+        run: >-
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover
+          -s tools -p 'test_release_bundle.py' -v
+
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           java-version: '21'

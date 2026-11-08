@@ -264,6 +264,9 @@ SHA256SUMS covers every payload file except the checksum file itself.
     bundle_hash = digest(distribution.read_bytes())
     with (output / "BUNDLE-SHA256SUMS").open("x") as handle:
         handle.write(bundle_hash + "  " + distribution.name + "\n")
+    with (output / "DOWNLOADS-SHA256SUMS").open("x") as handle:
+        handle.write(digest((output / apk_name).read_bytes()) + "  " + apk_name + "\n")
+        handle.write(bundle_hash + "  " + distribution.name + "\n")
     return distribution, bundle_hash
 
 
@@ -285,6 +288,9 @@ def main():
     except (ValueError, OSError, UnicodeError, zipfile.BadZipFile) as error:
         parser.exit(1, "release_bundle: " + str(error) + "\n")
     print(str(path) + "\nSHA256 " + sha256)
+    print("Upload exactly these three release assets:")
+    for name in ("app-gitHub-nightly-release.apk", path.name, "DOWNLOADS-SHA256SUMS"):
+        print(str(path.parent / name))
 
 
 if __name__ == "__main__":

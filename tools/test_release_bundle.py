@@ -169,6 +169,22 @@ class ReleaseBundleTest(unittest.TestCase):
         self.assertEqual(filename, bundle.name)
         self.assertEqual(checksum, hashlib.sha256(bundle.read_bytes()).hexdigest())
 
+    def test_download_checksums_cover_exactly_apk_and_complete_zip(self):
+        # Catches publishing payload diagnostics or hashing source ZIPs instead of both downloads.
+        result = self.package()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        checksums = self.output / "DOWNLOADS-SHA256SUMS"
+        self.assertTrue(checksums.is_file(), "The public downloads need one external checksum file")
+        entries = [line.split("  ", 1) for line in checksums.read_text().splitlines()]
+        self.assertEqual([name for _, name in entries], [
+            "app-gitHub-nightly-release.apk", "melonDS-UD-nightly-2.1.zip",
+        ])
+        for checksum, name in entries:
+            self.assertEqual(checksum, hashlib.sha256((self.output / name).read_bytes()).hexdigest())
+        with zipfile.ZipFile(self.output / "melonDS-UD-nightly-2.1.zip") as archive:
+            self.assertNotIn("DOWNLOADS-SHA256SUMS", archive.namelist())
+            self.assertIn("SHA256SUMS", archive.namelist())
+
     def test_readme_recipe_pins_index_and_initializes_recursive_sources(self):
         # Catches instructions that patch the working tree but leave old gitlinks in the index.
         result = self.package("--release-date", "2026-11-08")

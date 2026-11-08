@@ -1,23 +1,34 @@
 # Current release: UD Nightly 2.1/53
 
-[Download the standalone ZIP, APK, complete source and patches](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1).
+[Download the APK or complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1).
 This is an independent fork of the official Android Nightly. Its visible release
 name is 2.1; Android versionCode 53 preserves update ordering after code 52.
+
+- [Android APK](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/app-gitHub-nightly-release.apk) for installation.
+- [Complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip) with the same APK, complete recursive source, patches, license, build instructions and verification manifest.
+- [Download checksums](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS) for the APK and complete ZIP.
 
 | Field | UD Nightly 2.1 |
 | --- | --- |
 | Tag | `ud-nightly-2.1` |
+| Released app source | `e68e9459b240e297407bbf166c520d5e39e6e02c` |
 | Integrated official app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
-| Pinned core | `83d443c5` (native correction set unchanged from `ac5e6ba0`) |
+| Pinned core | `83d443c546e1c338eb69003ba27347ad5c5599f5` (native correction set unchanged from `ac5e6ba0`) |
 | Package / code | `me.magnum.melonds.nightly` / 53 |
 | Display version | `2.1-UD GH (NIGHTLY)` |
+| APK SHA-256 | `8ace1b87edb37a4368f16b0e8b42e28e0d05235f2ae7722feb4c3266a7145187` |
+| Complete ZIP SHA-256 | `4183edae58d653e6fcfbcdd3dad44c2f6e9dd6102ef2718150b5765d0a6d0d8f` |
 | Certificate SHA-256 | `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86` |
 | Native frontends | ARM64, ARM32 and x86-64 |
-| Exact sources / APK checksum | Release `BUILD-MANIFEST.json`, `SHA256SUMS` and `BUNDLE-SHA256SUMS` |
+| Exact sources / payload checksums | `BUILD-MANIFEST.json` and `SHA256SUMS` inside the complete ZIP |
 
-The release contains a standalone APK and a ZIP with the same APK, complete
-recursive source ZIP, full app/core source patches, license, installation/build
-instructions, manifest and checksums. `tools/release_bundle.py` exports committed
+Extract the complete ZIP to obtain `melonDS-UD-nightly-2.1-source.zip`, the
+app/core source patches, `LICENSE`, `README.txt`, `BUILD-MANIFEST.json` and
+`SHA256SUMS`. The source ZIP includes every pinned dependency. The APK and
+complete ZIP remain the original release bytes; later documentation or
+packaging-tool commits on `main` do not change their app source identity above.
+The bundled documentation is the original release snapshot; this page records
+the current download layout. `tools/release_bundle.py` exports committed
 Git objects including pinned core, oboe, faad2, enet and vendored dependencies.
 It independently verifies source archive bytes/modes, both complete patched
 Git trees and distribution ZIP readback. Six synthetic packaging tests include
@@ -38,22 +49,42 @@ and any Android runtime acceptance are identified separately in the manifest.
 Historical evidence below remains attached to its original binaries. Physical
 Thor, all-game compatibility, DSi qualification and performance are not inferred.
 
-The release also preserves the seven unchanged prior release assets in
-`archive-ud-nightly-2.1.11-r2.zip`, with their original identity manifest, so
-historical corresponding source remains available after old tag cleanup.
+The [historical 2.1.11 release metadata](https://api.github.com/repos/Umberto-DEV/melonDS-android/releases/437121674)
+retains the identities of its seven unchanged original assets. After the old
+tag ref was removed on 8 November, its browser page and ordinary download URLs
+return 404. The complete corresponding source remains publicly retrievable by
+asset ID using the [API download command below](#historical-source-download).
 Published source commits and contributor history remain intact.
 
 ---
 
 # Historical release: UD Nightly 2.1.11/52
 
-[Download and release assets](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11-r2).
-Only this Android release is offered. Previous Android release packages were
-withdrawn on 6 November 2026; source tags and published history remain.
+[Original release and asset metadata](https://api.github.com/repos/Umberto-DEV/melonDS-android/releases/437121674).
+The records below describe the historical code 52 binary and its package
+revision 2. The original seven assets remain retained; their ordinary browser
+download URLs no longer work after the old tag ref was removed.
 
-| Field | Current public artifact |
+## Historical source download
+
+Retrieve the original complete source without authentication through the release
+asset API. The `Accept` header requests the file content instead of asset metadata:
+
+```sh
+curl -fL -H 'Accept: application/octet-stream' \
+  'https://api.github.com/repos/Umberto-DEV/melonDS-android/releases/assets/718764276' \
+  -o historical-source.tar.gz
+printf '%s\n' '47930af53582a7c5c8df289e26484d51ce90174a904ed17bace31849897b6ac9  historical-source.tar.gz' | shasum -a 256 -c -
+```
+
+This anonymous download was verified on 8 November 2026: 26,587,945 bytes,
+matching the original source archive's SHA-256 above. The release metadata lists
+the other original asset IDs, including its build/source manifest; retrieve
+them through `/releases/assets/ASSET_ID` with the same `Accept` header.
+
+| Field | Historical public artifact |
 | --- | --- |
-| Immutable tag | `ud-nightly-2.1.11` |
+| Binary tag at publication (subsequently removed) | `ud-nightly-2.1.11` |
 | Released app source | `ac42561495ee6351d7f119f68760509c268f582e` |
 | Embedded core | `06f3df985f67416368e0716174b7f06934a10229` (native code unchanged from `ac5e6ba0`) |
 | Integrated official app | `feab12e597402565d245796669b2d0597f4b860d` |
@@ -64,9 +95,10 @@ withdrawn on 6 November 2026; source tags and published history remain.
 | Certificate SHA-256 | `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86` |
 | Native frontends | ARM64, ARM32 and x86-64 |
 
-The release page's `BUILD-MANIFEST.json` and `SHA256SUMS` retain exact source,
-CI, packaging, signature and alignment evidence. The fork uses immutable UD
-version tags; official nightly uses its rolling `nightly-release` convention.
+The historical release's `BUILD-MANIFEST.json` and `SHA256SUMS` retain exact
+source, CI, packaging, signature and alignment evidence. The old UD tag refs
+were removed on 8 November 2026; official nightly uses its rolling
+`nightly-release` convention.
 This is not an official stable 2.0.2 release.
 
 Source integration `7f8b9026` passed 367 app + four API tests (371 total),
