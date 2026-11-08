@@ -1,14 +1,14 @@
 # Current technical documentation
 
 This documentation describes the source and retained fixes in UD Nightly
-2.1.11/52. Evidence retains the exact candidate on which it was collected;
+2.1/53. Evidence retains the exact candidate on which it was collected;
 a dated pass is not fresh acceptance of every later build. Superseded
 release-only reports and operational drafts are no longer public files.
 Their original source/scan identities remain where needed to interpret the
-current regression evidence; source tags and published Git history are preserved.
+current regression evidence; published Git history and archived tag identities are preserved.
 
 - [Current release and package identity](RELEASE.md)
-- [Exact public-APK update and raw-save smoke](POST-RELEASE-SMOKE.md)
+- [Historical code-52 public-APK update and raw-save smoke](POST-RELEASE-SMOKE.md)
 - [Features and human contributor credits](FEATURES.md)
 - [Functional bug dossiers](bugs/README.md)
 - [101 security occurrence dossiers and canonical CSV](security/README.md)

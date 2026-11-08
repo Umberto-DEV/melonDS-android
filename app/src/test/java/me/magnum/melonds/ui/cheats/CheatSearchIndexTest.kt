@@ -63,4 +63,26 @@ class CheatSearchIndexTest {
         assertEquals(1201, rows.map { it.key }.toSet().size)
         assertEquals(rows.last().key, index.search("Match 1199").last().key)
     }
+
+    @Test fun toolbarFolderMatchIncludesEveryCheatAndFolderScopeUsesIdentity() {
+        val folders = listOf(
+            CheatFolder(1, "Inventory", listOf(plain(1, "Money"), plain(2, "Items"))),
+            CheatFolder(2, "Inventory", listOf(plain(3, "Other money"))),
+        )
+        val index = CheatSearchIndex.build(folders)
+        assertEquals(listOf(1L, 2L, 3L), index.searchCheats(" inventory ", null, null).map { it.cheat!!.id })
+        assertEquals(listOf(3L), index.searchCheats("money", "Inventory", 2).map { it.cheat!!.id })
+        assertEquals(2, index.searchCheats("", "Inventory", 1).size)
+        assertTrue(index.searchCheats("unknown", null, null).isEmpty())
+    }
+
+    @Test fun toolbarGeneratedOptionsRemainNavigationTargetsWithoutAnActionableCheat() {
+        val selector = Cheat(90, 1, "Choose", null, WildEncounterCheat.code(1, 5), false)
+        val index = CheatSearchIndex.build(listOf(CheatFolder(9, "Wild", listOf(selector))))
+        val match = index.searchCheats(" Pikachu ", null, null).single()
+        assertNull(match.cheat)
+        assertEquals(25, match.target.optionValue)
+        assertEquals("family:90:ITEM_LOAD", match.target.rowKey)
+        assertFalse(selector.enabled)
+    }
 }

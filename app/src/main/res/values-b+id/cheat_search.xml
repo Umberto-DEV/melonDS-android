@@ -2,4 +2,6 @@
 <resources>
     <string name="hint_search_cheats_and_folders">Cari curang dan folder</string>
     <string name="cheat_search_no_results">Tidak ada curang atau folder yang cocok</string>
+    <string name="hint_search">Cari…</string>
+    <string name="no_cheats_found_from_search">@string/cheat_search_no_results</string>
 </resources>

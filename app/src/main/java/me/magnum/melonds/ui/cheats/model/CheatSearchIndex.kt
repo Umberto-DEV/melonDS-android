@@ -3,6 +3,7 @@ package me.magnum.melonds.ui.cheats.model
 import me.magnum.melonds.common.cheats.ModifierFamilies
 import me.magnum.melonds.common.cheats.familyIdentity
 import me.magnum.melonds.domain.model.CheatFolder
+import me.magnum.melonds.domain.model.Cheat
 
 /** A destination, never an instruction to enable a cheat. Keys match CheatListItem. */
 data class CheatSearchTarget(val rowKey: String, val optionValue: Int? = null)
@@ -20,6 +21,7 @@ sealed class CheatSearchRow {
         val label: String,
         val familyTitle: String?,
         val target: CheatSearchTarget,
+        val cheat: Cheat? = null,
     ) : CheatSearchRow() {
         override val key = "match:${folder.id ?: folder.name}/${target.rowKey}/${target.optionValue ?: "row"}"
     }
@@ -30,6 +32,16 @@ class CheatSearchIndex private constructor(
     val folders: List<CheatFolder>,
     private val entries: List<Pair<CheatFolder, List<CheatSearchRow.Match>>>,
 ) {
+    fun searchCheats(query: String, folderName: String?, folderId: Long?): List<CheatSearchRow.Match> {
+        val needle = query.trim()
+        return entries.asSequence()
+            .filter { (folder, _) -> if (folderId != null) folder.id == folderId else folderName == null || folder.name == folderName }
+            .flatMap { (folder, matches) ->
+                val folderMatches = folder.name.contains(needle, ignoreCase = true)
+                matches.asSequence().filter { needle.isEmpty() || folderMatches || it.label.contains(needle, ignoreCase = true) }
+            }.toList()
+    }
+
     fun search(query: String): List<CheatSearchRow> {
         val needle = query.trim()
         if (needle.isEmpty()) return folders.map { CheatSearchRow.Folder(it) }
@@ -53,7 +65,7 @@ class CheatSearchIndex private constructor(
                 folder.cheats.forEach { cheat ->
                     val family = familyOf[cheat.familyIdentity]
                     if (family == null) {
-                        add(CheatSearchRow.Match(folder, cheat.name, null, CheatSearchTarget(CheatListItem.Single(cheat).key.toString())))
+                        add(CheatSearchRow.Match(folder, cheat.name, null, CheatSearchTarget(CheatListItem.Single(cheat).key.toString()), cheat))
                     } else if (placed.add(family.identity)) {
                         val key = CheatListItem.Family(family).key.toString()
                         add(CheatSearchRow.Match(folder, family.title, null, CheatSearchTarget(key)))

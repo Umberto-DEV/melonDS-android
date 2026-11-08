@@ -1,5 +1,44 @@
 # tools/
 
+## Release bundle
+
+`release_bundle.py` packages an existing APK and an exact committed app revision.
+Initialize all recursively pinned submodules locally first; the tool does not
+fetch, build, sign, tag or publish. It reads committed blobs, preserving executable
+modes and symlinks, and refuses tracked private notes or keys in source or patch
+inputs. Untracked work is excluded. Commit the complete intended public source
+before selecting its revision.
+
+```sh
+python3 tools/release_bundle.py --revision EXACT_APP_COMMIT_SHA \
+  --app-base 273211564bea8f9da0c9fe71b4006a06f5d4a2b5 \
+  --core-base 431ab4bd0003c4356e25fce89640ae1004579b9b \
+  --apk /path/to/verified.apk --output /path/to/new-empty-release --version 2.1 \
+  --release-date 2026-11-08 \
+  --verification-report /path/to/build-and-test-evidence.json
+python3 -m unittest discover -s tools -p test_release_bundle.py -v
+```
+
+The optional verification report is a JSON object copied as caller declarations;
+it does not cause the tool to accept build, signature or runtime checks. Record
+the exact APK hash, app/core revisions, build configuration, version code and
+actual checks/limitations in that report. The generated manifest distinguishes
+these declarations from the patch/tree and ZIP readback checks it performs.
+All app/core source patches include complete Git changes, including gitlinks,
+`.gitmodules`, documentation, modes, deletions and binary files. Each patch is
+applied at its stated base in a temporary index and must reconstruct the full
+target tree. The recursive source ZIP includes all pinned dependency licenses.
+
+The output includes `app-gitHub-nightly-release.apk`,
+`melonDS-UD-nightly-2.1-source.zip`, both `melonDS-UD-2.1-*-source.patch` files,
+and `melonDS-UD-nightly-2.1.zip` containing the same payloads and release notices.
+The optional release date defaults to the current UTC date. The generated source
+recipe applies the app patch with `--index`, synchronizes submodule URLs and then
+initializes the exact index pins recursively. `SHA256SUMS` covers the payloads;
+`BUNDLE-SHA256SUMS` covers the final ZIP.
+Existing nonempty outputs are refused, and the storage estimate reserves
+at least 10 GiB. Packaging success does not establish Android update safety.
+
 ## Host tests
 
 The [NAND/FatFs](host-tests/nand-fat/README.md) and

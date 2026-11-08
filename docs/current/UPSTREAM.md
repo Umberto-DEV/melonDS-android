@@ -1,4 +1,40 @@
-# Reconcile official Android updates while retaining UD fixes
+# Official source integration
+
+## Cheat search reconciliation — 8 November 2026
+
+UD Nightly 2.1/53 integrates official app
+`273211564bea8f9da0c9fe71b4006a06f5d4a2b5` from fork parent
+`a2668004e75d5f90f921d3a971f1c079a867a144`. The four incoming commits are
+[takanuva15's PR #1677](https://github.com/rafaelvcaetano/melonDS-android/pull/1677)
+and Rafael Caetano's merge. Their authorship and commits are retained.
+Core `83d443c5` is unchanged; this integration changes no save or database format.
+
+The upstream toolbar search, shared cheat options menu and pending-toggle
+snapshots are retained. Toolbar search reuses UD's indexed selector destinations:
+plain cheat rows support toggle/edit/delete, while family and generated option
+rows open the explicit picker. Finding an option does not enable it.
+The prior folder search and its navigation remain available. Index creation and
+toolbar filtering run on Dispatchers.Default. A folder-name match includes its
+cheats; folder-scoped searches use IDs so equal folder names remain separate.
+Deletion retains effective pending state, removes obsolete pending IDs and undo
+restores into the result's original folder with the existing exclusion rules.
+
+Initial focused tests reproduced the missing toolbar and stale pending-folder
+snapshot. The first integration additionally reproduced missing generated
+options and results crossing identical folder names. An initial checkbox
+assertion was an invalid test assumption about passive semantics, not a product
+defect. [Current release evidence](RELEASE.md) records final checks and limits.
+Cold-cache builds exposed missing dependency metadata checksums; each added
+artifact was compared byte for byte with official Maven Central while strict
+Gradle verification stayed enabled. Dependency versions were unchanged.
+
+The cumulative app source patch starts at the current official app revision and
+includes the full app tree, fork submodule configuration and exact core gitlink.
+[Patch instructions](../user-guide/SOURCE-PATCHES.md) use indexed application.
+The release packaging tool checks complete temporary-index tree equality and
+reads back recursive source archives against committed Git objects.
+
+## Earlier official reconciliation — 6 November 2026
 
 6 November 2026. Source integration joins UD `e5184229bf90c45b1762fcca132f9987813f73c7` with official `feab12e597402565d245796669b2d0597f4b860d`, including its six commits after `fa214944`. The pinned core remains `06f3df985f67416368e0716174b7f06934a10229`; no native-core change is part of this integration.
 

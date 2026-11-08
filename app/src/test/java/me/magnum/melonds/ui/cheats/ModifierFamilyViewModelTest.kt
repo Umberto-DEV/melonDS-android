@@ -6,6 +6,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import me.magnum.melonds.common.cheats.ModifierFamilies
 import me.magnum.melonds.common.cheats.ModifierFamily
@@ -100,6 +101,20 @@ class ModifierFamilyViewModelTest {
         vm.disableFamily(family("Prior"))
         runCurrent()
         assertEquals(listOf(prior.copy(enabled = false)), pending(state))
+    }
+
+    @Test fun folderSearchReflectsPendingTogglesWithoutWritingTheDatabase() = withMain {
+        val repo = FakeRepository(folder)
+        val vm = CheatsViewModel(repo, handle())
+        val snapshots = mutableListOf<CheatsScreenUiState<List<CheatFolder>>>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.folders.toList(snapshots) }
+        runCurrent()
+        vm.toggleCheat(prior)
+        runCurrent()
+        val latest = (snapshots.last() as CheatsScreenUiState.Ready).data.single()
+        assertFalse(latest.cheats.single { it.id == prior.id }.enabled)
+        assertTrue(repo.rows.getValue(requireNotNull(prior.id)).enabled)
+        assertEquals(0, repo.commits)
     }
 
     @Test fun genderAndNatureSelectionsAreExclusiveAndKeepTheSpeciesSelector() = withMain {
@@ -233,6 +248,28 @@ class ModifierFamilyViewModelTest {
         vm.commitCheatChanges()
         runCurrent()
         assertEquals(listOf(1000L), repo.rows.values.filter { it.enabled }.map { it.id })
+    }
+
+    @Test fun searchDeletionUsesTheResultFolderAndUndoKeepsItsPendingStatus() = withMain {
+        val other = CheatFolder(2, "Inventory", listOf(Cheat(7, 1, "Money", null, "not AR", false)))
+        val repo = FakeRepository(folder, other)
+        val state = handle()
+        val vm = CheatsViewModel(repo, state)
+        vm.toggleCheat(other.cheats.single())
+        runCurrent()
+        vm.deleteCheat(other.cheats.single(), other)
+        runCurrent()
+        assertFalse(repo.rows.containsKey(7L))
+        assertTrue(pending(state).none { it.id == 7L })
+        vm.undoCheatDeletion(other.cheats.single())
+        runCurrent()
+        val restored = repo.getFolderCheats(other).first().single()
+        assertEquals(1000L, restored.id)
+        assertTrue(restored.enabled)
+        assertFalse(repo.getFolderCheats(folder).first().any { it.id == restored.id })
+        vm.commitCheatChanges()
+        runCurrent()
+        assertTrue(repo.rows.getValue(1000L).enabled)
     }
 
     /** In-memory repository over one or more folders; cheats are keyed by id, folders keep their membership. */

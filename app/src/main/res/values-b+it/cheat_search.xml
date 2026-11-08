@@ -2,4 +2,6 @@
 <resources>
     <string name="hint_search_cheats_and_folders">Cerca trucchi e cartelle</string>
     <string name="cheat_search_no_results">Nessun trucco o cartella corrispondente</string>
+    <string name="hint_search">Cerca…</string>
+    <string name="no_cheats_found_from_search">@string/cheat_search_no_results</string>
 </resources>

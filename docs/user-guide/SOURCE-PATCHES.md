@@ -8,7 +8,7 @@ patch that can replace the official developer's Android signature.
 
 | Component | Official source revision |
 | --- | --- |
-| Android app | `feab12e597402565d245796669b2d0597f4b860d` |
+| Android app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
 | Android core | `431ab4bd0003c4356e25fce89640ae1004579b9b` |
 
 The Android app patch includes `.gitmodules` and the core gitlink, so it
@@ -16,20 +16,23 @@ reconstructs the complete app source revision. Start with a clean checkout of
 the stated Android app base. Keep your working project and its data backed up.
 
 ```sh
-git apply --check /path/to/melonDS-UD-2.1.11-app-source.patch
-git apply /path/to/melonDS-UD-2.1.11-app-source.patch
+git apply --check --index /path/to/melonDS-UD-2.1-app-source.patch
+git apply --index /path/to/melonDS-UD-2.1-app-source.patch
+git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
-The submodule command fetches the exact pinned core and other dependencies.
+Indexed patch application updates the core gitlink as well as files. The submodule
+commands synchronize fork URLs and fetch the exact pinned core and other dependencies.
+Verify `git submodule status --recursive`; no entry should begin with `+` or `-`.
 Do not then apply the core patch to that already updated core checkout.
 
 The separate core patch is an alternative for developers working directly
 from the official core revision listed above:
 
 ```sh
-git apply --check /path/to/melonDS-UD-2.1.11-core-source.patch
-git apply /path/to/melonDS-UD-2.1.11-core-source.patch
+git apply --check --index /path/to/melonDS-UD-2.1-core-source.patch
+git apply --index /path/to/melonDS-UD-2.1-core-source.patch
 ```
 
 Stop if a check fails. Do not force patches onto a different revision. Each
@@ -50,8 +53,8 @@ your own signing key in untracked `local.properties`, following the main
 sh ./gradlew :app:assembleGitHubNightlyRelease
 ```
 
-The distributed UD binary uses version code 52 and the display version
-`2.1.11-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in
+The distributed UD binary uses version code 53 and the display version
+`2.1-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in
 `BUILD-MANIFEST.json`; do not lower the version code of an existing installation.
 
 Use the existing signing identity for the installation you intend to update.

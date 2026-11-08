@@ -1,5 +1,5 @@
 **Changelog:**
-UD Nightly 2.1.11
+UD Nightly 2.1
 
 * Current features, downloads and contributor credits are described in the README.
 * Some bugs fixed.

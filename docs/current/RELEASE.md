@@ -1,4 +1,51 @@
-# Current release: UD Nightly 2.1.11/52
+# Current release: UD Nightly 2.1/53
+
+[Download the standalone ZIP, APK, complete source and patches](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1).
+This is an independent fork of the official Android Nightly. Its visible release
+name is 2.1; Android versionCode 53 preserves update ordering after code 52.
+
+| Field | UD Nightly 2.1 |
+| --- | --- |
+| Tag | `ud-nightly-2.1` |
+| Integrated official app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
+| Pinned core | `83d443c5` (native correction set unchanged from `ac5e6ba0`) |
+| Package / code | `me.magnum.melonds.nightly` / 53 |
+| Display version | `2.1-UD GH (NIGHTLY)` |
+| Certificate SHA-256 | `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86` |
+| Native frontends | ARM64, ARM32 and x86-64 |
+| Exact sources / APK checksum | Release `BUILD-MANIFEST.json`, `SHA256SUMS` and `BUNDLE-SHA256SUMS` |
+
+The release contains a standalone APK and a ZIP with the same APK, complete
+recursive source ZIP, full app/core source patches, license, installation/build
+instructions, manifest and checksums. `tools/release_bundle.py` exports committed
+Git objects including pinned core, oboe, faad2, enet and vendored dependencies.
+It independently verifies source archive bytes/modes, both complete patched
+Git trees and distribution ZIP readback. Six synthetic packaging tests include
+executing the indexed patch/submodule recipe in a clean checkout.
+
+The app patch begins at official `27321156`; the core patch begins at
+`431ab4bd`. [Apply instructions](../user-guide/SOURCE-PATCHES.md) update the
+index gitlinks before synchronizing/checking out submodules. Original licenses,
+notices and human contributor attribution are preserved. The ZIP layout is a
+fork distribution choice: no special upstream ZIP specification was found in
+the official README or release workflows. Upstream build/signing instructions
+and the GPL license remain applicable.
+
+Fresh source checks include 378 app + four API tests, without failures, errors
+or skipped tests, 56 focused cheat tests, successful three-ABI release assembly
+and lint with zero errors / 483 warnings. Final APK checks, exact pushed CI
+and any Android runtime acceptance are identified separately in the manifest.
+Historical evidence below remains attached to its original binaries. Physical
+Thor, all-game compatibility, DSi qualification and performance are not inferred.
+
+The release also preserves the seven unchanged prior release assets in
+`archive-ud-nightly-2.1.11-r2.zip`, with their original identity manifest, so
+historical corresponding source remains available after old tag cleanup.
+Published source commits and contributor history remain intact.
+
+---
+
+# Historical release: UD Nightly 2.1.11/52
 
 [Download and release assets](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11-r2).
 Only this Android release is offered. Previous Android release packages were

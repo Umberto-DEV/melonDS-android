@@ -2,4 +2,6 @@
 <resources>
     <string name="hint_search_cheats_and_folders">Поиск чит-кодов и каталогов</string>
     <string name="cheat_search_no_results">Подходящие чит-коды или каталоги не найдены</string>
+    <string name="hint_search">Поиск…</string>
+    <string name="no_cheats_found_from_search">@string/cheat_search_no_results</string>
 </resources>
