@@ -6,13 +6,13 @@ UD Nightly is a fork of [melonDS Android](https://github.com/rafaelvcaetano/melo
 
 Check each release for its exact version, Android package, CPU architectures, signing certificate and test results. An older release does not establish that the latest source has been packaged or tested on your device.
 
-**UD Nightly 2.1/53 is the current download.**
-[The APK and complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1)
+**UD Nightly 2.1.1/54 is the current download.**
+[The APK and complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.1)
 include the integrated official app `27321156`. The ZIP contains the complete
 recursive source, source patches, license, build instructions and verification
 manifest. Check either download with the release's `DOWNLOADS-SHA256SUMS`.
-The published APK and ZIP retain app source `e68e9459`; `main` may contain later
-documentation or packaging-tool changes. This is an independent UD fork
+2.1.1 restores import of complete cheat databases; see the release identity below.
+`main` may contain later documentation or packaging-tool changes. This is an independent UD fork
 release, with its own signing certificate. [Release identity and checks](docs/current/RELEASE.md)
 identify the exact binary and evidence; historical results retain their original
 candidate identities. The 2.1 publication replaces inherited tag names at the fork maintainer's
@@ -78,7 +78,7 @@ The [issue and PR coverage register](docs/current/ISSUE-COVERAGE.csv) distinguis
 
 ## Install or update
 
-Use the APK listed in a release and verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS) before installing. The [complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip) also includes that APK, source, source patches and the verification manifest. Commercial game images, personal BIOS/firmware, NAND and game saves are not included. The source retains the upstream freely redistributable BIOS replacement and its license.
+Use the APK listed in a release and verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/DOWNLOADS-SHA256SUMS) before installing. The [complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/melonDS-UD-nightly-2.1.1.zip) also includes that APK, source, source patches and the verification manifest. Commercial game images, personal BIOS/firmware, NAND and game saves are not included. The source retains the upstream freely redistributable BIOS replacement and its license.
 
 - **New UD installation:** use the standalone UD Nightly APK and select your own game and system files.
 - **Existing UD installation:** an in-place update requires the same Android package and signing certificate, with a higher version code. Back up saves, settings, layouts, cheats and system files first. Keep the app installed; do not clear its data as an update step.

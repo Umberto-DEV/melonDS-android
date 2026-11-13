@@ -1,7 +1,7 @@
 # Current technical documentation
 
 This documentation describes the source and retained fixes in UD Nightly
-2.1/53. Evidence retains the exact candidate on which it was collected;
+2.1.1/54. Evidence retains the exact candidate on which it was collected;
 a dated pass is not fresh acceptance of every later build. Superseded
 release-only reports and operational drafts are no longer public files.
 Their original source/scan identities remain where needed to interpret the

@@ -1,16 +1,54 @@
-# Current release: UD Nightly 2.1/53
+# Current release: UD Nightly 2.1.1/54
 
-[Download the APK or complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1).
+[Download the APK or complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.1).
 This is an independent fork of the official Android Nightly. Its visible release
-name is 2.1; Android versionCode 53 preserves update ordering after code 52.
+name is 2.1.1; Android versionCode 54 preserves update ordering after code 53.
 
-- [Android APK](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/app-gitHub-nightly-release.apk) for installation.
-- [Complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip) with the same APK, complete recursive source, patches, license, build instructions and verification manifest.
-- [Download checksums](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS) for the APK and complete ZIP.
+- [Android APK](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/app-gitHub-nightly-release.apk) for installation.
+- [Complete ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/melonDS-UD-nightly-2.1.1.zip) with the same APK, complete recursive source, patches, license, build instructions and verification manifest.
+- [Download checksums](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/DOWNLOADS-SHA256SUMS) for the APK and complete ZIP.
+
+2.1.1 changes only cheat import: the per-document budgets introduced by the
+3 November input hardening (250,000 cheats, 50,000 folders, 64 Mi text
+characters, 128 MiB) rejected the complete DeadSkullzJr NDS(i) database
+(709,658 cheats, 30,341 folders, about 95 M characters in 130 MB). The import
+failed part-way and its transaction was rolled back, leaving the previous
+database in place. XML and usrcheat imports now accept up to 2,000,000 cheats,
+200,000 folders, 256 Mi characters and 256 MiB per document; per-game and
+per-field limits are unchanged and parsing still streams one game at a time.
+A regression test streams a synthetic document larger than the old budgets.
+
+| Field | UD Nightly 2.1.1 |
+| --- | --- |
+| Tag | `ud-nightly-2.1.1` |
+| Integrated official app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
+| Pinned core | `83d443c546e1c338eb69003ba27347ad5c5599f5` (unchanged from 2.1) |
+| Package / code | `me.magnum.melonds.nightly` / 54 |
+| Display version | `2.1.1-UD GH (NIGHTLY)` |
+| Certificate SHA-256 | `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86` |
+| Native frontends | ARM64, ARM32 and x86-64 |
+| Exact sources / payload checksums | `BUILD-MANIFEST.json` and `SHA256SUMS` inside the complete ZIP |
+
+The complete ZIP layout, source patches and packaging checks are the same as
+for 2.1 below. The app patch begins at official `27321156`; the core patch
+begins at `431ab4bd`. Existing imported cheats, custom cheats, settings and
+saves are not migrated or rewritten by this update. Re-importing a database
+still replaces previously imported cheats and loads them disabled; custom
+cheats are kept.
+
+---
+
+# Historical release: UD Nightly 2.1/53
+
+Superseded by 2.1.1. The original 2.1 APK, complete ZIP and `DOWNLOADS-SHA256SUMS`
+are preserved byte-for-byte inside `archive-ud-nightly-2.1.zip`, attached to the
+[2.1.1 release](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.1).
+The `ud-nightly-2.1` tag ref was removed when 2.1.1 was published; source commit
+`e68e9459` remains in `main` history.
 
 | Field | UD Nightly 2.1 |
 | --- | --- |
-| Tag | `ud-nightly-2.1` |
+| Tag at publication (subsequently removed) | `ud-nightly-2.1` |
 | Released app source | `e68e9459b240e297407bbf166c520d5e39e6e02c` |
 | Integrated official app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
 | Pinned core | `83d443c546e1c338eb69003ba27347ad5c5599f5` (native correction set unchanged from `ac5e6ba0`) |

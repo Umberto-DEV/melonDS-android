@@ -1,7 +1,7 @@
 # Applying the UD source patches
 
-Download the [complete UD Nightly ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/melonDS-UD-nightly-2.1.zip),
-verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1/DOWNLOADS-SHA256SUMS),
+Download the [complete UD Nightly ZIP](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/melonDS-UD-nightly-2.1.1.zip),
+verify it against [DOWNLOADS-SHA256SUMS](https://github.com/Umberto-DEV/melonDS-android/releases/download/ud-nightly-2.1.1/DOWNLOADS-SHA256SUMS),
 then extract it. It contains the Android APK, complete recursive source ZIP,
 app/core **source patches**, build instructions, license, `BUILD-MANIFEST.json`
 and payload `SHA256SUMS`. Use the extracted patch paths in the commands below.
@@ -65,8 +65,8 @@ your own signing key in untracked `local.properties`, following the main
 sh ./gradlew :app:assembleGitHubNightlyRelease
 ```
 
-The distributed UD binary uses version code 53 and the display version
-`2.1-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in the bundle's
+The distributed UD binary uses version code 54 and the display version
+`2.1.1-UD GH (NIGHTLY)`. Reproduce the exact source/build metadata in the bundle's
 `BUILD-MANIFEST.json`; do not lower the version code of an existing installation.
 
 Use the existing signing identity for the installation you intend to update.

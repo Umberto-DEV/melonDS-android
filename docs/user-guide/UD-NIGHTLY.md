@@ -2,7 +2,7 @@
 
 This guide describes the fork's changes relative to official Nightly app `c42995ca` and core `431ab4bd`. Release notes identify the exact source and APK that a download contains. Source changes are not a test result for an unbuilt APK.
 
-The current public release is [UD Nightly 2.1/53](../current/RELEASE.md),
+The current public release is [UD Nightly 2.1.1/54](../current/RELEASE.md),
 including official app `27321156` and upstream RTC PR #1664. Resume
 synchronization exists upstream; UD retains its existing default-off,
 forward-only, 30-second policy and preference key.
