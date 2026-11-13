@@ -21,10 +21,14 @@ A regression test streams a synthetic document larger than the old budgets.
 | Field | UD Nightly 2.1.1 |
 | --- | --- |
 | Tag | `ud-nightly-2.1.1` |
+| Released app source | `7996706bb7355296435dba6e6a65abbd5df790c8` |
 | Integrated official app | `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` |
 | Pinned core | `83d443c546e1c338eb69003ba27347ad5c5599f5` (unchanged from 2.1) |
 | Package / code | `me.magnum.melonds.nightly` / 54 |
 | Display version | `2.1.1-UD GH (NIGHTLY)` |
+| APK SHA-256 | `b81a7ef6b10e0cd7da5c08874372e8f465c0eeba59124ae1ac9ff380a38bafd8` |
+| Complete ZIP SHA-256 | `793f57981c50269c83d45c664a0c05f6bea6be9bce521ff4422d15337070825b` |
+| Archived 2.1 assets SHA-256 | `c8cc1530a9decb6088dc9da77d41b98bf0fb2175cbb6c4ba97d145072eb4cd1a` (`archive-ud-nightly-2.1.zip`) |
 | Certificate SHA-256 | `832a0223e29802245c0e9f8ca24c8358e7d21cfe0dbea347845fda751f950d86` |
 | Native frontends | ARM64, ARM32 and x86-64 |
 | Exact sources / payload checksums | `BUILD-MANIFEST.json` and `SHA256SUMS` inside the complete ZIP |
@@ -35,6 +39,13 @@ begins at `431ab4bd`. Existing imported cheats, custom cheats, settings and
 saves are not migrated or rewritten by this update. Re-importing a database
 still replaces previously imported cheats and loads them disabled; custom
 cheats are kept.
+
+The released source passed [app CI](https://github.com/Umberto-DEV/melonDS-android/actions/runs/43427022552).
+Local checks passed 383 JVM/API tests, seven packaging tests, three-ABI release
+assembly and lint with zero errors / 483 warnings. The public downloads were
+re-fetched anonymously and matched `DOWNLOADS-SHA256SUMS`. No Android runtime
+acceptance of this exact public APK is claimed; the maintainer's physical Thor
+runs an equivalent debug-signed ARM64 build of the same source.
 
 ---
 
