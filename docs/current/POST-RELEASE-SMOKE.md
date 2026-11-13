@@ -1,4 +1,4 @@
-# UD 2.1.11: post-release Android smoke — 6 November 2026
+# UD 2.1.11 (historical): post-release Android smoke — 6 November 2026
 
 This records new execution after the release-time build report. It does not
 change the published APK, source archive, tag or checksums, and does not
@@ -43,7 +43,7 @@ complete game playthrough, multiplayer/DSi qualification, performance benchmark,
 power-loss test or universal compatibility claim. The copies used no active
 Day Care course or Pro shiny hunt; those populated workflows are not inferred.
 
-Use the [current release APK](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.11-r2).
+This smoke was run on UD Nightly 2.1.11 and is not a result for later releases. The current release is [UD Nightly 2.1.1](https://github.com/Umberto-DEV/melonDS-android/releases/tag/ud-nightly-2.1.1); no smoke of that exact APK is recorded here.
 The source patches are for rebuilding source code. They cannot convert the
 original author's differently signed APK into an in-place UD update. In-app
 update discovery still follows the original project; obtain UD updates from

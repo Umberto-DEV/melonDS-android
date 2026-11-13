@@ -2,7 +2,7 @@
 
 ## Cheat search reconciliation — 8 November 2026
 
-UD Nightly 2.1/53 integrates official app
+UD Nightly 2.1/53 (and the current 2.1.1/54, which keeps the same official app) integrates official app
 `273211564bea8f9da0c9fe71b4006a06f5d4a2b5` from fork parent
 `a2668004e75d5f90f921d3a971f1c079a867a144`. The four incoming commits are
 [takanuva15's PR #1677](https://github.com/rafaelvcaetano/melonDS-android/pull/1677)

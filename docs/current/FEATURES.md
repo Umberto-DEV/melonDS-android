@@ -1,6 +1,6 @@
 # Features and contributor provenance
 
-Current UD Nightly 2.1.11 integrates official Android source `feab12e5`.
+Current UD Nightly 2.1.1 integrates official Android source `27321156`.
 The original fork comparison used app `c42995ca` and core `431ab4bd`.
 The [upstream reconciliation](UPSTREAM.md) records later source integration;
 [release identity](RELEASE.md) and [runtime smoke](POST-RELEASE-SMOKE.md)

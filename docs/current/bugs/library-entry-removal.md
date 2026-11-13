@@ -1,6 +1,6 @@
 # Remove a single ROM entry from the library
 
-The selective-removal correction is included in current UD Nightly 2.1.11/52.
+The selective-removal correction is included in UD Nightly 2.1.11/52 and in the current UD Nightly 2.1.1/54.
 The dated evidence below was collected on production source
 `bd546465abffb6e775b3b9f51bcf1f07224eec89`, version 2.1.10/51. It remains
 historical evidence for those exact APKs; current-release execution is recorded
