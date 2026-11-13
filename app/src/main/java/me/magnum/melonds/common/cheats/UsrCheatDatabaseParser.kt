@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 class UsrCheatDatabaseParser(
-    private val maxInputBytes: Long = 128L * 1024 * 1024,
+    private val maxInputBytes: Long = 256L * 1024 * 1024,
 ) : CheatDatabaseParser {
 
     companion object {
@@ -33,8 +33,9 @@ class UsrCheatDatabaseParser(
         private const val MAX_GAME_BLOCK_SIZE = 1024 * 1024
         private const val MAX_CHEAT_CODE_BYTES = 1024 * 1024
         private const val MAX_ITEMS_PER_GAME = 10_000
-        private const val MAX_TOTAL_CHEATS = 250_000
-        private const val MAX_TOTAL_FOLDERS = 50_000
+        // Same document budget as the XML parser: large enough for complete community databases.
+        private const val MAX_TOTAL_CHEATS = 2_000_000
+        private const val MAX_TOTAL_FOLDERS = 200_000
 
         private const val FLAG_FOLDER = 0x1000
         private const val FLAG_FOLDER_ONE_HOT = 0x1100

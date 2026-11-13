@@ -37,9 +37,11 @@ class XmlCheatDatabaseSAXHandler(private val listener: HandlerListener) : Defaul
         const val MAX_FOLDERS_PER_GAME = 2_000
         const val MAX_TEXT_CHARS_PER_GAME = 8 * 1024 * 1024
         const val MAX_GAMES_PER_DOCUMENT = 10_000
-        const val MAX_CHEATS_PER_DOCUMENT = 250_000
-        const val MAX_FOLDERS_PER_DOCUMENT = 50_000
-        const val MAX_TEXT_CHARS_PER_DOCUMENT = 64 * 1024 * 1024
+        // Document budgets must admit the complete DeadSkullzJr NDS(i) database
+        // (709,658 cheats, 30,341 folders, ~95 M text characters) with headroom.
+        const val MAX_CHEATS_PER_DOCUMENT = 2_000_000
+        const val MAX_FOLDERS_PER_DOCUMENT = 200_000
+        const val MAX_TEXT_CHARS_PER_DOCUMENT = 256 * 1024 * 1024
     }
     interface HandlerListener {
         fun onCheatDatabaseParseStart(databaseName: String): CheatDatabase

@@ -39,6 +39,35 @@ class CheatParserSecurityTest {
     }
 
     @Test
+    fun `xml parser imports a database as large as the complete DeadSkullzJr release`() {
+        // The 2025-08-12 DeadSkullzJr NDS(i) database has 709,658 cheats in folders and
+        // about 95 million characters of text in 130 MB. This synthetic document exceeds
+        // the previous 250,000-cheat and 64 Mi-character document budgets while keeping
+        // every per-game limit satisfied.
+        val games = 30
+        val cheatsPerGame = 9_000
+        val note = "n".repeat(300)
+        var parsedGames = 0
+        var parsedCheats = 0
+        val listener = object : CheatDatabaseParserListener {
+            override fun onDatabaseParseStart(databaseName: String) = CheatDatabase(1, databaseName)
+            override fun onGameParseStart(gameName: String) = Unit
+            override fun onGameParsed(game: Game) {
+                parsedGames++
+                parsedCheats += game.cheats.sumOf { it.cheats.size }
+            }
+            override fun onParseComplete() = Unit
+        }
+
+        XmlCheatDatabaseParser().parseCheatDatabase(
+            ProgressTrackerInputStream(GeneratedXmlInputStream(games, cheatsPerGame, note)), listener
+        )
+
+        assertEquals(games, parsedGames)
+        assertEquals(games * cheatsPerGame, parsedCheats)
+    }
+
+    @Test
     fun `xml parser rejects doctype and internal entities`() {
         val xml = """<!DOCTYPE codelist [<!ENTITY boom "expanded">]>
             <codelist><name>&boom;</name></codelist>""".trimIndent()
@@ -168,6 +197,47 @@ class CheatParserSecurityTest {
         override fun onGameParseStart(gameName: String) = Unit
         override fun onGameParsed(game: Game) = Unit
         override fun onParseComplete() = Unit
+    }
+
+    /** Streams a large cheat XML document without holding it in memory. */
+    private class GeneratedXmlInputStream(
+        private val games: Int,
+        private val cheatsPerGame: Int,
+        private val note: String,
+    ) : InputStream() {
+        private val chunks = iterator {
+            yield("<codelist><name>Synthetic database</name>")
+            for (game in 0 until games) {
+                yield("<game><name>Game $game</name><gameid>T%03d %08X</gameid><folder><name>Folder</name>".format(game, game))
+                repeat(cheatsPerGame) { cheat ->
+                    yield("<cheat><name>Cheat $cheat</name><note>$note</note><codes>00000000 00000000</codes></cheat>")
+                }
+                yield("</folder></game>")
+            }
+            yield("</codelist>")
+        }
+        private var current = ByteArray(0)
+        private var position = 0
+
+        private fun fill(): Boolean {
+            while (position >= current.size) {
+                if (!chunks.hasNext()) return false
+                current = chunks.next().toByteArray()
+                position = 0
+            }
+            return true
+        }
+
+        override fun read(): Int = if (fill()) current[position++].toInt() and 0xff else -1
+
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+            if (length == 0) return 0
+            if (!fill()) return -1
+            val count = minOf(length, current.size - position)
+            current.copyInto(buffer, offset, position, position + count)
+            position += count
+            return count
+        }
     }
 
     private class MaxReadRecordingInputStream(private val bytes: ByteArray) : InputStream() {
